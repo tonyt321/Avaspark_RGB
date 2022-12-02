@@ -812,7 +812,7 @@ function btype(b){
 	return "?";
 }
 function bname(o){
-	if (o.name=="WLED") return o.ip;
+	if (o.name=="Andon") return o.ip;
 	return o.name;
 }
 

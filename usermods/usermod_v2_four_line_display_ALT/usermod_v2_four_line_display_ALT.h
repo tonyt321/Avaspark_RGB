@@ -693,7 +693,7 @@ class FourLineDisplayUsermod : public Usermod {
             //Akemi
             //draw2x2Glyph( 5, 0, 12, u8x8_4LineDisplay_WLED_icons_3x3); // use this if flash runs short and comment out 6x6 font
             drawGlyph( 5, 0, 12, u8x8_4LineDisplay_WLED_icons_6x6, true);
-            drawString(6, 6, "WLED");
+            drawString(6, 6, "Andon");
             break;
         }
       } else {
@@ -768,7 +768,7 @@ class FourLineDisplayUsermod : public Usermod {
       line = "";
       if (apActive) {
         line = apPass;
-      } else if (strcmp(serverDescription, "WLED") != 0) {
+      } else if (strcmp(serverDescription, "Andon") != 0) {
         line = serverDescription;
       }
       center(line, getCols());

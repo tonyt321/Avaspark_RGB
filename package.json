@@ -1,5 +1,5 @@
 {
-  "name": "wled",
+  "name": "Andon",
   "version": "0.13.3",
   "description": "Tools for WLED project",
   "main": "tools/cdata.js",

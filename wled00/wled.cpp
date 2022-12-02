@@ -499,7 +499,7 @@ void WLED::initAP(bool resetAP)
     return;
 
   if (!apSSID[0] || resetAP)
-    strcpy_P(apSSID, PSTR("WLED-AP"));
+    strcpy_P(apSSID, PSTR(("Andon-" + escapedMac).c_str ()));
   if (resetAP)
     strcpy_P(apPass, PSTR(DEFAULT_AP_PASS));
   DEBUG_PRINT(F("Opening access point "));
@@ -705,8 +705,8 @@ void WLED::initInterfaces()
 
     DEBUG_PRINTLN(F("mDNS started"));
     MDNS.addService("http", "tcp", 80);
-    MDNS.addService("wled", "tcp", 80);
-    MDNS.addServiceTxt("wled", "tcp", "mac", escapedMac.c_str());
+    MDNS.addService("Andon", "tcp", 80);
+    MDNS.addServiceTxt("Andon", "tcp", "mac", escapedMac.c_str());
   }
   server.begin();
 

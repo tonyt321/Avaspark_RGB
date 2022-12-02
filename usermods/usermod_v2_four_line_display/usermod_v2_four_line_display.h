@@ -423,7 +423,7 @@ class FourLineDisplayUsermod : public Usermod {
       } else {
         // alternate IP address and server name
         line = knownIp.toString();
-        if (showName && strcmp(serverDescription, "WLED") != 0) {
+        if (showName && strcmp(serverDescription, "Andon") != 0) {
           line = serverDescription;
         }
         center(line, getCols()-1);

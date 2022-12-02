@@ -53,6 +53,9 @@
 #define DEFAULT_AP_PASS     "andon123"
 #define DEFAULT_OTA_PASS    "andon123"
 
+#define SERVERNAME "Andon"
+
+#define USERMOD_ANDON_MOD
 #define DEFAULT_LED_TYPE TYPE_SK6812_RGBW
 
 

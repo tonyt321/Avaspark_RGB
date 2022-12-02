@@ -97,7 +97,7 @@ class Si7021_MQTT_HA : public Usermod
 
         JsonObject device = doc.createNestedObject("device"); // attach the sensor to the same device
         device["name"] = String(serverDescription);
-        device["model"] = "WLED";
+        device["model"] = "Andon";
         device["manufacturer"] = "Aircoookie";
         device["identifiers"] = String("wled-") + String(serverDescription);
         device["sw_version"] = VERSION;

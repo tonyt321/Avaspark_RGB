@@ -649,7 +649,7 @@ void serializeInfo(JsonObject root)
   #endif
   root[F("opt")] = os;
 
-  root[F("brand")] = "WLED";
+  root[F("brand")] = "Andon";
   root[F("product")] = F("FOSS");
   root["mac"] = escapedMac;
   char s[16] = "";
