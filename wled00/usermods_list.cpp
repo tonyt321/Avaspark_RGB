@@ -19,8 +19,8 @@
 #include "../usermods/Temperature/usermod_temperature.h"
 #endif
 
-#ifdef USERMOD_SN_PHOTORESISTOR
-#include "../usermods/SN_Photoresistor/usermod_sn_photoresistor.h"
+#ifdef USERMOD_ANDON_MOD
+#include "../usermods/ANDON_MOD/usermod_ANDON_MOD.h"
 #endif
 
 #ifdef USERMOD_PWM_FAN
