@@ -81,7 +81,7 @@ void prepareHostname(char* hostname)
 void WiFiEvent(WiFiEvent_t event)
 {
   #ifdef WLED_USE_ETHERNET
-  char hostname[25] = "wled-";
+  char hostname[25] = "andon-";
   #endif
   
   switch (event) {
@@ -417,7 +417,7 @@ void WLED::setup()
   escapedMac.toLowerCase();
   if (strcmp(cmDNS, "x") == 0)        // fill in unique mdns default
   {
-    strcpy_P(cmDNS, PSTR("wled-"));
+    strcpy_P(cmDNS, PSTR("andon-"));
     sprintf(cmDNS + 5, "%*s", 6, escapedMac.c_str() + 6);
   }
   if (mqttDeviceTopic[0] == 0) {
@@ -425,7 +425,7 @@ void WLED::setup()
     sprintf(mqttDeviceTopic + 5, "%*s", 6, escapedMac.c_str() + 6);
   }
   if (mqttClientID[0] == 0) {
-    strcpy_P(mqttClientID, PSTR("WLED-"));
+    strcpy_P(mqttClientID, PSTR("ANDON-"));
     sprintf(mqttClientID + 5, "%*s", 6, escapedMac.c_str() + 6);
   }
 
@@ -655,7 +655,7 @@ void WLED::initConnection()
   DEBUG_PRINTLN("...");
 
   // convert the "serverDescription" into a valid DNS hostname (alphanumeric)
-  char hostname[25] = "wled-";
+  char hostname[25] = "";
   prepareHostname(hostname);
 
 #ifdef ESP8266

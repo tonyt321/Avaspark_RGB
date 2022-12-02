@@ -99,7 +99,7 @@ class Si7021_MQTT_HA : public Usermod
         device["name"] = String(serverDescription);
         device["model"] = "Andon";
         device["manufacturer"] = "Aircoookie";
-        device["identifiers"] = String("wled-") + String(serverDescription);
+        device["identifiers"] = String("andon-") + String(serverDescription);
         device["sw_version"] = VERSION;
 
         String payload;
