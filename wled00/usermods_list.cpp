@@ -23,6 +23,11 @@
 #include "../usermods/ANDON_MOD/usermod_ANDON_MOD.h"
 #endif
 
+
+#ifdef USERMOD_POWERAP
+#include "../usermods/PowerAPUsermod/PowerAPUsermod.h"
+#endif
+
 #ifdef USERMOD_PWM_FAN
 #include "../usermods/PWM_fan/usermod_PWM_fan.h"
 #endif
@@ -214,6 +219,14 @@ void registerUsermods()
 
   #ifdef USERMOD_SEVEN_SEGMENT
   usermods.add(new SevenSegmentDisplay());
+  #endif
+
+  #ifdef USERMOD_ANDON_MOD
+  usermods.add(new UsermodAndon());
+  #endif
+
+  #ifdef USERMOD_POWERAP
+  usermods.add(new PowerAPUsermod());
   #endif
 
   #ifdef USERMOD_SSDR

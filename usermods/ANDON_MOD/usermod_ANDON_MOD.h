@@ -3,7 +3,7 @@
 #include "wled.h"
 
 
-class Usermod_ANDON_MOD : public Usermod
+class UsermodAndon : public Usermod
 {
 private:
 
@@ -603,22 +603,22 @@ public:
 
 // strings to reduce flash memory usage (used more than twice)
 //                           _veriable         "what it says on the webpage"
-const char Usermod_ANDON_MOD::_name[] PROGMEM = "Enabled Features";
-const char Usermod_ANDON_MOD::_stock[] PROGMEM = "Emulate stock lighting (overrides everything)";
+const char UsermodAndon::_name[] PROGMEM = "Enabled Features";
+const char UsermodAndon::_stock[] PROGMEM = "Emulate stock lighting (overrides everything)";
 #ifdef PRO_VERSION
-const char Usermod_ANDON_MOD::_Status_bar[] PROGMEM = "Mirror Status bar error";
-const char Usermod_ANDON_MOD::_battery_bar[] PROGMEM = "Display battery on dismount";
-const char Usermod_ANDON_MOD::_low_bat_percent[] PROGMEM = "Battery percent to change preset (0 to disable) overrides duty cycle preset";
-const char Usermod_ANDON_MOD::_low_bat_preset[] PROGMEM = "Low battery preset animation";
+const char UsermodAndon::_Status_bar[] PROGMEM = "Mirror Status bar error";
+const char UsermodAndon::_battery_bar[] PROGMEM = "Display battery on dismount";
+const char UsermodAndon::_low_bat_percent[] PROGMEM = "Battery percent to change preset (0 to disable) overrides duty cycle preset";
+const char UsermodAndon::_low_bat_preset[] PROGMEM = "Low battery preset animation";
 
-const char Usermod_ANDON_MOD::_choosen_slow_preset[] PROGMEM = "Slow preset animation";
-const char Usermod_ANDON_MOD::_choosen_med_preset[] PROGMEM = "Med preset animation";
-const char Usermod_ANDON_MOD::_choosen_fast_preset[] PROGMEM = "Fast preset animation";
-const char Usermod_ANDON_MOD::_motor_duty_slow[] PROGMEM = "Slow motor duty %";
-const char Usermod_ANDON_MOD::_motor_duty_med[] PROGMEM = "Med motor duty %";
-const char Usermod_ANDON_MOD::_motor_duty_fast[] PROGMEM = "fast motor duty %";
+const char UsermodAndon::_choosen_slow_preset[] PROGMEM = "Slow preset animation";
+const char UsermodAndon::_choosen_med_preset[] PROGMEM = "Med preset animation";
+const char UsermodAndon::_choosen_fast_preset[] PROGMEM = "Fast preset animation";
+const char UsermodAndon::_motor_duty_slow[] PROGMEM = "Slow motor duty %";
+const char UsermodAndon::_motor_duty_med[] PROGMEM = "Med motor duty %";
+const char UsermodAndon::_motor_duty_fast[] PROGMEM = "fast motor duty %";
 #else
-const char Usermod_ANDON_MOD::_choosen_preset[] PROGMEM = "Preset animation to use while riding";
+const char UsermodAndon::_choosen_preset[] PROGMEM = "Preset animation to use while riding";
 #endif
-const char Usermod_ANDON_MOD::_boot_preset[] PROGMEM = "Preset animation to use as boot animation";
-const char Usermod_ANDON_MOD::_boot_preset_time[] PROGMEM = "How long is boot preset in sec (0 to disable)";
+const char UsermodAndon::_boot_preset[] PROGMEM = "Preset animation to use as boot animation";
+const char UsermodAndon::_boot_preset_time[] PROGMEM = "How long is boot preset in sec (0 to disable)";

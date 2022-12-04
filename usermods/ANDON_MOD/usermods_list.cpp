@@ -9,6 +9,6 @@
 void registerUsermods()
 {
 #ifdef USERMOD_ANDON_MOD
-  usermods.add(new Usermod_ANDON_MOD());
+  usermods.add(new UsermodAndon());
 #endif
 }
