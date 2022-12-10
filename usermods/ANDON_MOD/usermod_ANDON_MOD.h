@@ -77,11 +77,6 @@ private:
   static const char _boot_preset_time[];
   static const char _stock[];
 
-  bool checkBoundSensor(float newValue, float prevValue, float maxDiff)
-  {
-    return isnan(prevValue) || newValue <= prevValue - maxDiff || newValue >= prevValue + maxDiff;
-  }
-
 
 
 

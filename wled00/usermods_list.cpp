@@ -24,8 +24,8 @@
 #endif
 
 
-#ifdef USERMOD_POWERAP
-#include "../usermods/PowerAPUsermod/PowerAPUsermod.h"
+#ifdef USERMOD_POWER_AP
+#include "../usermods/powerap/powerap.h"
 #endif
 
 #ifdef USERMOD_PWM_FAN
@@ -225,7 +225,7 @@ void registerUsermods()
   usermods.add(new UsermodAndon());
   #endif
 
-  #ifdef USERMOD_POWERAP
+  #ifdef USERMOD_POWER_AP
   usermods.add(new PowerAPUsermod());
   #endif
 

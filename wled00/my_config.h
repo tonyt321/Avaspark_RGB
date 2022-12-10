@@ -53,7 +53,6 @@
 #define DEFAULT_AP_PASS     "andon123"
 #define DEFAULT_OTA_PASS    "andon123"
 
-#define SERVERNAME "Andon"
 
 #define DEFAULT_LED_TYPE TYPE_SK6812_RGBW
 
@@ -61,8 +60,8 @@
 //#define MAX_LEDS 1500       //Maximum total LEDs. More than 1500 might create a low memory situation on ESP8266.
 
 
-#define USERMOD_POWERAP
-#define USERMOD_ANDON_MOD
+//#define USERMOD_POWER_AP
+//#define USERMOD_ANDON_MOD
 
 //#define DEFAULT_BRIGHTNESS (uint8_t)127
 //#define DEFAULT_MODE       (uint8_t)0
