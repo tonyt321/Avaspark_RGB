@@ -499,6 +499,9 @@ void WLED::initAP(bool resetAP)
     return;
 
   if (!apSSID[0] || resetAP)
+  escapedMac = WiFi.macAddress();
+  escapedMac.replace(":", "");
+  escapedMac.toLowerCase();
     strcpy_P(apSSID, PSTR(("Andon-" + escapedMac).c_str ()));
   if (resetAP)
     strcpy_P(apPass, PSTR(DEFAULT_AP_PASS));
