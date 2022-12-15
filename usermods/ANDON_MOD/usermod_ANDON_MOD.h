@@ -50,9 +50,14 @@ private:
   int FRONT_LIGHT_W_ANALOG;
   
   // flag set at startup
+  int client_numb;
+  bool skip_loop_wifi_clients_on = true;
   bool forward = true; //on startup assume forware movment
   bool app_lights_on;  // are the lights on in the app?
-  bool skip_loop_wifi_clients_on = true;
+
+  bool app_lights_on_last; // last check value of lights on
+  int blink_app_lights = 0;
+  unsigned long blink_app_lights_timing;
 
 
   bool stock = true;
@@ -298,6 +303,10 @@ private:
 #endif
 
 
+
+
+
+
   void get_front_light()
   {
 
@@ -307,7 +316,7 @@ private:
     FRONT_LIGHT_R = digitalRead(FRONT_LIGHT_R_PIN);
     FRONT_LIGHT_R_ANALOG = analogRead(FRONT_LIGHT_R_PIN);
 
-    if (((FRONT_LIGHT_W) == true) || ((FRONT_LIGHT_R) == true)){ 
+    if (((FRONT_LIGHT_W) == true) || ((FRONT_LIGHT_R) == true)){
       //switch to using analog input to detect switch sooner needs testing on live board
     app_lights_on = true;
     if ((FRONT_LIGHT_W) == true){  // if white rgbw front light is on board is going forward
@@ -322,6 +331,16 @@ private:
       // if lights are off assume forward to avoid if someone turns lights
       // off while going backwards being stuck in backwards within the program
     }
+
+        if (app_lights_on_last != app_lights_on){
+          if ((millis() - blink_app_lights_timing) < BLINK_APP_LIGHTS_DELAY){ //if time seince last toggle less then 1 sec
+            blink_app_lights = blink_app_lights + 1;
+          }else{
+          blink_app_lights = 0;
+          }
+    blink_app_lights_timing = millis();
+    }
+    app_lights_on_last = app_lights_on;
   }
 
 
@@ -345,14 +364,28 @@ handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&G=255&R2=255&IX=" + battery_perce
   void emulate_stock()
   {
 if ((forward) == true) {
- handleSet(nullptr, "win&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
- handleSet(nullptr, "win&SB=255&FX=0&G=0&B=0&R=255&W=0&TT=1000" , false );
+ handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+         String string1 = "win&SB=255&FX=0&G=0&B=0&R=255&W=0&TT=1000&T=1&S=0&S2=" + FRONT_LED_COUNT;   //combining multiple strings at once can result in unpredictable outcomes
+ handleSet(nullptr, "win&SB=255&FX=0&G=0&B=0&R=255&W=0&TT=1000&T=1&S=0&S2=13" , false );
+ 
+ handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
+         String string2 = "win&SB=255&FX=0&G=255&B=255&R=255&W=255&TT=1000&T=1&S=" + FRONT_LED_COUNT;
+         int all_led_count = FRONT_LED_COUNT + BACK_LED_COUNT;
+         String string3 = "&S2=" + all_led_count;
+         String together1 = string2 + string3;
+ handleSet(nullptr, "win&SB=255&FX=0&G=255&B=255&R=255&W=255&TT=1000&T=1&S=13&S2=26" , false );
 
- handleSet(nullptr, "win&SS=1&SM=1&SV=2" , false );
- handleSet(nullptr, "win&SB=255&FX=0&G=255&B=255&R=255&W=255&TT=1000" , false );
 } else {
- handleSet(nullptr, "win&SB=255&FX=0&SS=0&G=0&B=0&R=255&W=0&TT=1000" , false );
- handleSet(nullptr, "win&SB=255&FX=0&SS=1&G=255&B=255&R=255&W=255&TT=1000" , false );
+ handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+         String string1 = "win&SB=255&FX=0&G=255&B=255&R=255&W=255&TT=1000&T=1&S=0&S2=" + FRONT_LED_COUNT;   //combining multiple strings at once can result in unpredictable outcomes
+ handleSet(nullptr, string1 , false );
+ 
+ handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
+         String string2 = "win&SB=255&FX=0&G=0&B=0&R=255&W=0&TT=1000&T=1&S=" + FRONT_LED_COUNT;
+         int all_led_count = FRONT_LED_COUNT + BACK_LED_COUNT;
+         String string3 = "&S2=" + all_led_count;
+         String together1 = string2 + string3;
+ handleSet(nullptr, together1 , false );
  }
 }
 
@@ -429,7 +462,7 @@ public:
 
    }
 
-   applyPreset(0);
+   //applyPreset(0);
 
   }// end of start up 
 
@@ -457,7 +490,7 @@ public:
 
     wifi_sta_list_t stationList;  //skip looping code if user is on wifi so we dont change stuff while they are editing
     esp_wifi_ap_get_sta_list(&stationList);
-    int client_numb = stationList.num;
+    client_numb = stationList.num;
     if ( client_numb != 0 ){
     return; 
     }
@@ -476,7 +509,13 @@ public:
 
 
 
-
+   if (blink_app_lights >= 2 ){ //if the lights in Onewheel app are flashed on off within 2 sec
+    // turn wifi on
+   }else{
+    if ( client_numb == 0 ){ // if no one is on the wifi and the lights are toggle in the app 
+    // turn wifi off
+    }
+   }
 
 
   

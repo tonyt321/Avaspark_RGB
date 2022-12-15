@@ -20,6 +20,8 @@
   //WARNING: this will hardcode these as the default even after a factory reset
 */
 #define DEFAULT_LED_COUNT 13 //11 for GT 13 for pint
+#define FRONT_LED_COUNT 13 
+#define BACK_LED_COUNT 13
 
 #define MODEL 0    // what model of onewheel is this for? 
 //0   1    2   3
@@ -57,14 +59,17 @@
 #define DEFAULT_LED_TYPE TYPE_SK6812_RGBW
 
 
-//#define MAX_LEDS 1500       //Maximum total LEDs. More than 1500 might create a low memory situation on ESP8266.
+#define BLINK_APP_LIGHTS_DELAY 1000 //ms between blinks to enable wifi
 
+//#define MAX_LEDS 1500       //Maximum total LEDs. More than 1500 might create a low memory situation on ESP8266.
 
 //#define USERMOD_POWER_AP
 //#define USERMOD_ANDON_MOD
 
-//#define DEFAULT_BRIGHTNESS (uint8_t)127
+
+
+#define DEFAULT_BRIGHTNESS (uint8_t)255
 //#define DEFAULT_MODE       (uint8_t)0
 //#define DEFAULT_SPEED      (uint8_t)128
 //#define DEFAULT_INTENSITY  (uint8_t)128
-//#define DEFAULT_COLOR      (uint32_t)0xFFAA00
+#define DEFAULT_COLOR      (uint32_t)0x000000
