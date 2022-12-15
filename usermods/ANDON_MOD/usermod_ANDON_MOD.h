@@ -55,7 +55,7 @@ private:
   bool skip_loop_wifi_clients_on = true;
 
 
-  bool stock = false;
+  bool stock = true;
   
   // strings to reduce flash memory usage (used more than twice)
   static const char _name[];
@@ -345,11 +345,14 @@ handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&G=255&R2=255&IX=" + battery_perce
   void emulate_stock()
   {
 if ((forward) == true) {
- handleSet(nullptr, "win&SB=255&FX=0&SM=0&SS=0&R=255&TT=1000" , false );
- handleSet(nullptr, "win&SB=255&FX=0&SM=1&SS=1&G=255&B=255&R=255&W=255&TT=1000" , false );
+ handleSet(nullptr, "win&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+ handleSet(nullptr, "win&SB=255&FX=0&G=0&B=0&R=255&W=0&TT=1000" , false );
+
+ handleSet(nullptr, "win&SS=1&SM=1&SV=2" , false );
+ handleSet(nullptr, "win&SB=255&FX=0&G=255&B=255&R=255&W=255&TT=1000" , false );
 } else {
- handleSet(nullptr, "win&SB=255&FX=0&SM=1&SS=0&R=255&TT=1000" , false );
- handleSet(nullptr, "win&SB=255&FX=0&SM=0&SS=1&G=255&B=255&R=255&W=255&TT=1000" , false );
+ handleSet(nullptr, "win&SB=255&FX=0&SS=0&G=0&B=0&R=255&W=0&TT=1000" , false );
+ handleSet(nullptr, "win&SB=255&FX=0&SS=1&G=255&B=255&R=255&W=255&TT=1000" , false );
  }
 }
 
@@ -403,18 +406,39 @@ public:
 
 */
 
+ 
+  #ifndef TEST_MODE
+  app_lights_on = true;  // set as if lights are detected as always on in test mode
+  #endif
+
+   #ifndef TEST_MODE // test mode skip get front light becuase we dont have the hardware on test esp32
+   get_front_light();
+   if (app_lights_on == (false)){ //turns lights off if in app lights are off
+   handleSet(nullptr, "win&T=0" , false );// turn all off
+   return; // skip rest of loop becuase we dont want to change lights besides forward/back
+   }
+   #endif
+   
+
+   if ((stock) == true){ // if emulate stock is off use boot up preset
+
     if (boot_preset_time != 0){ // skip if boot_preset_time set to 0
     start_milisec = millis();
     applyPreset(boot_preset);// start up animation plays for 3 sec or so (still need to implement switching back)
     }
 
-  }
+   }
+
+   applyPreset(0);
+
+  }// end of start up 
 
   void loop()
   {
-    //if (strip.isUpdating())
-    //  return;
-   
+
+    if (strip.isUpdating())
+      return;
+    
 
 
 
@@ -435,20 +459,11 @@ public:
     esp_wifi_ap_get_sta_list(&stationList);
     int client_numb = stationList.num;
     if ( client_numb != 0 ){
-   // wifi_on_time_extend = millis() + 15000;//add 15 sec to when the wifi will turn off if client is connect to wifi
     return; 
-    }// else { /////////// usermod pertenent looping code starts here
-    
-   //    if (((millis()) - wifi_on_time_extend) > (wifi_on_time * 1000)){
-   //    WiFi.mode(WIFI_OFF);    // Switch WiFi off
-   //    apActive = false;
-   //    skip_loop_wifi_clients_on = false;
-   // }
-   //}
-   //}
+    }
 
 
-   if ((stock) == true){
+   if ((stock) == false){
    emulate_stock();
    return; // skip rest of loop becuase we dont want to change lights besides forward/back
    }
