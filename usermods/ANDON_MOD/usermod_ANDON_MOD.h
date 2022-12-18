@@ -11,6 +11,7 @@ class UsermodAndon : public Usermod
 private:
 
 ADXL345 accelerometer;
+
 #ifdef PRO_VERSION
   int  LIGHT_BAR_R_ANALOG;
   bool LIGHT_BAR_R = false;
@@ -68,6 +69,15 @@ ADXL345 accelerometer;
   int rawx;
   int rawy;
   int rawz;
+
+  int normx;
+  int normy;
+  int normz;
+
+  int roll;
+  int pitch;
+  int froll;
+  int fpitch;
   
   // strings to reduce flash memory usage (used more than twice)
   static const char _name[];
@@ -388,8 +398,7 @@ if ((forward) == true) {
  
  handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
          String string2 = "win&SB=255&FX=0&G=0&B=0&R=255&W=0&TT=1000&T=1&S=" + FRONT_LED_COUNT;
-         int all_led_count = FRONT_LED_COUNT + BACK_LED_COUNT;
-         String string3 = "&S2=" + all_led_count;
+         String string3 = "&S2=" + (FRONT_LED_COUNT + BACK_LED_COUNT);
          String together1 = string2 + string3;
  handleSet(nullptr, together1 , false );
  }
@@ -412,9 +421,90 @@ public:
 
  if (!accelerometer.begin())
   {
-    Serial.println("Could not find a valid ADXL345 sensor, check wiring!");
-    delay(500);
+    //Serial.println("Could not find a valid ADXL345 sensor, check wiring!");
+    delay(5);
   }
+
+  ///////////////////////////////////////////////////// Set measurement range
+  // +/-  2G: ADXL345_RANGE_2G
+  // +/-  4G: ADXL345_RANGE_4G
+  // +/-  8G: ADXL345_RANGE_8G
+  // +/- 16G: ADXL345_RANGE_16G
+  accelerometer.setRange(ADXL345_RANGE_16G);
+
+    //////////////////////////////////////////////////// Set measurement rate
+    // ADXL345_DATARATE_3200HZ
+    // ADXL345_DATARATE_1600HZ
+    // ADXL345_DATARATE_800HZ 
+    // ADXL345_DATARATE_400HZ   
+    // ADXL345_DATARATE_200HZ  
+    // ADXL345_DATARATE_100HZ  
+    // ADXL345_DATARATE_50HZ   
+    // ADXL345_DATARATE_25HZ    
+    // ADXL345_DATARATE_12_5HZ  
+    // ADXL345_DATARATE_6_25HZ  
+    // ADXL345_DATARATE_3_13HZ  
+    // ADXL345_DATARATE_1_56HZ 
+    // ADXL345_DATARATE_0_78HZ 
+    // ADXL345_DATARATE_0_39HZ  
+    // ADXL345_DATARATE_0_20HZ 
+    // ADXL345_DATARATE_0_10HZ
+    accelerometer.setDataRate(ADXL345_DATARATE_25HZ);
+
+
+    /////////////////////////////////////////////////////////////////////////// Set Free Fall detection
+  accelerometer.setFreeFallThreshold(0.35); // Recommended 0.3 -0.6 g
+  accelerometer.setFreeFallDuration(0.05);  // Recommended 0.1 s
+
+  // Select INT 1 for get activities
+  //accelerometer.useInterrupt(ADXL345_INT1);
+
+
+  ////////////////////////////////////////////////////////////////////////////// Set inactivity detection only on X,Y,Z-Axis
+
+      // Values for Inactivity detection
+  accelerometer.setInactivityThreshold(4.0);  // Recommended 2 g
+  accelerometer.setTimeInactivity(10);         // Recommended 5 s
+  
+  accelerometer.setInactivityXYZ(1);       // Check inactivity on X,Y,Z-Axis
+  // or
+  // accelerometer.setInactivityX(1);      // Check inactivity on X_Axis
+  // accelerometer.setInactivityY(1);      // Check inactivity on Y-Axis
+  // accelerometer.setInactivityZ(1);      // Check inactivity on Z-Axis
+  
+  ////////////////////////////////////////////////////////////////////////////// Set activity detection only on X,Y,Z-Axis
+    // Values for Activity detection
+    accelerometer.setActivityThreshold(4.0);    // Recommended 2 g
+    
+  accelerometer.setActivityXYZ(1);         // Check activity on X,Y,Z-Axis
+  // or
+  // accelerometer.setActivityX(1);        // Check activity on X_Axis
+  // accelerometer.setActivityY(1);        // Check activity on Y-Axis
+  // accelerometer.setActivityZ(1);        // Check activity on Z-Axis
+  
+  // Select INT 1 for get activities
+  //accelerometer.useInterrupt(ADXL345_INT1);
+
+  ///////////////////////////////////////////////////////////////////////////// Set tap detection on Z-Axis
+
+  //accelerometer.setTapDetectionXYZ(1);  // Check tap on X,Y,Z-Axis
+  //or
+  //accelerometer.setTapDetectionX(0);       // Don't check tap on X-Axis
+  //accelerometer.setTapDetectionY(0);       // Don't check tap on Y-Axis
+  //accelerometer.setTapDetectionZ(1);       // Check tap on Z-Axis
+  
+
+  //accelerometer.setTapThreshold(2.5);      // Recommended 2.5 g
+  //accelerometer.setTapDuration(0.02);      // Recommended 0.02 s
+  //accelerometer.setDoubleTapLatency(0.10); // Recommended 0.10 s
+  //accelerometer.setDoubleTapWindow(0.30);  // Recommended 0.30 s
+
+  // Select INT 1 for get activities
+  //accelerometer.useInterrupt(ADXL345_INT1);
+
+
+
+
 /*
 ///////////////////////////////////turn AP on copied from wled>wled.cpp
   escapedMac = WiFi.macAddress();
@@ -482,8 +572,74 @@ public:
     if (strip.isUpdating())
       return;
 
-    Vector raw = accelerometer.readRaw();
-    rawx = raw.XAxis;
+  // Read normalized values
+  Vector norm = accelerometer.readNormalize();
+  
+  // Read raw values
+  Vector raw = accelerometer.readRaw();
+
+  // Low Pass Filter to smooth out data. 0.1 - 0.9
+  Vector filtered = accelerometer.lowPassFilter(norm, 0.15);
+
+  // Read activities
+  Activites activ = accelerometer.readActivites();
+
+  if (activ.isFreeFall)
+  {
+    //Serial.println("Free Fall Detected!");
+  }
+
+  if (activ.isActivity)
+  {
+    //Serial.println("Activity Detected");
+  }
+
+  if (activ.isInactivity)
+  {
+    //Serial.println("Inactivity Detected");
+  }
+/*
+    if (activ.isDoubleTap)
+  {
+    Serial.println("Double Tap Detected");
+  } else if (activ.isTap)
+  {
+    Serial.println("Tap Detected");
+  }
+*/
+
+  
+
+  // Calculate Pitch & Roll
+  pitch = -(atan2(norm.XAxis, sqrt(norm.YAxis*norm.YAxis + norm.ZAxis*norm.ZAxis))*180.0)/M_PI;
+  roll  = (atan2(norm.YAxis, norm.ZAxis)*180.0)/M_PI;
+
+  // Calculate Pitch & Roll (Low Pass Filter)
+  fpitch = -(atan2(filtered.XAxis, sqrt(filtered.YAxis*filtered.YAxis + filtered.ZAxis*filtered.ZAxis))*180.0)/M_PI;
+  froll  = (atan2(filtered.YAxis, filtered.ZAxis)*180.0)/M_PI;
+
+
+ // Serial.print(raw.ZAxis); //  Serial.print(norm.ZAxis);
+
+
+  rawx = (raw.XAxis);
+  rawy = (raw.YAxis);
+  rawz = (raw.ZAxis);
+
+  normx = (norm.XAxis);
+  normy = (norm.YAxis);
+  normz = (norm.ZAxis);
+
+
+
+
+
+
+
+
+
+
+
 
 
    #ifndef TEST_MODE // test mode skip get direction from front light becuase we dont have the hardware on test esp32
