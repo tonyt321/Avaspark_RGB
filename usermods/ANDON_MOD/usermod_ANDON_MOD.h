@@ -365,15 +365,14 @@ handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&G=255&R2=255&IX=" + battery_perce
   {
 if ((forward) == true) {
  handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
-         String string1 = "win&SB=255&FX=0&G=0&B=0&R=255&W=0&TT=1000&T=1&S=0&S2=" + FRONT_LED_COUNT;   //combining multiple strings at once can result in unpredictable outcomes
- handleSet(nullptr, "win&SB=255&FX=0&G=0&B=0&R=255&W=0&TT=1000&T=1&S=0&S2=13" , false );
+         String string1 = "win&SB=255&FX=0&G=0&B=0&R=255&W=0&TT=1000&T=1&S=0&S2=13";// + FRONT_LED_COUNT;   //combining multiple strings at once can result in unpredictable outcomes
+ handleSet(nullptr, string1 , false );
  
  handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
-         String string2 = "win&SB=255&FX=0&G=255&B=255&R=255&W=255&TT=1000&T=1&S=" + FRONT_LED_COUNT;
-         int all_led_count = FRONT_LED_COUNT + BACK_LED_COUNT;
-         String string3 = "&S2=" + all_led_count;
-         String together1 = string2 + string3;
- handleSet(nullptr, "win&SB=255&FX=0&G=255&B=255&R=255&W=255&TT=1000&T=1&S=13&S2=26" , false );
+         String string2 = "win&SB=255&FX=0&G=255&B=255&R=255&W=255&TT=3000&T=1&S=" + FRONT_LED_COUNT;
+         String string3 = string2 + "&S2=";
+         String together1 = string3 + FRONT_AND_BACK_LED_COUNT;
+ handleSet(nullptr, "win&SB=255&FX=0&G=255&B=255&R=255&W=255&TT=3000&T=1&S=13&S2=26" , false );
 
 } else {
  handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg

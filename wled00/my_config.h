@@ -22,6 +22,7 @@
 #define DEFAULT_LED_COUNT 13 //11 for GT 13 for pint
 #define FRONT_LED_COUNT 13 
 #define BACK_LED_COUNT 13
+#define FRONT_AND_BACK_LED_COUNT 26
 
 #define MODEL 0    // what model of onewheel is this for? 
 //0   1    2   3
