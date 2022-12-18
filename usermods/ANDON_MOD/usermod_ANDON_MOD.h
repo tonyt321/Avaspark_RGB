@@ -1,13 +1,16 @@
 #pragma once
 
 #include "wled.h"
+#include <Wire.h>
+#include "ADXL345.h"
+#include "ADXL345.cpp"
 
 
 class UsermodAndon : public Usermod
 {
 private:
 
-
+ADXL345 accelerometer;
 #ifdef PRO_VERSION
   int  LIGHT_BAR_R_ANALOG;
   bool LIGHT_BAR_R = false;
@@ -61,6 +64,10 @@ private:
 
 
   bool stock = true;
+
+  int rawx;
+  int rawy;
+  int rawz;
   
   // strings to reduce flash memory usage (used more than twice)
   static const char _name[];
@@ -403,7 +410,11 @@ public:
     pinMode(FRONT_LIGHT_W_PIN, INPUT);
     pinMode(FRONT_LIGHT_R_PIN, INPUT);
 
-
+ if (!accelerometer.begin())
+  {
+    Serial.println("Could not find a valid ADXL345 sensor, check wiring!");
+    delay(500);
+  }
 /*
 ///////////////////////////////////turn AP on copied from wled>wled.cpp
   escapedMac = WiFi.macAddress();
@@ -470,8 +481,9 @@ public:
 
     if (strip.isUpdating())
       return;
-    
 
+    Vector raw = accelerometer.readRaw();
+    rawx = raw.XAxis;
 
 
    #ifndef TEST_MODE // test mode skip get direction from front light becuase we dont have the hardware on test esp32
@@ -574,9 +586,9 @@ public:
       JsonArray shop = user.createNestedArray("Andon Origin");  //left side thing
       shop.add(SHOP_NAME);                               //right side variable
 
-      JsonArray lights = user.createNestedArray("App Lights on");  //left side thing
-      lights.add(app_lights_on);                               //right side variable
-      lights.add(F(" Lights"));                      //right side thing
+      JsonArray lights = user.createNestedArray("X Axis");  //left side thing
+      lights.add(rawx);                               //right side variable
+      lights.add(F(" xAxis"));                      //right side thing
   }
 
   uint16_t getId()
