@@ -21,9 +21,9 @@ ADXL345 accelerometer;
   bool Status_bar = false;
   bool battery_bar = false;
 
-  float motor_duty_est; // slow on the build up quick on the slow down
+  unsigned long motor_duty_est; // slow on the build up quick on the slow down
   //unable to shape with caps diffrently without being more space on the pcb and thru hole sodlering
-  float battery_voltage_est; // estimated battery voltage (might be a bit off due to ADC non linearaity) 
+  unsigned long battery_voltage_est; // estimated battery voltage (might be a bit off due to ADC non linearaity) 
   //https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2019/05/ADC-non-linear-ESP32.png?w=768&quality=100&strip=all&ssl=1
   int battery_percent;
   
@@ -44,7 +44,7 @@ ADXL345 accelerometer;
 
   
   int8_t boot_preset = 1;  //preset played as a boot animation
-  unsigned long boot_preset_time = 3; // boot animation length in msec
+  unsigned long boot_preset_time = 3; // boot animation length in sec
   unsigned long start_milisec; // for tracking how much time has past for boot animation preset
 
 
@@ -66,6 +66,12 @@ ADXL345 accelerometer;
 
   bool stock = true;
 
+  unsigned long free_fall_duration = 0.05; // Recommended 0.3 -0.6 g
+  unsigned long free_fall_threshold = 0.35; // Recommended 0.1 s
+  unsigned long free_fall_preset_time = 3; // animation length in sec
+  unsigned long free_fall_preset = 1; // preset after free fall
+  unsigned long free_fall_milisec; // for tracking how much time has past for free_fall animation preset
+
   int rawx;
   int rawy;
   int rawz;
@@ -78,6 +84,9 @@ ADXL345 accelerometer;
   int pitch;
   int froll;
   int fpitch;
+
+  bool imu_activity = false;
+  bool imu_free_fall = false;
   
   // strings to reduce flash memory usage (used more than twice)
   static const char _name[];
@@ -98,6 +107,10 @@ ADXL345 accelerometer;
   static const char _boot_preset[];
   static const char _boot_preset_time[];
   static const char _stock[];
+  static const char _free_fall_preset_time[];
+  static const char _free_fall_duration[];
+  static const char _free_fall_threshold[];
+  static const char _free_fall_preset[];
 
 
 
@@ -321,7 +334,68 @@ ADXL345 accelerometer;
 
 
 
+  void get_imu_data(){
 
+      // Read normalized values
+  Vector norm = accelerometer.readNormalize();
+  
+  // Read raw values
+  Vector raw = accelerometer.readRaw();
+
+  // Low Pass Filter to smooth out data. 0.1 - 0.9
+  Vector filtered = accelerometer.lowPassFilter(norm, 0.15);
+
+  // Read activities
+  Activites activ = accelerometer.readActivites();
+
+  if (activ.isFreeFall)
+  {
+    //Serial.println("Free Fall Detected!");
+    imu_free_fall = true;
+    free_fall_milisec = millis();
+  }
+
+  if (activ.isActivity)
+  {
+    imu_activity = true;
+    //Serial.println("Activity Detected");
+  }
+
+  if (activ.isInactivity)
+  {
+    //Serial.println("Inactivity Detected");
+  }
+/*
+    if (activ.isDoubleTap)
+  {
+    Serial.println("Double Tap Detected");
+  } else if (activ.isTap)
+  {
+    Serial.println("Tap Detected");
+  }
+*/
+
+  // Calculate Pitch & Roll
+  pitch = -(atan2(norm.XAxis, sqrt(norm.YAxis*norm.YAxis + norm.ZAxis*norm.ZAxis))*180.0)/M_PI;
+  roll  = (atan2(norm.YAxis, norm.ZAxis)*180.0)/M_PI;
+
+  // Calculate Pitch & Roll (Low Pass Filter)
+  fpitch = -(atan2(filtered.XAxis, sqrt(filtered.YAxis*filtered.YAxis + filtered.ZAxis*filtered.ZAxis))*180.0)/M_PI;
+  froll  = (atan2(filtered.YAxis, filtered.ZAxis)*180.0)/M_PI;
+
+
+ // Serial.print(raw.ZAxis); //  Serial.print(norm.ZAxis);
+
+
+  rawx = (raw.XAxis);
+  rawy = (raw.YAxis);
+  rawz = (raw.ZAxis);
+
+  normx = (norm.XAxis);
+  normy = (norm.YAxis);
+  normz = (norm.ZAxis);
+
+  }
 
 
   void get_front_light()
@@ -453,8 +527,8 @@ public:
 
 
     /////////////////////////////////////////////////////////////////////////// Set Free Fall detection
-  accelerometer.setFreeFallThreshold(0.35); // Recommended 0.3 -0.6 g
-  accelerometer.setFreeFallDuration(0.05);  // Recommended 0.1 s
+  accelerometer.setFreeFallThreshold(free_fall_threshold); // Recommended 0.3 -0.6 g
+  accelerometer.setFreeFallDuration(free_fall_duration);  // Recommended 0.1 s
 
   // Select INT 1 for get activities
   //accelerometer.useInterrupt(ADXL345_INT1);
@@ -572,75 +646,6 @@ public:
     if (strip.isUpdating())
       return;
 
-  // Read normalized values
-  Vector norm = accelerometer.readNormalize();
-  
-  // Read raw values
-  Vector raw = accelerometer.readRaw();
-
-  // Low Pass Filter to smooth out data. 0.1 - 0.9
-  Vector filtered = accelerometer.lowPassFilter(norm, 0.15);
-
-  // Read activities
-  Activites activ = accelerometer.readActivites();
-
-  if (activ.isFreeFall)
-  {
-    //Serial.println("Free Fall Detected!");
-  }
-
-  if (activ.isActivity)
-  {
-    //Serial.println("Activity Detected");
-  }
-
-  if (activ.isInactivity)
-  {
-    //Serial.println("Inactivity Detected");
-  }
-/*
-    if (activ.isDoubleTap)
-  {
-    Serial.println("Double Tap Detected");
-  } else if (activ.isTap)
-  {
-    Serial.println("Tap Detected");
-  }
-*/
-
-  
-
-  // Calculate Pitch & Roll
-  pitch = -(atan2(norm.XAxis, sqrt(norm.YAxis*norm.YAxis + norm.ZAxis*norm.ZAxis))*180.0)/M_PI;
-  roll  = (atan2(norm.YAxis, norm.ZAxis)*180.0)/M_PI;
-
-  // Calculate Pitch & Roll (Low Pass Filter)
-  fpitch = -(atan2(filtered.XAxis, sqrt(filtered.YAxis*filtered.YAxis + filtered.ZAxis*filtered.ZAxis))*180.0)/M_PI;
-  froll  = (atan2(filtered.YAxis, filtered.ZAxis)*180.0)/M_PI;
-
-
- // Serial.print(raw.ZAxis); //  Serial.print(norm.ZAxis);
-
-
-  rawx = (raw.XAxis);
-  rawy = (raw.YAxis);
-  rawz = (raw.ZAxis);
-
-  normx = (norm.XAxis);
-  normy = (norm.YAxis);
-  normz = (norm.ZAxis);
-
-
-
-
-
-
-
-
-
-
-
-
 
    #ifndef TEST_MODE // test mode skip get direction from front light becuase we dont have the hardware on test esp32
    get_front_light();
@@ -688,11 +693,27 @@ public:
   
 
 
+/////////////////////////////////////// imu things
+    get_imu_data();
+
+
+    if (free_fall_preset_time != 0 && imu_free_fall == true){ // skip if free_fall_preset_time set to 0
+    applyPreset(free_fall_preset);
+    if ((free_fall_milisec + (free_fall_preset_time * 1000)) < millis()){
+      imu_free_fall = false;
+    }
+    }
+    
+
+/////////////////////////////////////// end of imu things
 
 
    #ifndef PRO_VERSION //if not pro version
    applyPreset(choosen_preset); //sets lights to the choosen preset for standard version
    #endif
+
+
+
 
    #ifdef PRO_VERSION  //rest of loop is pro only features
    GET_BATT_LEVEL();
@@ -776,6 +797,11 @@ public:
     #endif
     top[FPSTR(_boot_preset)] = boot_preset;  //int input
     top[FPSTR(_boot_preset_time)] = boot_preset_time;  //int input
+    top[FPSTR(_free_fall_duration)] = free_fall_duration;  //int input
+    top[FPSTR(_free_fall_threshold)] = free_fall_threshold;  //int input
+    top[FPSTR(_free_fall_preset_time)] = free_fall_preset_time;  //int input
+    top[FPSTR(_free_fall_preset)] = free_fall_preset;  //int input
+    
 
     DEBUG_PRINTLN(F("Andon config saved."));
   }
@@ -809,6 +835,10 @@ public:
     boot_preset   = top[FPSTR(_boot_preset)] | boot_preset;     //int input
     boot_preset_time   = top[FPSTR(_boot_preset_time)] | boot_preset_time;     //int input
     stock            = !(top[FPSTR(_stock)] | !stock);       //bool
+    free_fall_preset   = top[FPSTR(_free_fall_preset)] | free_fall_preset;     //int input
+    free_fall_preset_time   = top[FPSTR(_free_fall_preset_time)] | free_fall_preset_time;     //int input
+    free_fall_threshold   = top[FPSTR(_free_fall_threshold)] | free_fall_threshold;     //int input
+    free_fall_duration   = top[FPSTR(_free_fall_duration)] | free_fall_duration;     //int input
     DEBUG_PRINT(FPSTR(_name));
     DEBUG_PRINTLN(F(" config (re)loaded."));
 
@@ -838,3 +868,9 @@ const char UsermodAndon::_choosen_preset[] PROGMEM = "Preset animation to use wh
 #endif
 const char UsermodAndon::_boot_preset[] PROGMEM = "Preset animation to use as boot animation";
 const char UsermodAndon::_boot_preset_time[] PROGMEM = "How long is boot preset in sec (0 to disable)";
+
+const char UsermodAndon::_free_fall_preset[] PROGMEM = "Preset to display after a free fall";
+const char UsermodAndon::_free_fall_preset_time[] PROGMEM = "How long is free fall preset in sec (0 to disable)";
+
+const char UsermodAndon::_free_fall_threshold[] PROGMEM = "how sensitive is a free fall detection 0.3 -0.6 g";
+const char UsermodAndon::_free_fall_duration[] PROGMEM = "how long the free fall should be to detect 0.1 s";
