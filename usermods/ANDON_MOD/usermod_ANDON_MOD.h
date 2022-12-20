@@ -401,27 +401,24 @@ ADXL345 accelerometer;
   void get_front_light()
   {
 
-    FRONT_LIGHT_W = digitalRead(FRONT_LIGHT_W_PIN);
     FRONT_LIGHT_W_ANALOG = analogRead(FRONT_LIGHT_W_PIN);
+    if (FRONT_LIGHT_W_ANALOG > 1000){FRONT_LIGHT_W = false;}else{FRONT_LIGHT_W = true;}
 
-    FRONT_LIGHT_R = digitalRead(FRONT_LIGHT_R_PIN);
     FRONT_LIGHT_R_ANALOG = analogRead(FRONT_LIGHT_R_PIN);
+    if (FRONT_LIGHT_R_ANALOG > 1000){
+      FRONT_LIGHT_R = false;
+      app_lights_on = false;
+      }else{
+        FRONT_LIGHT_R = true;
+        app_lights_on = true;
+        }
 
-    if (((FRONT_LIGHT_W) == true) || ((FRONT_LIGHT_R) == true)){
-      //switch to using analog input to detect switch sooner needs testing on live board
-    app_lights_on = true;
-    if ((FRONT_LIGHT_W) == true){  // if white rgbw front light is on board is going forward
-       forward = true;
+      if (FRONT_LIGHT_W == FRONT_LIGHT_R){ 
+        forward = true;
       } else {
-       forward = false;
+        forward = false;
       }
 
-    } else {
-      app_lights_on = false;
-      forward = true;  
-      // if lights are off assume forward to avoid if someone turns lights
-      // off while going backwards being stuck in backwards within the program
-    }
 
         if (app_lights_on_last != app_lights_on){
           if ((millis() - blink_app_lights_timing) < BLINK_APP_LIGHTS_DELAY){ //if time seince last toggle less then 1 sec
@@ -454,34 +451,40 @@ handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&G=255&R2=255&IX=" + battery_perce
 
   void emulate_stock()
   {
+       if (app_lights_on == (false)){ //turns lights off if in app lights are off
+   handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+   handleSet(nullptr, "win&T=0&SB=0&S=0&S2=13" , false );// turn all off
+
+   handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
+   handleSet(nullptr, "win&T=0&SB=0&S=13&S2=26" , false );// turn all off
+   return; // skip rest of loop becuase we dont want to change lights besides forward/back
+   }else{
+
 if ((forward) == true) {
  handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
-         String string1 = "win&SB=255&FX=0&G=0&B=0&R=255&W=0&TT=1000&T=1&S=0&S2=13";// + FRONT_LED_COUNT;   //combining multiple strings at once can result in unpredictable outcomes
- handleSet(nullptr, string1 , false );
+ handleSet(nullptr, "win&SB=255&FX=0&G=0&B=0&R=255&W=0&TT=1000&T=1&S=0&S2=13" , false );
  
  handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
-         String string2 = "win&SB=255&FX=0&G=255&B=255&R=255&W=255&TT=3000&T=1&S=" + FRONT_LED_COUNT;
-         String string3 = string2 + "&S2=";
-         String together1 = string3 + FRONT_AND_BACK_LED_COUNT;
  handleSet(nullptr, "win&SB=255&FX=0&G=255&B=255&R=255&W=255&TT=3000&T=1&S=13&S2=26" , false );
 
 } else {
  handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
-         String string1 = "win&SB=255&FX=0&G=255&B=255&R=255&W=255&TT=1000&T=1&S=0&S2=" + FRONT_LED_COUNT;   //combining multiple strings at once can result in unpredictable outcomes
- handleSet(nullptr, string1 , false );
+ handleSet(nullptr, "win&SB=255&FX=0&G=255&B=255&R=255&W=255&TT=1000&T=1&S=0&S2=13" , false );
  
  handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
-         String string2 = "win&SB=255&FX=0&G=0&B=0&R=255&W=0&TT=1000&T=1&S=" + FRONT_LED_COUNT;
-         String string3 = "&S2=" + (FRONT_LED_COUNT + BACK_LED_COUNT);
-         String together1 = string2 + string3;
- handleSet(nullptr, together1 , false );
+ handleSet(nullptr, "win&SB=255&FX=0&G=0&B=0&R=255&W=0&TT=1000&T=1&S=13&S2=26" , false );
+  }
  }
 }
 
 public:
   void setup()
   {
-    // set pinmode
+    // set pin modes
+
+    pinMode(FRONT_LIGHT_W_PIN, INPUT);
+    pinMode(FRONT_LIGHT_R_PIN, INPUT);
+    
     #ifdef PRO_VERSION
     pinMode(LIGHT_BAR_R_PIN, INPUT);
     pinMode(LIGHT_BAR_G_PIN, INPUT);
@@ -490,8 +493,7 @@ public:
     pinMode(BATTERY_VOLTAGE_PIN, INPUT);
     pinMode(MOTOR_SPEED_PIN, INPUT);
     #endif
-    pinMode(FRONT_LIGHT_W_PIN, INPUT);
-    pinMode(FRONT_LIGHT_R_PIN, INPUT);
+
 
  if (!accelerometer.begin())
   {
@@ -527,8 +529,8 @@ public:
 
 
     /////////////////////////////////////////////////////////////////////////// Set Free Fall detection
-  accelerometer.setFreeFallThreshold((free_fall_threshold * 100)); // Recommended 0.3 -0.6 g
-  accelerometer.setFreeFallDuration((free_fall_duration * 100));  // Recommended 0.1 s
+  accelerometer.setFreeFallThreshold((free_fall_threshold / 100)); // Recommended 0.3 -0.6 g
+  accelerometer.setFreeFallDuration((free_fall_duration / 100));  // Recommended 0.1 s
 
   // Select INT 1 for get activities
   //accelerometer.useInterrupt(ADXL345_INT1);
@@ -548,7 +550,7 @@ public:
   
   ////////////////////////////////////////////////////////////////////////////// Set activity detection only on X,Y,Z-Axis
     // Values for Activity detection
-    accelerometer.setActivityThreshold(4.0);    // Recommended 2 g
+  accelerometer.setActivityThreshold(4.0);    // Recommended 2 g
     
   accelerometer.setActivityXYZ(1);         // Check activity on X,Y,Z-Axis
   // or
@@ -614,15 +616,21 @@ public:
 */
 
  
-  #ifndef TEST_MODE
+  #ifdef TEST_MODE
   app_lights_on = true;  // set as if lights are detected as always on in test mode
   #endif
 
    #ifndef TEST_MODE // test mode skip get front light becuase we dont have the hardware on test esp32
    get_front_light();
-   if (app_lights_on == (false)){ //turns lights off if in app lights are off
-   handleSet(nullptr, "win&T=0" , false );// turn all off
+   if (FRONT_LIGHT_R == (false)){ //turns lights off if in app lights are off
+   handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+   handleSet(nullptr, "win&T=0&SB=0&S=0&S2=13" , false );// turn all off
+
+   handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
+   handleSet(nullptr, "win&T=0&SB=0&S=13&S2=26" , false );// turn all off
    return; // skip rest of loop becuase we dont want to change lights besides forward/back
+   }else{
+    handleSet(nullptr, "win&T=1&SB=255" , false );// turn all on
    }
    #endif
    
@@ -636,8 +644,6 @@ public:
 
    }
 
-   //applyPreset(0);
-
   }// end of start up 
 
   void loop()
@@ -647,18 +653,10 @@ public:
       return;
 
 
-   #ifndef TEST_MODE // test mode skip get direction from front light becuase we dont have the hardware on test esp32
-   get_front_light();
-   if (app_lights_on == (false)){ //turns lights off if in app lights are off
-   handleSet(nullptr, "win&T=0" , false );// turn all off
-   return; // skip rest of loop becuase we dont want to change lights besides forward/back
-   }
-   #endif
+
 
     
-    //if (skip_loop_wifi_clients_on){
-    
-   // float wifi_on_time_extend;
+ 
 
     wifi_sta_list_t stationList;  //skip looping code if user is on wifi so we dont change stuff while they are editing
     esp_wifi_ap_get_sta_list(&stationList);
@@ -666,6 +664,24 @@ public:
     if ( client_numb != 0 ){
     return; 
     }
+
+
+   #ifndef TEST_MODE // test mode skip get direction from front light becuase we dont have the hardware on test esp32
+   get_front_light();
+   if (app_lights_on == (false)){ //turns lights off if in app lights are off
+
+   handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+   handleSet(nullptr, "win&T=0&SB=0&S=0&S2=13" , false );// turn all off
+
+   handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
+   handleSet(nullptr, "win&T=0&SB=0&S=13&S2=26" , false );// turn all off
+
+
+   return; // skip rest of loop becuase we dont want to change lights besides forward/back
+   }else{
+    handleSet(nullptr, "win&T=1&SB=255" , false );// turn all on
+    }
+   #endif
 
 
    if ((stock) == false){
@@ -679,8 +695,8 @@ public:
      }
 
 
-
-
+//flash lights to turn on wifi
+/*
    if (blink_app_lights >= 2 ){ //if the lights in Onewheel app are flashed on off within 2 sec
     // turn wifi on
    }else{
@@ -688,12 +704,13 @@ public:
     // turn wifi off
     }
    }
-
+*/
 
   
 
 
 /////////////////////////////////////// imu things
+/*
     get_imu_data();
 
 
@@ -704,11 +721,12 @@ public:
     }
     }
     
-
+*/
 /////////////////////////////////////// end of imu things
 
 
    #ifndef PRO_VERSION //if not pro version
+   handleSet(nullptr, "win&T=1&SB=255" , false );// turn all on
    applyPreset(choosen_preset); //sets lights to the choosen preset for standard version
    #endif
 
@@ -766,6 +784,18 @@ public:
       JsonArray lights = user.createNestedArray("X Axis");  //left side thing
       lights.add(rawx);                               //right side variable
       lights.add(F(" xAxis"));                      //right side thing
+
+            JsonArray battery1 = user.createNestedArray("app_lights_on");  //left side thing
+      battery1.add(app_lights_on);                               //right side variable
+      battery1.add(F(" app_lights_on"));                      //right side thing
+
+                  JsonArray battery3 = user.createNestedArray("red bool");  //left side thing
+      battery3.add(FRONT_LIGHT_R);                               //right side variable
+      battery3.add(F(" RED GPIO read"));                      //right side thing
+
+            JsonArray battery4 = user.createNestedArray("white bool");  //left side thing
+      battery4.add(FRONT_LIGHT_W);                               //right side variable
+      battery4.add(F(" WHITE GPIO read"));                      //right side thing
   }
 
   uint16_t getId()
