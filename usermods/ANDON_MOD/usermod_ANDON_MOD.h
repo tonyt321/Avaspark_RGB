@@ -43,6 +43,10 @@ ADXL345 accelerometer;
   #endif
 
   
+unsigned long usermod_loop_time; // for tracking how much time has past for each loop
+unsigned long usermod_loop_time_last; // for tracking how much time has past for each loop
+unsigned long usermod_loop; // for tracking how much time has past for each loop
+
   int8_t boot_preset = 1;  //preset played as a boot animation
   unsigned long boot_preset_time = 3; // boot animation length in sec
   unsigned long start_milisec; // for tracking how much time has past for boot animation preset
@@ -651,8 +655,9 @@ public:
 
     if (strip.isUpdating())
       return;
+    
 
-
+    
 
 
     
@@ -666,6 +671,9 @@ public:
     }
 
 
+    usermod_loop = ((millis()) - usermod_loop_time_last);
+    usermod_loop_time_last = millis();
+
    #ifndef TEST_MODE // test mode skip get direction from front light becuase we dont have the hardware on test esp32
    get_front_light();
    if (app_lights_on == (false)){ //turns lights off if in app lights are off
@@ -677,8 +685,10 @@ public:
    handleSet(nullptr, "win&T=0&SB=0&S=13&S2=26" , false );// turn all off
 
 
-   return; // skip rest of loop becuase we dont want to change lights besides forward/back
+   return; // skip rest of loop
    }else{
+    handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );
+    handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
     handleSet(nullptr, "win&T=1&SB=255" , false );// turn all on
     }
    #endif
@@ -726,7 +736,6 @@ public:
 
 
    #ifndef PRO_VERSION //if not pro version
-   handleSet(nullptr, "win&T=1&SB=255" , false );// turn all on
    applyPreset(choosen_preset); //sets lights to the choosen preset for standard version
    #endif
 
@@ -796,6 +805,10 @@ public:
             JsonArray battery4 = user.createNestedArray("white bool");  //left side thing
       battery4.add(FRONT_LIGHT_W);                               //right side variable
       battery4.add(F(" WHITE GPIO read"));                      //right side thing
+
+                  JsonArray battery5 = user.createNestedArray("loop time");  //left side thing
+      battery5.add(usermod_loop);                               //right side variable
+      battery5.add(F(" ms"));                      //right side thing
   }
 
   uint16_t getId()
