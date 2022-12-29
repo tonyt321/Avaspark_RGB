@@ -30,7 +30,7 @@
 // should effect voltage curves motor speed estimates as voltages are diffrent
 // if vesc should bring up option to input number of cells 
 
-//#define TEST_MODE //comment out for normal mode
+#define TEST_MODE //comment out for normal mode
 // disables turning lights off when detected from what should be the OW controller as off
 //#define PRO_VERSION    // comment out for standard
 #define SHOP_NAME "Andon"    // Andon Origin shop who installed it just andon for customer installed versions

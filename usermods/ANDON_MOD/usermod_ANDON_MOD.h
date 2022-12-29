@@ -76,18 +76,22 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
   unsigned long free_fall_preset = 1; // preset after free fall
   unsigned long free_fall_milisec; // for tracking how much time has past for free_fall animation preset
 
-  int rawx;
-  int rawy;
-  int rawz;
+  float rawx;
+  float rawy;
+  float rawz;
 
-  int normx;
-  int normy;
-  int normz;
+  float normx;
+  float normy;
+  float normz;
 
-  int roll;
-  int pitch;
-  int froll;
-  int fpitch;
+  float roll;
+  float pitch;
+  float froll;
+  float fpitch;
+
+  float filteredx;
+  float filteredy;
+  float filteredz;
 
   bool imu_activity = false;
   bool imu_free_fall = false;
@@ -340,17 +344,41 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
 
   void get_imu_data(){
 
-      // Read normalized values
-  Vector norm = accelerometer.readNormalize();
-  
   // Read raw values
   Vector raw = accelerometer.readRaw();
+
+      // Read normalized values
+  Vector norm = accelerometer.readNormalize();
 
   // Low Pass Filter to smooth out data. 0.1 - 0.9
   Vector filtered = accelerometer.lowPassFilter(norm, 0.15);
 
   // Read activities
   Activites activ = accelerometer.readActivites();
+
+  // Calculate Pitch & Roll
+  //pitch = -(atan2(norm.XAxis, sqrt(norm.YAxis*norm.YAxis + norm.ZAxis*norm.ZAxis))*180.0)/M_PI;
+  //roll  = (atan2(norm.YAxis, norm.ZAxis)*180.0)/M_PI;
+
+  // Calculate Pitch & Roll (Low Pass Filter)
+  //fpitch = -(atan2(filtered.XAxis, sqrt(filtered.YAxis*filtered.YAxis + filtered.ZAxis*filtered.ZAxis))*180.0)/M_PI;
+  //froll  = (atan2(filtered.YAxis, filtered.ZAxis)*180.0)/M_PI;
+
+
+ // Serial.print(raw.ZAxis); //  Serial.print(norm.ZAxis);
+
+
+  //rawx = (raw.XAxis);
+  //rawy = (raw.YAxis);
+  //rawz = (raw.ZAxis);
+
+  //normx = (norm.XAxis);
+  //normy = (norm.YAxis);
+  //normz = (norm.ZAxis);
+
+filteredx = filtered.XAxis;
+filteredy = filtered.YAxis;
+filteredz = filtered.ZAxis;
 
   if (activ.isFreeFall)
   {
@@ -378,26 +406,6 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
     Serial.println("Tap Detected");
   }
 */
-
-  // Calculate Pitch & Roll
-  pitch = -(atan2(norm.XAxis, sqrt(norm.YAxis*norm.YAxis + norm.ZAxis*norm.ZAxis))*180.0)/M_PI;
-  roll  = (atan2(norm.YAxis, norm.ZAxis)*180.0)/M_PI;
-
-  // Calculate Pitch & Roll (Low Pass Filter)
-  fpitch = -(atan2(filtered.XAxis, sqrt(filtered.YAxis*filtered.YAxis + filtered.ZAxis*filtered.ZAxis))*180.0)/M_PI;
-  froll  = (atan2(filtered.YAxis, filtered.ZAxis)*180.0)/M_PI;
-
-
- // Serial.print(raw.ZAxis); //  Serial.print(norm.ZAxis);
-
-
-  rawx = (raw.XAxis);
-  rawy = (raw.YAxis);
-  rawz = (raw.ZAxis);
-
-  normx = (norm.XAxis);
-  normy = (norm.YAxis);
-  normz = (norm.ZAxis);
 
   }
 
@@ -720,7 +728,7 @@ public:
 
 
 /////////////////////////////////////// imu things
-/*
+
     get_imu_data();
 
 
@@ -729,15 +737,21 @@ public:
     if ((free_fall_milisec + (free_fall_preset_time * 1000)) < millis()){
       imu_free_fall = false;
     }
+    return;  // returns loop if boot animation hasnt finished playing
     }
     
-*/
+
 /////////////////////////////////////// end of imu things
-
-
-   #ifndef PRO_VERSION //if not pro version
+if (filteredz > 0){
+applyPreset(free_fall_preset);
+}else{
+     #ifndef PRO_VERSION //if not pro version
    applyPreset(choosen_preset); //sets lights to the choosen preset for standard version
    #endif
+
+}
+
+
 
 
 
@@ -791,8 +805,16 @@ public:
       shop.add(SHOP_NAME);                               //right side variable
 
       JsonArray lights = user.createNestedArray("X Axis");  //left side thing
-      lights.add(rawx);                               //right side variable
+      lights.add(filteredx);                               //right side variable
       lights.add(F(" xAxis"));                      //right side thing
+
+            JsonArray lights1 = user.createNestedArray("y Axis");  //left side thing
+      lights1.add(filteredy);                               //right side variable
+      lights1.add(F(" yAxis"));                      //right side thing
+
+            JsonArray lights2 = user.createNestedArray("z Axis");  //left side thing
+      lights2.add(filteredz);                               //right side variable
+      lights2.add(F(" zAxis"));                      //right side thing
 
             JsonArray battery1 = user.createNestedArray("app_lights_on");  //left side thing
       battery1.add(app_lights_on);                               //right side variable
