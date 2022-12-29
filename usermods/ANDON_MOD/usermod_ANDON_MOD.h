@@ -93,7 +93,7 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
   float filteredy;
   float filteredz;
 
-  bool imu_activity = false;
+  bool imu_activity;
   bool imu_free_fall = false;
   
   // strings to reduce flash memory usage (used more than twice)
@@ -344,8 +344,11 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
 
   void get_imu_data(){
 
+      // Read activities
+  Activites activ = accelerometer.readActivites();
+
   // Read raw values
-  Vector raw = accelerometer.readRaw();
+  //Vector raw = accelerometer.readRaw();
 
       // Read normalized values
   Vector norm = accelerometer.readNormalize();
@@ -353,8 +356,7 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
   // Low Pass Filter to smooth out data. 0.1 - 0.9
   Vector filtered = accelerometer.lowPassFilter(norm, 0.15);
 
-  // Read activities
-  Activites activ = accelerometer.readActivites();
+
 
   // Calculate Pitch & Roll
   //pitch = -(atan2(norm.XAxis, sqrt(norm.YAxis*norm.YAxis + norm.ZAxis*norm.ZAxis))*180.0)/M_PI;
@@ -379,7 +381,7 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
 filteredx = filtered.XAxis;
 filteredy = filtered.YAxis;
 filteredz = filtered.ZAxis;
-
+ //delay(5);
   if (activ.isFreeFall)
   {
     //Serial.println("Free Fall Detected!");
@@ -395,6 +397,8 @@ filteredz = filtered.ZAxis;
 
   if (activ.isInactivity)
   {
+    imu_free_fall = false;
+    imu_activity = false;
     //Serial.println("Inactivity Detected");
   }
 /*
@@ -510,7 +514,7 @@ public:
  if (!accelerometer.begin())
   {
     //Serial.println("Could not find a valid ADXL345 sensor, check wiring!");
-    delay(5);
+    //delay(5);
   }
 
   ///////////////////////////////////////////////////// Set measurement range
@@ -541,8 +545,8 @@ public:
 
 
     /////////////////////////////////////////////////////////////////////////// Set Free Fall detection
-  accelerometer.setFreeFallThreshold((free_fall_threshold / 100)); // Recommended 0.3 -0.6 g
-  accelerometer.setFreeFallDuration((free_fall_duration / 100));  // Recommended 0.1 s
+  accelerometer.setFreeFallThreshold(0.3);//(free_fall_threshold / 100)); // Recommended 0.3 -0.6 g
+  accelerometer.setFreeFallDuration(0.1);//(free_fall_duration / 100));  // Recommended 0.1 s
 
   // Select INT 1 for get activities
   //accelerometer.useInterrupt(ADXL345_INT1);
@@ -551,7 +555,7 @@ public:
   ////////////////////////////////////////////////////////////////////////////// Set inactivity detection only on X,Y,Z-Axis
 
       // Values for Inactivity detection
-  accelerometer.setInactivityThreshold(4.0);  // Recommended 2 g
+  accelerometer.setInactivityThreshold(2.0);  // Recommended 2 g
   accelerometer.setTimeInactivity(10);         // Recommended 5 s
   
   accelerometer.setInactivityXYZ(1);       // Check inactivity on X,Y,Z-Axis
@@ -562,7 +566,7 @@ public:
   
   ////////////////////////////////////////////////////////////////////////////// Set activity detection only on X,Y,Z-Axis
     // Values for Activity detection
-  accelerometer.setActivityThreshold(4.0);    // Recommended 2 g
+  accelerometer.setActivityThreshold(2.0);    // Recommended 2 g
     
   accelerometer.setActivityXYZ(1);         // Check activity on X,Y,Z-Axis
   // or
@@ -715,10 +719,10 @@ public:
 
 //flash lights to turn on wifi
 /*
-   if (blink_app_lights >= 2 ){ //if the lights in Onewheel app are flashed on off within 2 sec
+   if ((blink_app_lights >= 3) || (filteredz > 0)){ //if upside down or lights in Onewheel app are flashed on off 3 times
     // turn wifi on
    }else{
-    if ( client_numb == 0 ){ // if no one is on the wifi and the lights are toggle in the app 
+    if ( client_numb == 0 ){ // if no one is on the wifi
     // turn wifi off
     }
    }
@@ -731,8 +735,8 @@ public:
 
     get_imu_data();
 
-
-    if (free_fall_preset_time != 0 && imu_free_fall == true){ // skip if free_fall_preset_time set to 0
+/////////////////////////////get this function working
+    if ((free_fall_preset_time != 0) && imu_free_fall == true){ // skip if free_fall_preset_time set to 0
     applyPreset(free_fall_preset);
     if ((free_fall_milisec + (free_fall_preset_time * 1000)) < millis()){
       imu_free_fall = false;
@@ -742,18 +746,27 @@ public:
     
 
 /////////////////////////////////////// end of imu things
-if (filteredz > 0){
-applyPreset(free_fall_preset);
-}else{
-     #ifndef PRO_VERSION //if not pro version
-   applyPreset(choosen_preset); //sets lights to the choosen preset for standard version
-   #endif
+if (imu_free_fall == true){
+applyPreset(free_fall_preset); //sets lights to the choosen preset for standard version
+return;
+}
 
+if (imu_activity == true){
+applyPreset(2); //sets lights to the choosen preset for standard version
+return;
+}
+
+if (imu_activity == false){
+applyPreset(3); 
+return;
 }
 
 
 
 
+     #ifndef PRO_VERSION //if not pro version
+   applyPreset(choosen_preset); //sets lights to the choosen preset for standard version
+   #endif
 
 
    #ifdef PRO_VERSION  //rest of loop is pro only features
