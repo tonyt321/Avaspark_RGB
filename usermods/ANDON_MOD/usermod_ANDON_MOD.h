@@ -1,9 +1,10 @@
 #pragma once
 
-#include "wled.h"
-#include <Wire.h>
 #include "ADXL345.h"
 #include "ADXL345.cpp"
+#include "wled.h"
+#include <Wire.h>
+
 
 
 class UsermodAndon : public Usermod
@@ -514,7 +515,7 @@ public:
  if (!accelerometer.begin())
   {
     //Serial.println("Could not find a valid ADXL345 sensor, check wiring!");
-    //delay(5);
+    delay(5);
   }
 
   ///////////////////////////////////////////////////// Set measurement range
@@ -545,8 +546,8 @@ public:
 
 
     /////////////////////////////////////////////////////////////////////////// Set Free Fall detection
-  accelerometer.setFreeFallThreshold(0.3);//(free_fall_threshold / 100)); // Recommended 0.3 -0.6 g
-  accelerometer.setFreeFallDuration(0.1);//(free_fall_duration / 100));  // Recommended 0.1 s
+  accelerometer.setFreeFallThreshold((free_fall_threshold / 100)); // Recommended 0.3 -0.6 g
+  accelerometer.setFreeFallDuration((free_fall_duration / 1000));  // Recommended 0.1 s
 
   // Select INT 1 for get activities
   //accelerometer.useInterrupt(ADXL345_INT1);
@@ -566,7 +567,7 @@ public:
   
   ////////////////////////////////////////////////////////////////////////////// Set activity detection only on X,Y,Z-Axis
     // Values for Activity detection
-  accelerometer.setActivityThreshold(2.0);    // Recommended 2 g
+  accelerometer.setActivityThreshold(8);    // Recommended 2 g
     
   accelerometer.setActivityXYZ(1);         // Check activity on X,Y,Z-Axis
   // or
@@ -683,6 +684,7 @@ public:
     }
 
 
+
     usermod_loop = ((millis()) - usermod_loop_time_last);
     usermod_loop_time_last = millis();
 
@@ -733,9 +735,37 @@ public:
 
 /////////////////////////////////////// imu things
 
-    get_imu_data();
+
+
+  Vector norm = accelerometer.readNormalize();
+
+  // Read activities
+  Activites activ = accelerometer.readActivites();
+
+
+
+
+  if (activ.isActivity)
+  {
+applyPreset(3);
+  }
+
+  if (activ.isInactivity)
+  {
+applyPreset(4);
+  }
+
+    if (activ.isFreeFall)
+  {
+    //Serial.println("Free Fall Detected!");
+applyPreset(2);
+  }
+
+return;
+  //  get_imu_data();
 
 /////////////////////////////get this function working
+/*
     if ((free_fall_preset_time != 0) && imu_free_fall == true){ // skip if free_fall_preset_time set to 0
     applyPreset(free_fall_preset);
     if ((free_fall_milisec + (free_fall_preset_time * 1000)) < millis()){
@@ -760,12 +790,12 @@ if (imu_activity == false){
 applyPreset(3); 
 return;
 }
-
+*/
 
 
 
      #ifndef PRO_VERSION //if not pro version
-   applyPreset(choosen_preset); //sets lights to the choosen preset for standard version
+  // applyPreset(choosen_preset); //sets lights to the choosen preset for standard version
    #endif
 
 
