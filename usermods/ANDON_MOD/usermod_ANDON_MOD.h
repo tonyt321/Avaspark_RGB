@@ -71,7 +71,7 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
 
   bool stock = true;
 
-  unsigned long free_fall_duration = 5; // Recommended 30 -60 g
+  unsigned long free_fall_duration = 5; // inches fallen
   unsigned long free_fall_threshold = 35; // Recommended 10 s
   unsigned long free_fall_preset_time = 3; // animation length in sec
   unsigned long free_fall_preset = 1; // preset after free fall
@@ -546,8 +546,8 @@ public:
 
 
     /////////////////////////////////////////////////////////////////////////// Set Free Fall detection
-  accelerometer.setFreeFallThreshold((free_fall_threshold / 100)); // Recommended 0.3 -0.6 g
-  accelerometer.setFreeFallDuration((free_fall_duration / 1000));  // Recommended 0.1 s
+  accelerometer.setFreeFallThreshold(0.3); // Recommended 0.3 -0.6 g
+  accelerometer.setFreeFallDuration(sqrt(2 * (free_fall_duration * 0.0254)/ 9.81));  // Recommended 0.1 s
 
   // Select INT 1 for get activities
   //accelerometer.useInterrupt(ADXL345_INT1);
@@ -747,7 +747,7 @@ public:
 
   if (activ.isActivity)
   {
-applyPreset(3);
+//applyPreset(3);
   }
 
   if (activ.isInactivity)
@@ -981,4 +981,4 @@ const char UsermodAndon::_free_fall_preset[] PROGMEM = "Preset to display after 
 const char UsermodAndon::_free_fall_preset_time[] PROGMEM = "How long is free fall preset in sec (0 to disable)";
 
 const char UsermodAndon::_free_fall_threshold[] PROGMEM = "how sensitive is a free fall detection 30 -60 g";
-const char UsermodAndon::_free_fall_duration[] PROGMEM = "how long the free fall should be to detect 100 = 1 sec";
+const char UsermodAndon::_free_fall_duration[] PROGMEM = "inches for free fall detection";
