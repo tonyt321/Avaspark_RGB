@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ADXL345.h"
-#include "ADXL345.cpp"
+#include "SparkFun_ADXL345.cpp"         // SparkFun ADXL345 Library
+#include "SparkFun_ADXL345.h"         // SparkFun ADXL345 Library
 #include "wled.h"
 #include <Wire.h>
 
@@ -11,7 +11,8 @@ class UsermodAndon : public Usermod
 {
 private:
 
-ADXL345 accelerometer;
+
+ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
 
 #ifdef PRO_VERSION
   int  LIGHT_BAR_R_ANALOG;
@@ -77,13 +78,13 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
   unsigned long free_fall_preset = 1; // preset after free fall
   unsigned long free_fall_milisec; // for tracking how much time has past for free_fall animation preset
 
-  float rawx;
-  float rawy;
-  float rawz;
+  int rawx;
+  int rawy;
+  int rawz;
 
-  float normx;
-  float normy;
-  float normz;
+  int normx;
+  int normy;
+  int normz;
 
   float roll;
   float pitch;
@@ -94,7 +95,8 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
   float filteredy;
   float filteredz;
 
-  bool imu_activity;
+  bool imu_activity = true;
+  bool imu_inactivity = true;
   bool imu_free_fall = false;
   
   // strings to reduce flash memory usage (used more than twice)
@@ -345,17 +347,13 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
 
   void get_imu_data(){
 
-      // Read activities
-  Activites activ = accelerometer.readActivites();
+  // Accelerometer Readings
+  adxl.readAccel(&rawx, &rawy, &rawz);         // Read the accelerometer values and store them in variables declared above x,y,z
 
-  // Read raw values
-  //Vector raw = accelerometer.readRaw();
 
-      // Read normalized values
-  Vector norm = accelerometer.readNormalize();
-
-  // Low Pass Filter to smooth out data. 0.1 - 0.9
-  Vector filtered = accelerometer.lowPassFilter(norm, 0.15);
+filteredx = rawx * 0.15 + (rawx * (1.0 - 0.15));
+filteredy = rawy * 0.15 + (rawy * (1.0 - 0.15));
+filteredz = rawx * 0.15 + (rawz * (1.0 - 0.15));
 
 
 
@@ -368,49 +366,24 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
   //froll  = (atan2(filtered.YAxis, filtered.ZAxis)*180.0)/M_PI;
 
 
- // Serial.print(raw.ZAxis); //  Serial.print(norm.ZAxis);
-
-
-  //rawx = (raw.XAxis);
-  //rawy = (raw.YAxis);
-  //rawz = (raw.ZAxis);
-
-  //normx = (norm.XAxis);
-  //normy = (norm.YAxis);
-  //normz = (norm.ZAxis);
-
-filteredx = filtered.XAxis;
-filteredy = filtered.YAxis;
-filteredz = filtered.ZAxis;
- //delay(5);
-  if (activ.isFreeFall)
-  {
-    //Serial.println("Free Fall Detected!");
+  byte interrupts = adxl.getInterruptSource();
+  
+  // Free Fall Detection
+  if(adxl.triggered(interrupts, ADXL345_FREE_FALL)){
     imu_free_fall = true;
     free_fall_milisec = millis();
+  } 
+  
+  // Inactivity
+  if(adxl.triggered(interrupts, ADXL345_INACTIVITY)){
+    imu_inactivity = true;
   }
-
-  if (activ.isActivity)
-  {
+  
+  // Activity
+  if(adxl.triggered(interrupts, ADXL345_ACTIVITY)){
     imu_activity = true;
-    //Serial.println("Activity Detected");
   }
-
-  if (activ.isInactivity)
-  {
-    imu_free_fall = false;
-    imu_activity = false;
-    //Serial.println("Inactivity Detected");
-  }
-/*
-    if (activ.isDoubleTap)
-  {
-    Serial.println("Double Tap Detected");
-  } else if (activ.isTap)
-  {
-    Serial.println("Tap Detected");
-  }
-*/
+  
 
   }
 
@@ -512,88 +485,34 @@ public:
     #endif
 
 
- if (!accelerometer.begin())
-  {
-    //Serial.println("Could not find a valid ADXL345 sensor, check wiring!");
-    delay(5);
-  }
-
-  ///////////////////////////////////////////////////// Set measurement range
-  // +/-  2G: ADXL345_RANGE_2G
-  // +/-  4G: ADXL345_RANGE_4G
-  // +/-  8G: ADXL345_RANGE_8G
-  // +/- 16G: ADXL345_RANGE_16G
-  accelerometer.setRange(ADXL345_RANGE_16G);
-
-    //////////////////////////////////////////////////// Set measurement rate
-    // ADXL345_DATARATE_3200HZ
-    // ADXL345_DATARATE_1600HZ
-    // ADXL345_DATARATE_800HZ 
-    // ADXL345_DATARATE_400HZ   
-    // ADXL345_DATARATE_200HZ  
-    // ADXL345_DATARATE_100HZ  
-    // ADXL345_DATARATE_50HZ   
-    // ADXL345_DATARATE_25HZ    
-    // ADXL345_DATARATE_12_5HZ  
-    // ADXL345_DATARATE_6_25HZ  
-    // ADXL345_DATARATE_3_13HZ  
-    // ADXL345_DATARATE_1_56HZ 
-    // ADXL345_DATARATE_0_78HZ 
-    // ADXL345_DATARATE_0_39HZ  
-    // ADXL345_DATARATE_0_20HZ 
-    // ADXL345_DATARATE_0_10HZ
-    accelerometer.setDataRate(ADXL345_DATARATE_25HZ);
-
- //float fall_sec = ((sqrt(2 * (free_fall_duration * 25400)/ 981))/100);
-    /////////////////////////////////////////////////////////////////////////// Set Free Fall detection
-  accelerometer.setFreeFallThreshold(0.3); // Recommended 0.3 -0.6 g
-  accelerometer.setFreeFallDuration(.1);  // Recommended 0.1 s
-
-  // Select INT 1 for get activities
-  accelerometer.useInterrupt(ADXL345_INT1);
 
 
-  ////////////////////////////////////////////////////////////////////////////// Set inactivity detection only on X,Y,Z-Axis
+  adxl.powerOn();                     // Power on the ADXL345
 
-      // Values for Inactivity detection
-  accelerometer.setInactivityThreshold(2.0);  // Recommended 2 g
-  accelerometer.setTimeInactivity(10);         // Recommended 5 s
-  
-  accelerometer.setInactivityXYZ(1);       // Check inactivity on X,Y,Z-Axis
-  // or
-  // accelerometer.setInactivityX(1);      // Check inactivity on X_Axis
-  // accelerometer.setInactivityY(1);      // Check inactivity on Y-Axis
-  // accelerometer.setInactivityZ(1);      // Check inactivity on Z-Axis
-  
-  ////////////////////////////////////////////////////////////////////////////// Set activity detection only on X,Y,Z-Axis
-    // Values for Activity detection
-  accelerometer.setActivityThreshold(8);    // Recommended 2 g
-    
-  accelerometer.setActivityXYZ(1);         // Check activity on X,Y,Z-Axis
-  // or
-  // accelerometer.setActivityX(1);        // Check activity on X_Axis
-  // accelerometer.setActivityY(1);        // Check activity on Y-Axis
-  // accelerometer.setActivityZ(1);        // Check activity on Z-Axis
-  
-  // Select INT 1 for get activities
-  accelerometer.useInterrupt(ADXL345_INT2);
+  adxl.setRangeSetting(16);           // Accepted values are 2g, 4g, 8g or 16g
 
-  ///////////////////////////////////////////////////////////////////////////// Set tap detection on Z-Axis
+  adxl.setSpiBit(0);                  // Configure the device to be in 4 wire SPI mode when set to '0' or 3 wire SPI mode when set to 1
+                                      // Default: Set to 1
+                                      // SPI pins on the ATMega328: 11, 12 and 13 as reference in SPI Library 
+   
+  adxl.setActivityXYZ(1, 1, 1);       // Set to activate movement detection in the axes "adxl.setActivityXYZ(X, Y, Z);" (1 == ON, 0 == OFF)
+  adxl.setActivityThreshold(75);      // 62.5mg per increment   // Set activity   // Inactivity thresholds (0-255)
+ 
+  adxl.setInactivityXYZ(1, 1, 1);     // Set to detect inactivity in all the axes "adxl.setInactivityXYZ(X, Y, Z);" (1 == ON, 0 == OFF)
+  adxl.setInactivityThreshold(75);    // 62.5mg per increment   // Set inactivity // Inactivity thresholds (0-255)
+  adxl.setTimeInactivity(10);         // How many seconds of no activity is inactive?
 
-  //accelerometer.setTapDetectionXYZ(1);  // Check tap on X,Y,Z-Axis
-  //or
-  //accelerometer.setTapDetectionX(0);       // Don't check tap on X-Axis
-  //accelerometer.setTapDetectionY(0);       // Don't check tap on Y-Axis
-  //accelerometer.setTapDetectionZ(1);       // Check tap on Z-Axis
-  
-
-  //accelerometer.setTapThreshold(2.5);      // Recommended 2.5 g
-  //accelerometer.setTapDuration(0.02);      // Recommended 0.02 s
-  //accelerometer.setDoubleTapLatency(0.10); // Recommended 0.10 s
-  //accelerometer.setDoubleTapWindow(0.30);  // Recommended 0.30 s
-
-  // Select INT 1 for get activities
-  //accelerometer.useInterrupt(ADXL345_INT1);
+  adxl.setTapDetectionOnXYZ(0, 0, 0); // Detect taps in the directions turned ON "adxl.setTapDetectionOnX(X, Y, Z);" (1 == ON, 0 == OFF)
+ 
+  // Set values for what is considered a TAP and what is a DOUBLE TAP (0-255)
+  adxl.setTapThreshold(50);           // 62.5 mg per increment
+  adxl.setTapDuration(15);            // 625 μs per increment
+  adxl.setDoubleTapLatency(80);       // 1.25 ms per increment
+  adxl.setDoubleTapWindow(200);       // 1.25 ms per increment
+ 
+  // Set values for what is considered FREE FALL (0-255)
+  adxl.setFreeFallThreshold(7);       // (5 - 9) recommended - 62.5mg per increment
+  adxl.setFreeFallDuration(30);       // (20 - 70) recommended - 5ms per increment
 
 
 
@@ -735,34 +654,29 @@ public:
 
 /////////////////////////////////////// imu things
 
+get_imu_data();
 
-
-  Vector norm = accelerometer.readNormalize();
-
-  // Read activities
-  Activites activ = accelerometer.readActivites();
-
-
-
-
-  if (activ.isActivity)
+  if (imu_activity)
   {
-//applyPreset(3);
+    imu_activity = false;
+  applyPreset(1);
   }
 
-  if (activ.isInactivity)
+  if (imu_inactivity)
   {
+    imu_inactivity = false;
+  applyPreset(3);
+  }
+
+    if (imu_free_fall)
+  {
+    //Serial.println("Free Fall Detected!");
+    imu_free_fall = false;
 applyPreset(4);
   }
 
-    if (activ.isFreeFall)
-  {
-    //Serial.println("Free Fall Detected!");
-applyPreset(2);
-  }
-
 return;
-  //  get_imu_data();
+
 
 /////////////////////////////get this function working
 /*
