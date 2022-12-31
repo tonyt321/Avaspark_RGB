@@ -544,13 +544,13 @@ public:
     // ADXL345_DATARATE_0_10HZ
     accelerometer.setDataRate(ADXL345_DATARATE_25HZ);
 
-
+ //float fall_sec = ((sqrt(2 * (free_fall_duration * 25400)/ 981))/100);
     /////////////////////////////////////////////////////////////////////////// Set Free Fall detection
   accelerometer.setFreeFallThreshold(0.3); // Recommended 0.3 -0.6 g
-  accelerometer.setFreeFallDuration(sqrt(2 * (free_fall_duration * 0.0254)/ 9.81));  // Recommended 0.1 s
+  accelerometer.setFreeFallDuration(.1);  // Recommended 0.1 s
 
   // Select INT 1 for get activities
-  //accelerometer.useInterrupt(ADXL345_INT1);
+  accelerometer.useInterrupt(ADXL345_INT1);
 
 
   ////////////////////////////////////////////////////////////////////////////// Set inactivity detection only on X,Y,Z-Axis
@@ -576,7 +576,7 @@ public:
   // accelerometer.setActivityZ(1);        // Check activity on Z-Axis
   
   // Select INT 1 for get activities
-  //accelerometer.useInterrupt(ADXL345_INT1);
+  accelerometer.useInterrupt(ADXL345_INT2);
 
   ///////////////////////////////////////////////////////////////////////////// Set tap detection on Z-Axis
 
