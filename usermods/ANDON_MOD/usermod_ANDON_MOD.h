@@ -44,7 +44,8 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
   int8_t choosen_preset = 1;
   #endif
 
-  
+  int8_t backwards_preset = 1;  //preset played as a boot animation
+
 unsigned long usermod_loop_time; // for tracking how much time has past for each loop
 unsigned long usermod_loop_time_last; // for tracking how much time has past for each loop
 unsigned long usermod_loop; // for tracking how much time has past for each loop
@@ -72,10 +73,10 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
 
   bool stock = true;
 
-  unsigned long free_fall_duration = 5; // inches fallen
-  unsigned long free_fall_threshold = 35; // Recommended 10 s
-  unsigned long free_fall_preset_time = 3; // animation length in sec
-  unsigned long free_fall_preset = 1; // preset after free fall
+  unsigned int free_fall_duration = 5; // inches fallen
+  unsigned int free_fall_threshold = 35; // Recommended 10 s
+  unsigned int free_fall_preset_time = 3; // animation length in sec
+  unsigned int free_fall_preset = 1; // preset after free fall
   unsigned long free_fall_milisec; // for tracking how much time has past for free_fall animation preset
 
   int rawx;
@@ -86,18 +87,25 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
   int normy;
   int normz;
 
-  float roll;
-  float pitch;
-  float froll;
-  float fpitch;
+  int roll;
+  int pitch;
+  int froll;
+  int fpitch;
 
-  float filteredx;
-  float filteredy;
-  float filteredz;
+  int filteredx;
+  int filteredy;
+  int filteredz;
 
   bool imu_activity = true;
   bool imu_inactivity = true;
   bool imu_free_fall = false;
+
+  bool side_left = false;   //how is the board on the ground
+  bool side_right = false;
+  bool upside_down = false;
+
+  unsigned int trail_ruffness_max = 30;   // max activations per min for the bar graph
+  unsigned long trail_ruffness = 0; //how ruff the trail is using active activations per min and how on pro version use motor disengadements
   
   // strings to reduce flash memory usage (used more than twice)
   static const char _name[];
@@ -115,9 +123,11 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
   #else
   static const char _choosen_preset[];
   #endif
+  static const char _backwards_preset[];
   static const char _boot_preset[];
   static const char _boot_preset_time[];
   static const char _stock[];
+  static const char _trail_ruffness_max[];
   static const char _free_fall_preset_time[];
   static const char _free_fall_duration[];
   static const char _free_fall_threshold[];
@@ -131,7 +141,7 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
 
     rider_present() // look at the white/red led signals from the controller and see if they are dim or bright. If dim, 
     //the board is idle and at rest, if they are bright the board is in use or has just been dismounted
-    {
+    { useing IMU for this now with active / inactive interrupts 
 
     }
 
@@ -164,30 +174,8 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
 
     }
 
-    void IMU_POSN_INPUT() //determine board orientation 
-    {
-
-    }
 
     void isMallgrab() //using IMU_POSN_INPUT, determine if the board is being carried vertically by the front handle
-    {
-
-    }
-
-    void isAirborne() //using IMU_POSN_INPUT, approximate if the board is travelling in an inverted parabola, if the board's trajectory
-    // matches a perfect parabola within a programmable threshold, set a boolean to represent being airborne or not 
-    {
-
-    }
-
-    void trailRate() //use IMU data input to quantify the following:
-    // 1.) trail chunkiness - a function of z-variance detected by the IMU, measured over a long timescale
-    // 2.) altitude gain/loss - a function of the average slope of z acceleration measured over long distances
-    // 3.) average speed - a function of how high/low the average speed of a run is
-    // 4.) motor disengagement - worse trails require you to dismount more frequently, better trails do not. count 
-    // how many times the motor disengages during a given run
-    //how is the start/stop of a trail or segment measured?
-    //all of the above calculation results in a color assignment to the trail run, like how trails are rated green, blue, black, etc
     {
 
     }
@@ -213,6 +201,26 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
 
   **/
 
+
+
+    //use IMU data input to quantify the following:
+    // 1.) trail chunkiness - a function of z-variance detected by the IMU, measured over a long timescale
+    // 2.) altitude gain/loss - a function of the average slope of z acceleration measured over long distances
+    // 3.) average speed - a function of how high/low the average speed of a run is
+    // 4.) motor disengagement - worse trails require you to dismount more frequently, better trails do not. count 
+    // how many times the motor disengages during a given run
+    //how is the start/stop of a trail or segment measured?
+    //all of the above calculation results in a color assignment to the trail run, like how trails are rated green, blue, black, etc
+    void trailRate() {
+     float activations_per_min = (trail_ruffness / (millis() * 6000));
+     int trail_percent = (activations_per_min / trail_ruffness_max);
+
+handleSet(nullptr, "win&SB=255&FX=98&SM=0&SS=0&B=255&G2=50&IX=0" , false );
+handleSet(nullptr, "win&SB=255&FX=98&SM=0&SS=0&B=255&G2=50&IX=" + trail_percent , false );
+
+handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&B=255&G2=50&IX=0" , false );
+handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&B=255&G2=50&IX=" + trail_percent , false );
+    }
 
   #ifdef PRO_VERSION
     void MOTOR_ENGAGED() //determine if the motor is engaged (used as trigger for board-idle animations)
@@ -330,8 +338,12 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
 #ifdef PRO_VERSION
   void set_motor_duty_preset()
   {  
+    if(!forward)
+    {applyPreset(backwards_preset); return; }
+
    if (motor_duty_est == 0)
    { return; }
+
    if (motor_duty_slow < motor_duty_est)
    { applyPreset(choosen_slow_preset); return; }
 
@@ -351,19 +363,23 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
   adxl.readAccel(&rawx, &rawy, &rawz);         // Read the accelerometer values and store them in variables declared above x,y,z
 
 
-filteredx = rawx * 0.15 + (rawx * (1.0 - 0.15));
-filteredy = rawy * 0.15 + (rawy * (1.0 - 0.15));
-filteredz = rawx * 0.15 + (rawz * (1.0 - 0.15));
+    normx = rawx * 0.004 * 9.80665f;
+    normy = rawy * 0.004 * 9.80665f;
+    normz = rawz * 0.004 * 9.80665f;
+
+    filteredx = rawx * ALPHA + (filteredx * (1.0 - ALPHA));
+    filteredy = rawy * ALPHA + (filteredy * (1.0 - ALPHA));
+    filteredz = rawz * ALPHA + (filteredz * (1.0 - ALPHA));
 
 
 
   // Calculate Pitch & Roll
-  //pitch = -(atan2(norm.XAxis, sqrt(norm.YAxis*norm.YAxis + norm.ZAxis*norm.ZAxis))*180.0)/M_PI;
-  //roll  = (atan2(norm.YAxis, norm.ZAxis)*180.0)/M_PI;
+  //pitch = -(atan2(normx, sqrt(normy*normy + normz*normz))*180.0)/M_PI;
+  //roll  = (atan2(normy, normz)*180.0)/M_PI;
 
   // Calculate Pitch & Roll (Low Pass Filter)
-  //fpitch = -(atan2(filtered.XAxis, sqrt(filtered.YAxis*filtered.YAxis + filtered.ZAxis*filtered.ZAxis))*180.0)/M_PI;
-  //froll  = (atan2(filtered.YAxis, filtered.ZAxis)*180.0)/M_PI;
+  //fpitch = -(atan2(filteredx, sqrt(filteredy*filteredy + filteredz*filteredz))*180.0)/M_PI;
+  //froll  = (atan2(filteredy, filteredz)*180.0)/M_PI;
 
 
   byte interrupts = adxl.getInterruptSource();
@@ -377,15 +393,27 @@ filteredz = rawx * 0.15 + (rawz * (1.0 - 0.15));
   // Inactivity
   if(adxl.triggered(interrupts, ADXL345_INACTIVITY)){
     imu_inactivity = true;
+if (filteredz < -100){upside_down = true;}
+if (filteredy < -200){side_right = true;}
+if (filteredy > 200){side_left = true;}
   }
+
+  if (filteredz > 100){ // if board is upright set board possition back to default
+  side_left = false;  
+  side_right = false;
+  upside_down = false;
+}
+
+
   
   // Activity
   if(adxl.triggered(interrupts, ADXL345_ACTIVITY)){
     imu_activity = true;
+    trail_ruffness = trail_ruffness + 1;
   }
   
 
-  }
+  } // end of get IMU data
 
 
   void get_front_light()
@@ -494,9 +522,11 @@ public:
   adxl.setSpiBit(0);                  // Configure the device to be in 4 wire SPI mode when set to '0' or 3 wire SPI mode when set to 1
                                       // Default: Set to 1
                                       // SPI pins on the ATMega328: 11, 12 and 13 as reference in SPI Library 
-   
+  
+  adxl.set_bw(ADXL345_BW_25);         //set bitrate
+
   adxl.setActivityXYZ(1, 1, 1);       // Set to activate movement detection in the axes "adxl.setActivityXYZ(X, Y, Z);" (1 == ON, 0 == OFF)
-  adxl.setActivityThreshold(75);      // 62.5mg per increment   // Set activity   // Inactivity thresholds (0-255)
+  adxl.setActivityThreshold(150);      // 62.5mg per increment   // Set activity   // Inactivity thresholds (0-255)
  
   adxl.setInactivityXYZ(1, 1, 1);     // Set to detect inactivity in all the axes "adxl.setInactivityXYZ(X, Y, Z);" (1 == ON, 0 == OFF)
   adxl.setInactivityThreshold(75);    // 62.5mg per increment   // Set inactivity // Inactivity thresholds (0-255)
@@ -512,6 +542,7 @@ public:
  
   // Set values for what is considered FREE FALL (0-255)
   adxl.setFreeFallThreshold(7);       // (5 - 9) recommended - 62.5mg per increment
+  int fall_sec = ((sqrt(2 * (free_fall_duration * 25400)/ 981))*2);  // convert inches fallen to ms fallen devided by 5
   adxl.setFreeFallDuration(30);       // (20 - 70) recommended - 5ms per increment
 
 
@@ -708,8 +739,12 @@ return;
 
 
 
-     #ifndef PRO_VERSION //if not pro version
-  // applyPreset(choosen_preset); //sets lights to the choosen preset for standard version
+   #ifndef PRO_VERSION //if not pro version
+   if (forward){
+   applyPreset(choosen_preset); //sets lights to the choosen preset for standard version
+   }else{
+   applyPreset(backwards_preset);
+   }
    #endif
 
 
@@ -817,12 +852,14 @@ return;
     #else
     top[FPSTR(_choosen_preset)] = choosen_preset;  //int input
     #endif
+    top[FPSTR(_backwards_preset)] = backwards_preset;  //int input
     top[FPSTR(_boot_preset)] = boot_preset;  //int input
     top[FPSTR(_boot_preset_time)] = boot_preset_time;  //int input
     top[FPSTR(_free_fall_duration)] = free_fall_duration;  //int input
     top[FPSTR(_free_fall_threshold)] = free_fall_threshold;  //int input
     top[FPSTR(_free_fall_preset_time)] = free_fall_preset_time;  //int input
     top[FPSTR(_free_fall_preset)] = free_fall_preset;  //int input
+    top[FPSTR(_trail_ruffness_max)] = trail_ruffness_max;  //int input
     
 
     DEBUG_PRINTLN(F("Andon config saved."));
@@ -854,6 +891,7 @@ return;
     #else
     choosen_preset   = top[FPSTR(_choosen_preset)] | choosen_preset;     //int input
     #endif
+    backwards_preset   = top[FPSTR(_backwards_preset)] | backwards_preset;     //int input
     boot_preset   = top[FPSTR(_boot_preset)] | boot_preset;     //int input
     boot_preset_time   = top[FPSTR(_boot_preset_time)] | boot_preset_time;     //int input
     stock            = !(top[FPSTR(_stock)] | !stock);       //bool
@@ -861,6 +899,7 @@ return;
     free_fall_preset_time   = top[FPSTR(_free_fall_preset_time)] | free_fall_preset_time;     //int input
     free_fall_threshold   = top[FPSTR(_free_fall_threshold)] | free_fall_threshold;     //int input
     free_fall_duration   = top[FPSTR(_free_fall_duration)] | free_fall_duration;     //int input
+    trail_ruffness_max   = top[FPSTR(_trail_ruffness_max)] | trail_ruffness_max;     //int input
     DEBUG_PRINT(FPSTR(_name));
     DEBUG_PRINTLN(F(" config (re)loaded."));
 
@@ -888,6 +927,7 @@ const char UsermodAndon::_motor_duty_fast[] PROGMEM = "fast motor duty %";
 #else
 const char UsermodAndon::_choosen_preset[] PROGMEM = "Preset animation to use while riding";
 #endif
+const char UsermodAndon::_backwards_preset[] PROGMEM = "Preset animation to use when riding backwards";
 const char UsermodAndon::_boot_preset[] PROGMEM = "Preset animation to use as boot animation";
 const char UsermodAndon::_boot_preset_time[] PROGMEM = "How long is boot preset in sec (0 to disable)";
 
@@ -896,3 +936,4 @@ const char UsermodAndon::_free_fall_preset_time[] PROGMEM = "How long is free fa
 
 const char UsermodAndon::_free_fall_threshold[] PROGMEM = "how sensitive is a free fall detection 30 -60 g";
 const char UsermodAndon::_free_fall_duration[] PROGMEM = "inches for free fall detection";
+const char UsermodAndon::_trail_ruffness_max[] PROGMEM = "max trail ruffness for bar graph";

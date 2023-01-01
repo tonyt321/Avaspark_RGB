@@ -62,6 +62,7 @@
 
 
 #define BLINK_APP_LIGHTS_DELAY 1000 //ms between blinks to enable wifi
+#define ALPHA 0.15 // how much smoothing is used for accel readings
 
 //#define MAX_LEDS 1500       //Maximum total LEDs. More than 1500 might create a low memory situation on ESP8266.
 
