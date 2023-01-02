@@ -42,7 +42,7 @@
 //#define CLIENT_PASS "8280RH90029"    //for testing only will be disabled in production should be blank    
 
 #define wifi_on_time 60  // how many sec wifi is on at boot
-//#define LEDPIN 26           //front rgbw lights
+#define ERROR_LED_PIN 16  // on pcb led
 #define DATA_PINS 18 ,17  //front then back lights GPIO segment 0 then 1 ect
 #define LIGHT_BAR_R_PIN 36  //status bar red
 #define LIGHT_BAR_G_PIN 39   //status bar green

@@ -72,6 +72,7 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
 
 
   bool stock = true;
+  bool accel_test = true;
 
   unsigned int free_fall_duration = 5; // inches fallen
   unsigned int free_fall_threshold = 35; // Recommended 10 s
@@ -132,6 +133,7 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
   static const char _free_fall_duration[];
   static const char _free_fall_threshold[];
   static const char _free_fall_preset[];
+  static const char _accel_test[];
 
 
 
@@ -338,7 +340,7 @@ handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&B=255&G2=50&IX=" + trail_percent 
 #ifdef PRO_VERSION
   void set_motor_duty_preset()
   {  
-    if(!forward)
+    if(forward == false)
     {applyPreset(backwards_preset); return; }
 
    if (motor_duty_est == 0)
@@ -393,9 +395,6 @@ handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&B=255&G2=50&IX=" + trail_percent 
   // Inactivity
   if(adxl.triggered(interrupts, ADXL345_INACTIVITY)){
     imu_inactivity = true;
-if (filteredz < -100){upside_down = true;}
-if (filteredy < -200){side_right = true;}
-if (filteredy > 200){side_left = true;}
   }
 
   if (filteredz > 100){ // if board is upright set board possition back to default
@@ -415,6 +414,36 @@ if (filteredy > 200){side_left = true;}
 
   } // end of get IMU data
 
+ void test_imu(){
+
+         handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+         String redstring = "win&SB=255&FX=98&SM=1&SS=1&IX=0&R=" + filteredx;   //combining multiple strings at once can result in unpredictable outcomes
+         String greenstring = "&G=" + filteredy;
+         String bluestring = "&B=" + filteredz;
+         String together1 = redstring + greenstring;
+         String together2 = together1 + bluestring;
+         if(imu_free_fall || imu_activity || imu_inactivity){
+         together2 = together2 + "&W=255";
+         }else{
+         together2 = together2 + "&W=0";
+         }
+
+         handleSet(nullptr, together2 , false );
+         
+         handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
+         String redstring1 = "win&SB=255&FX=98&SM=0&SS=0&IX=0&R=" + filteredx;  //combining multiple strings at once can result in unpredictable outcomes
+         String greenstring1 = "&G=" + filteredy;
+         String bluestring1 = "&B=" + filteredz;
+         String together3 = redstring + greenstring;
+         String together4 = together1 + bluestring;
+         if(imu_free_fall || imu_activity || imu_inactivity){
+         together2 = together2 + "&W=255";
+         }else{
+         together2 = together2 + "&W=0";
+         }
+         handleSet(nullptr, together4 , false );
+
+ }
 
   void get_front_light()
   {
@@ -447,6 +476,23 @@ if (filteredy > 200){side_left = true;}
     blink_app_lights_timing = millis();
     }
     app_lights_on_last = app_lights_on;
+
+   if (app_lights_on == false){ //turns lights off if in app lights are off
+   handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+   handleSet(nullptr, "win&T=0&SB=0&S=0&S2=13" , false );// turn all off
+
+   handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
+   handleSet(nullptr, "win&T=0&SB=0&S=13&S2=26" , false );// turn all off
+   return; // skip rest of loop becuase we dont want to change lights besides forward/back
+   }else{
+    //handleSet(nullptr, "win&T=1&SB=255" , false );// turn all on
+   handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+   handleSet(nullptr, "win&T=1&SB=255&S=0&S2=13" , false );// turn all off
+
+   handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
+   handleSet(nullptr, "win&T=1&SB=255&S=13&S2=26" , false );// turn all off
+   }
+
   }
 
 
@@ -502,7 +548,10 @@ public:
 
     pinMode(FRONT_LIGHT_W_PIN, INPUT);
     pinMode(FRONT_LIGHT_R_PIN, INPUT);
-    
+
+    pinMode(ERROR_LED_PIN, OUTPUT);
+    digitalWrite(ERROR_LED_PIN, LOW);
+
     #ifdef PRO_VERSION
     pinMode(LIGHT_BAR_R_PIN, INPUT);
     pinMode(LIGHT_BAR_G_PIN, INPUT);
@@ -523,10 +572,10 @@ public:
                                       // Default: Set to 1
                                       // SPI pins on the ATMega328: 11, 12 and 13 as reference in SPI Library 
   
-  adxl.set_bw(ADXL345_BW_25);         //set bitrate
+  adxl.set_bw(ADXL345_BW_1600);         //set bitrate
 
   adxl.setActivityXYZ(1, 1, 1);       // Set to activate movement detection in the axes "adxl.setActivityXYZ(X, Y, Z);" (1 == ON, 0 == OFF)
-  adxl.setActivityThreshold(150);      // 62.5mg per increment   // Set activity   // Inactivity thresholds (0-255)
+  adxl.setActivityThreshold(75);      // 62.5mg per increment   // Set activity   // Inactivity thresholds (0-255)
  
   adxl.setInactivityXYZ(1, 1, 1);     // Set to detect inactivity in all the axes "adxl.setInactivityXYZ(X, Y, Z);" (1 == ON, 0 == OFF)
   adxl.setInactivityThreshold(75);    // 62.5mg per increment   // Set inactivity // Inactivity thresholds (0-255)
@@ -588,21 +637,11 @@ public:
   #endif
 
    #ifndef TEST_MODE // test mode skip get front light becuase we dont have the hardware on test esp32
-   get_front_light();
-   if (FRONT_LIGHT_R == (false)){ //turns lights off if in app lights are off
-   handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
-   handleSet(nullptr, "win&T=0&SB=0&S=0&S2=13" , false );// turn all off
-
-   handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
-   handleSet(nullptr, "win&T=0&SB=0&S=13&S2=26" , false );// turn all off
-   return; // skip rest of loop becuase we dont want to change lights besides forward/back
-   }else{
-    handleSet(nullptr, "win&T=1&SB=255" , false );// turn all on
-   }
+   get_front_light();  // handels truning on/off lights and forward/back detection
    #endif
    
 
-   if ((stock) == true){ // if emulate stock is off use boot up preset
+   if (stock){ // if emulate stock is off use boot up preset
 
     if (boot_preset_time != 0){ // skip if boot_preset_time set to 0
     start_milisec = millis();
@@ -616,15 +655,13 @@ public:
   void loop()
   {
 
-    if (strip.isUpdating())
+  //  if (strip.isUpdating())
+   //   return;
+
+     if (accel_test == false){
+      test_imu();
       return;
-    
-
-    
-
-
-    
- 
+     }
 
     wifi_sta_list_t stationList;  //skip looping code if user is on wifi so we dont change stuff while they are editing
     esp_wifi_ap_get_sta_list(&stationList);
@@ -639,26 +676,14 @@ public:
     usermod_loop_time_last = millis();
 
    #ifndef TEST_MODE // test mode skip get direction from front light becuase we dont have the hardware on test esp32
-   get_front_light();
-   if (app_lights_on == (false)){ //turns lights off if in app lights are off
-
-   handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
-   handleSet(nullptr, "win&T=0&SB=0&S=0&S2=13" , false );// turn all off
-
-   handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
-   handleSet(nullptr, "win&T=0&SB=0&S=13&S2=26" , false );// turn all off
-
-
-   return; // skip rest of loop
-   }else{
-    handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );
-    handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
-    handleSet(nullptr, "win&T=1&SB=255" , false );// turn all on
-    }
+   get_front_light();  // handels truning on/off lights and forward/back detection
+   if (app_lights_on == false){
+       return; // skip rest of loop
+   }
    #endif
 
 
-   if ((stock) == false){
+   if (stock == false){
    emulate_stock();
    return; // skip rest of loop becuase we dont want to change lights besides forward/back
    }
@@ -697,6 +722,10 @@ get_imu_data();
   {
     imu_inactivity = false;
   applyPreset(3);
+
+if (filteredz < -100){upside_down = true;}
+if (filteredy < -200){side_right = true;}
+if (filteredy > 200){side_left = true;}
   }
 
     if (imu_free_fall)
@@ -823,6 +852,10 @@ return;
                   JsonArray battery5 = user.createNestedArray("loop time");  //left side thing
       battery5.add(usermod_loop);                               //right side variable
       battery5.add(F(" ms"));                      //right side thing
+
+                  JsonArray battery6 = user.createNestedArray("trail ruffness");  //left side thing
+      battery6.add(trail_ruffness);                               //right side variable
+      battery6.add(F(""));                      //right side thing
   }
 
   uint16_t getId()
@@ -860,6 +893,7 @@ return;
     top[FPSTR(_free_fall_preset_time)] = free_fall_preset_time;  //int input
     top[FPSTR(_free_fall_preset)] = free_fall_preset;  //int input
     top[FPSTR(_trail_ruffness_max)] = trail_ruffness_max;  //int input
+    top[FPSTR(_accel_test)] = !accel_test;
     
 
     DEBUG_PRINTLN(F("Andon config saved."));
@@ -900,6 +934,7 @@ return;
     free_fall_threshold   = top[FPSTR(_free_fall_threshold)] | free_fall_threshold;     //int input
     free_fall_duration   = top[FPSTR(_free_fall_duration)] | free_fall_duration;     //int input
     trail_ruffness_max   = top[FPSTR(_trail_ruffness_max)] | trail_ruffness_max;     //int input
+    accel_test       = !(top[FPSTR(_accel_test)] | !accel_test);    //bool
     DEBUG_PRINT(FPSTR(_name));
     DEBUG_PRINTLN(F(" config (re)loaded."));
 
@@ -937,3 +972,4 @@ const char UsermodAndon::_free_fall_preset_time[] PROGMEM = "How long is free fa
 const char UsermodAndon::_free_fall_threshold[] PROGMEM = "how sensitive is a free fall detection 30 -60 g";
 const char UsermodAndon::_free_fall_duration[] PROGMEM = "inches for free fall detection";
 const char UsermodAndon::_trail_ruffness_max[] PROGMEM = "max trail ruffness for bar graph";
+const char UsermodAndon::_accel_test[] PROGMEM = "IMU test";
