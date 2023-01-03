@@ -217,6 +217,10 @@ public:
 	bool getJustifyBit();
 	void setJustifyBit(bool justifyBit);
 	void printAllRegister();
+	void setFIFOMode(String FIFOMode);
+	byte getFIFOMode();
+	byte getFIFOStatus();
+
 	
 private:
 	void writeTo(byte address, byte val);

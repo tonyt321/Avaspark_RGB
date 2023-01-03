@@ -566,22 +566,23 @@ public:
 
   adxl.powerOn();                     // Power on the ADXL345
 
-  adxl.setRangeSetting(16);           // Accepted values are 2g, 4g, 8g or 16g
+  adxl.setRangeSetting(16);           // Give the range settings
+                                      // Accepted values are 2g, 4g, 8g or 16g
+                                      // Higher Values = Wider Measurement Range
+                                      // Lower Values = Greater Sensitivity
 
   adxl.setSpiBit(0);                  // Configure the device to be in 4 wire SPI mode when set to '0' or 3 wire SPI mode when set to 1
                                       // Default: Set to 1
                                       // SPI pins on the ATMega328: 11, 12 and 13 as reference in SPI Library 
-  
-  adxl.set_bw(ADXL345_BW_1600);         //set bitrate
-
+   
   adxl.setActivityXYZ(1, 1, 1);       // Set to activate movement detection in the axes "adxl.setActivityXYZ(X, Y, Z);" (1 == ON, 0 == OFF)
-  adxl.setActivityThreshold(75);      // 62.5mg per increment   // Set activity   // Inactivity thresholds (0-255)
+  adxl.setActivityThreshold(150);      // 62.5mg per increment   // Set activity   // Inactivity thresholds (0-255)
  
   adxl.setInactivityXYZ(1, 1, 1);     // Set to detect inactivity in all the axes "adxl.setInactivityXYZ(X, Y, Z);" (1 == ON, 0 == OFF)
   adxl.setInactivityThreshold(75);    // 62.5mg per increment   // Set inactivity // Inactivity thresholds (0-255)
   adxl.setTimeInactivity(10);         // How many seconds of no activity is inactive?
 
-  adxl.setTapDetectionOnXYZ(0, 0, 0); // Detect taps in the directions turned ON "adxl.setTapDetectionOnX(X, Y, Z);" (1 == ON, 0 == OFF)
+  adxl.setTapDetectionOnXYZ(1, 1, 1); // Detect taps in the directions turned ON "adxl.setTapDetectionOnX(X, Y, Z);" (1 == ON, 0 == OFF)
  
   // Set values for what is considered a TAP and what is a DOUBLE TAP (0-255)
   adxl.setTapThreshold(50);           // 62.5 mg per increment
@@ -591,11 +592,23 @@ public:
  
   // Set values for what is considered FREE FALL (0-255)
   adxl.setFreeFallThreshold(7);       // (5 - 9) recommended - 62.5mg per increment
-  int fall_sec = ((sqrt(2 * (free_fall_duration * 25400)/ 981))*2);  // convert inches fallen to ms fallen devided by 5
-  adxl.setFreeFallDuration(30);       // (20 - 70) recommended - 5ms per increment
+  //int fall_sec = ((sqrt(2 * (free_fall_duration * 25400)/ 981))*2);  // convert inches fallen to ms fallen devided by 5
+  adxl.setFreeFallDuration((sqrt((free_fall_duration * 50800)/ 981))*2);       // (20 - 70) recommended - 5ms per increment
+ 
+  // Setting all interupts to take place on INT1 pin
+  adxl.setImportantInterruptMapping(1, 1, 1, 1, 1);     // Sets "adxl.setEveryInterruptMapping(single tap, double tap, free fall, activity, inactivity);" 
+                                                        // Accepts only 1 or 2 values for pins INT1 and INT2. This chooses the pin on the ADXL345 to use for Interrupts.
+                                                        // This library may have a problem using INT2 pin. Default to INT1 pin.
+  
+  // Turn on Interrupts for each mode (1 == ON, 0 == OFF)
+  adxl.InactivityINT(1);
+  adxl.ActivityINT(1);
+  adxl.FreeFallINT(1);
+  adxl.doubleTapINT(1);
+  adxl.singleTapINT(1);
 
-
-
+   // adxl.setFIFOMode("FIFO"); //four available modes - Bypass, FIFO, Stream and Trigger.
+   // adxl.set_bw(ADXL345_BW_1600);         //set bitrate
 
 /*
 ///////////////////////////////////turn AP on copied from wled>wled.cpp
