@@ -30,18 +30,19 @@
 // should effect voltage curves motor speed estimates as voltages are diffrent
 // if vesc should bring up option to input number of cells 
 
+#define TEST_MODE //comment out for normal mode
+// disables turning lights off when detected from what should be the OW controller as off
 //#define PRO_VERSION    // comment out for standard
 #define SHOP_NAME "Andon"    // Andon Origin shop who installed it just andon for customer installed versions
 #define WLED_VERSION "2.2.2"  //shows up in info on UI 
-#define TEST_MODE //comment out for normal mode
-// disables turning lights off when detected from what should be the OW controller as off
+
 
 //disable testing wifi for fast AP start up
 //#define CLIENT_SSID "TRENDnet828_2.4GHz_3FDB"  //for testing only will be disabled in production should be blank
 //#define CLIENT_PASS "8280RH90029"    //for testing only will be disabled in production should be blank    
 
 #define wifi_on_time 60  // how many sec wifi is on at boot
-//#define LEDPIN 26           //front rgbw lights
+#define ERROR_LED_PIN 16  // on pcb led
 #define DATA_PINS 18 ,17  //front then back lights GPIO segment 0 then 1 ect
 #define LIGHT_BAR_R_PIN 36  //status bar red
 #define LIGHT_BAR_G_PIN 39   //status bar green
@@ -50,8 +51,8 @@
 #define MOTOR_SPEED_PIN 35   //motor phase pin
 #define BATTERY_VOLTAGE_PIN 34   //battery voltage pin
 
-#define FRONT_LIGHT_R_PIN 36   //status bar blue
-#define FRONT_LIGHT_W_PIN 39   //status bar blue
+#define FRONT_LIGHT_R_PIN 39   //status bar blue
+#define FRONT_LIGHT_W_PIN 36   //status bar blue
 
 #define DEFAULT_AP_PASS     "andon123"
 #define DEFAULT_OTA_PASS    "andon123"
@@ -61,6 +62,7 @@
 
 
 #define BLINK_APP_LIGHTS_DELAY 1000 //ms between blinks to enable wifi
+#define ALPHA 0.15 // how much smoothing is used for accel readings
 
 //#define MAX_LEDS 1500       //Maximum total LEDs. More than 1500 might create a low memory situation on ESP8266.
 
