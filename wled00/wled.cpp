@@ -498,6 +498,8 @@ void WLED::initAP(bool resetAP)
   if (apBehavior == AP_BEHAVIOR_BUTTON_ONLY && !resetAP)
     return;
 
+    if (wifiDisabled) return;
+
   if (!apSSID[0] || resetAP)
   escapedMac = WiFi.macAddress();
   escapedMac.replace(":", "");
@@ -623,6 +625,7 @@ void WLED::initConnection()
   ws.onEvent(wsEvent);
   #endif
 
+if (wifiDisabled) return; // can still use ethernet
 
   WiFi.disconnect(true);        // close old connections
 #ifdef ESP8266
@@ -743,7 +746,7 @@ void WLED::handleConnection()
 
   if (now < 2000 && (!WLED_WIFI_CONFIGURED || apBehavior == AP_BEHAVIOR_ALWAYS))
     return;
-  if (lastReconnectAttempt == 0) {
+  if (lastReconnectAttempt == 0 && !wifiDisabled) {
     initConnection();
     return;
   }
@@ -800,11 +803,11 @@ void WLED::handleConnection()
       sendImprovStateResponse(0x03, true);
       improvActive = 2;
     }
-    if (now - lastReconnectAttempt > ((stac) ? 300000 : 18000) && WLED_WIFI_CONFIGURED) {
+    if (now - lastReconnectAttempt > ((stac) ? 300000 : 18000) && WLED_WIFI_CONFIGURED && !wifiDisabled) {
       if (improvActive == 2) improvActive = 3;
       initConnection();
     }
-    if (!apActive && now - lastReconnectAttempt > 12000 && (!wasConnected || apBehavior == AP_BEHAVIOR_NO_CONN))
+    if (!apActive && now - lastReconnectAttempt > 12000 && (!wasConnected || apBehavior == AP_BEHAVIOR_NO_CONN) && !wifiDisabled)
       initAP();
   } else if (!interfacesInited) { //newly connected
     DEBUG_PRINTLN("");
@@ -863,4 +866,13 @@ void WLED::handleStatusLED()
 
   }
   #endif
+}
+
+void WLED::disableWiFi() {
+  wifiDisabled = true;
+  WiFi.disconnect(true);
+}
+
+void WLED::enableWiFi() {
+  wifiDisabled = false;
 }

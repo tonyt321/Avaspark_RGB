@@ -397,24 +397,30 @@ handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&B=255&G2=50&IX=" + trail_percent 
     imu_inactivity = true;
   }
 
-  if (filteredz > 100){ // if board is upright set board possition back to default
-  side_left = false;  
-  side_right = false;
-  upside_down = false;
-}
 
-
-  
   // Activity
   if(adxl.triggered(interrupts, ADXL345_ACTIVITY)){
     imu_activity = true;
-    trail_ruffness = trail_ruffness + 1;
+    board_upright();
   }
+
+  if (filteredz > 100){ // if board is upright set board possition back to default
+board_upright();
+}
   
 
   } // end of get IMU data
 
+
+  void board_upright(){
+  side_left = false;  
+  side_right = false;
+  upside_down = false;
+  }
+
  void test_imu(){
+        
+         get_imu_data();
 
          handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
          String redstring = "win&SB=255&FX=98&SM=1&SS=1&IX=0&R=" + filteredx;   //combining multiple strings at once can result in unpredictable outcomes
@@ -442,7 +448,6 @@ handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&B=255&G2=50&IX=" + trail_percent 
          together2 = together2 + "&W=0";
          }
          handleSet(nullptr, together4 , false );
-
  }
 
   void get_front_light()
@@ -604,11 +609,11 @@ public:
   adxl.InactivityINT(1);
   adxl.ActivityINT(1);
   adxl.FreeFallINT(1);
-  adxl.doubleTapINT(1);
-  adxl.singleTapINT(1);
+  adxl.doubleTapINT(0);
+  adxl.singleTapINT(0);
 
    // adxl.setFIFOMode("FIFO"); //four available modes - Bypass, FIFO, Stream and Trigger.
-   // adxl.set_bw(ADXL345_BW_1600);         //set bitrate
+   // adxl.set_bw(ADXL345_BW_25);         //set bitrate
 
 /*
 ///////////////////////////////////turn AP on copied from wled>wled.cpp
@@ -663,18 +668,34 @@ public:
 
    }
 
+
+get_imu_data();
+///////////////////////////////////////////////////////  wifi
+          if (filteredz < 0){ // if right side up stop wifi
+          apBehavior = AP_BEHAVIOR_BUTTON_ONLY;
+          dnsServer.stop();
+          WiFi.softAPdisconnect(true);
+          apActive = false;
+         // WLED::instance().initAP(false);
+         // WLED::instance().disableWiFi();
+          WLED::instance().handleConnection();
+   }// else {
+   //       apBehavior = AP_BEHAVIOR_ALWAYS;
+   //       WLED::instance().initAP(true);
+   //       WLED::instance().enableWiFi();
+   //       apActive = true;
+  // }    
+///////////////////////////////////////////////////////
+
   }// end of start up 
 
   void loop()
   {
 
-  //  if (strip.isUpdating())
-   //   return;
+    if (strip.isUpdating()){return;}
+      
 
-     if (accel_test == false){
-      test_imu();
-      return;
-     }
+
 
     wifi_sta_list_t stationList;  //skip looping code if user is on wifi so we dont change stuff while they are editing
     esp_wifi_ap_get_sta_list(&stationList);
@@ -683,7 +704,10 @@ public:
     return; 
     }
 
-
+     if (accel_test == false){
+      test_imu();
+      return;
+     }
 
     usermod_loop = ((millis()) - usermod_loop_time_last);
     usermod_loop_time_last = millis();
@@ -707,27 +731,37 @@ public:
      }
 
 
+get_imu_data();
 //flash lights to turn on wifi
-/*
-   if ((blink_app_lights >= 3) || (filteredz > 0)){ //if upside down or lights in Onewheel app are flashed on off 3 times
-    // turn wifi on
-   }else{
-    if ( client_numb == 0 ){ // if no one is on the wifi
-    // turn wifi off
-    }
-   }
-*/
+   
+   if (blink_app_lights >= 3){ //if lights in Onewheel app are flashed on off 3 times
+          apBehavior = AP_BEHAVIOR_ALWAYS;
+          WLED::instance().initAP(true);
+          WLED::instance().enableWiFi();
+          apActive = true;
+   }// else{
+ //   if ( client_numb == 0 ){ // if no one is on the wifi
+ //         apBehavior = AP_BEHAVIOR_BUTTON_ONLY;
+ //         dnsServer.stop();
+ //         WiFi.softAPdisconnect(true);
+ //         apActive = false;
+ //         WLED::instance().initAP(false);
+ //         WLED::instance().disableWiFi();
+ //               //WLED::instance().reset(); // reboots the esp
+ //   }
+ //  }                                                                                                                 
+
+
 
   
 
 
-/////////////////////////////////////// imu things
-
-get_imu_data();
+/////////////////////////////////////// imu reactions
 
   if (imu_activity)
   {
     imu_activity = false;
+    trail_ruffness = trail_ruffness + 1;
   applyPreset(1);
   }
 
@@ -736,16 +770,16 @@ get_imu_data();
     imu_inactivity = false;
   applyPreset(3);
 
-if (filteredz < -100){upside_down = true;}
-if (filteredy < -200){side_right = true;}
-if (filteredy > 200){side_left = true;}
+if (filteredz < -10 || /* filteredz < 0 */ ){upside_down = true;}
+if (filteredy < -20){side_right = true;}
+if (filteredy > 20){side_left = true;}
   }
 
     if (imu_free_fall)
   {
     //Serial.println("Free Fall Detected!");
     imu_free_fall = false;
-applyPreset(4);
+    applyPreset(4);
   }
 
 return;

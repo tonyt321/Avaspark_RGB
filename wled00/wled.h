@@ -690,6 +690,10 @@ bool oappend(const char* txt);
 bool oappendi(int i);
 
 class WLED {
+  
+private:
+  bool wifiDisabled = false;
+
 public:
   WLED();
   static WLED& instance()
@@ -713,5 +717,7 @@ public:
   void handleStatusLED();
   void enableWatchdog();
   void disableWatchdog();
+  void disableWiFi();
+  void enableWiFi();
 };
 #endif        // WLED_H
