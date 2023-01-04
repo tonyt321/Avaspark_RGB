@@ -19,7 +19,7 @@
   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-  THE SOFTWARE.
+  THE SOFTWARE. 
 
   Modified heavily for WLED
 */
@@ -266,7 +266,7 @@ uint16_t WS2812FX::mode_dynamic(void) {
 }
 
 /*
- * effect "Dynamic" with smoth color-fading
+ * effect "Dynamic" with smooth color-fading
  */
 uint16_t WS2812FX::mode_dynamic_smooth(void) {
   return dynamic(true);
@@ -4226,4 +4226,198 @@ uint16_t WS2812FX::mode_aurora(void) {
   }
   
   return FRAMETIME;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+     /////////   ///   ///   /////////   /////////   /////////   ////  ////
+    ///         ///   ///   ///            ///      ///   ///   //  //  //
+   ///         ///   ///   ////////       ///      ///   ///   //  //  //
+  ///         ///   ///        ///       ///      ///   ///   //      //
+ ////////    /////////   ////////       ///      /////////   //      //
+
+ ////////////////////////////////////////////////////////////////////////
+
+
+   //    mode_display_battery(void);
+  //    mode_display_duty_cycle(void);
+ //     mode_display_tire_psi(void);
+//      mode_display_trail_ruffness(void);
+
+
+/*
+ * Battery display
+ * Intesity values from 0-100 turn on the leds.
+ */
+uint16_t WS2812FX::mode_display_battery(void) {
+
+	uint8_t percent = MAX(0, MIN(200, SEGMENT.intensity));
+	uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
+                                         : SEGLEN * (200 - percent) / 100.0;
+  
+  uint8_t size = (1 + ((SEGMENT.speed * SEGLEN) >> 11));
+  if (SEGMENT.speed == 255) size = 255;
+    
+  if (percent < 100) {
+    for (uint16_t i = 0; i < SEGLEN; i++) {
+	  	if (i < SEGENV.step) {
+        setPixelColor(i, color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+	  	}
+	  	else {
+        setPixelColor(i, SEGCOLOR(1));
+	  	}
+	  }
+  } else {
+    for (uint16_t i = 0; i < SEGLEN; i++) {
+	  	if (i < (SEGLEN - SEGENV.step)) {
+        setPixelColor(i, SEGCOLOR(1));
+	  	}
+	  	else {
+        setPixelColor(i, color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+	  	}
+	  }
+  }
+
+  if(active_leds > SEGENV.step) {  // smooth transition to the target value
+    SEGENV.step += size;
+    if (SEGENV.step > active_leds) SEGENV.step = active_leds;
+  } else if (active_leds < SEGENV.step) {
+    if (SEGENV.step > size) SEGENV.step -= size; else SEGENV.step = 0;
+    if (SEGENV.step < active_leds) SEGENV.step = active_leds;
+  }
+
+ 	return FRAMETIME;
+}
+
+/*
+ * Duty cycle display
+ * Intesity values from 0-100 turn on the leds.
+ */
+uint16_t WS2812FX::mode_display_duty_cycle(void) {
+
+	uint8_t percent = MAX(0, MIN(200, SEGMENT.intensity));
+	uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
+                                         : SEGLEN * (200 - percent) / 100.0;
+  
+  uint8_t size = (1 + ((SEGMENT.speed * SEGLEN) >> 11));
+  if (SEGMENT.speed == 255) size = 255;
+    
+  if (percent < 100) {
+    for (uint16_t i = 0; i < SEGLEN; i++) {
+	  	if (i < SEGENV.step) {
+        setPixelColor(i, color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+	  	}
+	  	else {
+        setPixelColor(i, SEGCOLOR(1));
+	  	}
+	  }
+  } else {
+    for (uint16_t i = 0; i < SEGLEN; i++) {
+	  	if (i < (SEGLEN - SEGENV.step)) {
+        setPixelColor(i, SEGCOLOR(1));
+	  	}
+	  	else {
+        setPixelColor(i, color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+	  	}
+	  }
+  }
+
+  if(active_leds > SEGENV.step) {  // smooth transition to the target value
+    SEGENV.step += size;
+    if (SEGENV.step > active_leds) SEGENV.step = active_leds;
+  } else if (active_leds < SEGENV.step) {
+    if (SEGENV.step > size) SEGENV.step -= size; else SEGENV.step = 0;
+    if (SEGENV.step < active_leds) SEGENV.step = active_leds;
+  }
+
+ 	return FRAMETIME;
+}
+
+/*
+ * tire psi display
+ * Intesity values from 0-100 turn on the leds.
+ */
+uint16_t WS2812FX::mode_display_tire_psi(void) {
+
+	uint8_t percent = MAX(0, MIN(200, SEGMENT.intensity));
+	uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
+                                         : SEGLEN * (200 - percent) / 100.0;
+  
+  uint8_t size = (1 + ((SEGMENT.speed * SEGLEN) >> 11));
+  if (SEGMENT.speed == 255) size = 255;
+    
+  if (percent < 100) {
+    for (uint16_t i = 0; i < SEGLEN; i++) {
+	  	if (i < SEGENV.step) {
+        setPixelColor(i, color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+	  	}
+	  	else {
+        setPixelColor(i, SEGCOLOR(1));
+	  	}
+	  }
+  } else {
+    for (uint16_t i = 0; i < SEGLEN; i++) {
+	  	if (i < (SEGLEN - SEGENV.step)) {
+        setPixelColor(i, SEGCOLOR(1));
+	  	}
+	  	else {
+        setPixelColor(i, color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+	  	}
+	  }
+  }
+
+  if(active_leds > SEGENV.step) {  // smooth transition to the target value
+    SEGENV.step += size;
+    if (SEGENV.step > active_leds) SEGENV.step = active_leds;
+  } else if (active_leds < SEGENV.step) {
+    if (SEGENV.step > size) SEGENV.step -= size; else SEGENV.step = 0;
+    if (SEGENV.step < active_leds) SEGENV.step = active_leds;
+  }
+
+ 	return FRAMETIME;
+}
+
+/*
+ * mode_display_trail_ruffness display
+ * Intesity values from 0-100 turn on the leds.
+ */
+uint16_t WS2812FX::mode_display_trail_ruffness(void) {
+
+	uint8_t percent = MAX(0, MIN(200, SEGMENT.intensity));
+	uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
+                                         : SEGLEN * (200 - percent) / 100.0;
+  
+  uint8_t size = (1 + ((SEGMENT.speed * SEGLEN) >> 11));
+  if (SEGMENT.speed == 255) size = 255;
+    
+  if (percent < 100) {
+    for (uint16_t i = 0; i < SEGLEN; i++) {
+	  	if (i < SEGENV.step) {
+        setPixelColor(i, color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+	  	}
+	  	else {
+        setPixelColor(i, SEGCOLOR(1));
+	  	}
+	  }
+  } else {
+    for (uint16_t i = 0; i < SEGLEN; i++) {
+	  	if (i < (SEGLEN - SEGENV.step)) {
+        setPixelColor(i, SEGCOLOR(1));
+	  	}
+	  	else {
+        setPixelColor(i, color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+	  	}
+	  }
+  }
+
+  if(active_leds > SEGENV.step) {  // smooth transition to the target value
+    SEGENV.step += size;
+    if (SEGENV.step > active_leds) SEGENV.step = active_leds;
+  } else if (active_leds < SEGENV.step) {
+    if (SEGENV.step > size) SEGENV.step -= size; else SEGENV.step = 0;
+    if (SEGENV.step < active_leds) SEGENV.step = active_leds;
+  }
+
+ 	return FRAMETIME;
 }

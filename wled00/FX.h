@@ -19,7 +19,7 @@
   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-  THE SOFTWARE.
+  THE SOFTWARE. 
 
   Modified for WLED
 */
@@ -245,6 +245,11 @@
 #define FX_MODE_BLENDS                 115
 #define FX_MODE_TV_SIMULATOR           116
 #define FX_MODE_DYNAMIC_SMOOTH         117
+
+#define FX_MODE_DISPLAY_BATTERY        118
+#define FX_MODE_DISPLAY_DUTY_CYCLE     119
+#define FX_MODE_DISPLAY_TIRE_PSI       120
+#define FX_MODE_DISPLAY_TRAIL_RUFFNESS 121
 
 
 class WS2812FX {
@@ -615,6 +620,12 @@ class WS2812FX {
       _mode[FX_MODE_BLENDS]                  = &WS2812FX::mode_blends;
       _mode[FX_MODE_TV_SIMULATOR]            = &WS2812FX::mode_tv_simulator;
       _mode[FX_MODE_DYNAMIC_SMOOTH]          = &WS2812FX::mode_dynamic_smooth;
+      
+      _mode[FX_MODE_DISPLAY_BATTERY]         = &WS2812FX::mode_display_battery;
+      _mode[FX_MODE_DISPLAY_DUTY_CYCLE]      = &WS2812FX::mode_display_duty_cycle;
+      _mode[FX_MODE_DISPLAY_TIRE_PSI]        = &WS2812FX::mode_display_tire_psi;
+      _mode[FX_MODE_DISPLAY_TRAIL_RUFFNESS]  = &WS2812FX::mode_display_trail_ruffness;
+      
 
       _brightness = DEFAULT_BRIGHTNESS;
       currentPalette = CRGBPalette16(CRGB::Black);
@@ -841,6 +852,11 @@ class WS2812FX {
       mode_tv_simulator(void),
       mode_dynamic_smooth(void);
 
+      mode_display_battery(void);
+      mode_display_duty_cycle(void);
+      mode_display_tire_psi(void);
+      mode_display_trail_ruffness(void);
+
   private:
     uint32_t crgb_to_col(CRGB fastled);
     CRGB col_to_crgb(uint32_t);
@@ -942,7 +958,8 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Twinklefox","Twinklecat","Halloween Eyes","Solid Pattern","Solid Pattern Tri","Spots","Spots Fade","Glitter","Candle","Fireworks Starburst",
 "Fireworks 1D","Bouncing Balls","Sinelon","Sinelon Dual","Sinelon Rainbow","Popcorn","Drip","Plasma","Percent","Ripple Rainbow",
 "Heartbeat","Pacifica","Candle Multi", "Solid Glitter","Sunrise","Phased","Twinkleup","Noise Pal", "Sine","Phased Noise",
-"Flow","Chunchun","Dancing Shadows","Washing Machine","Candy Cane","Blends","TV Simulator","Dynamic Smooth"
+"Flow","Chunchun","Dancing Shadows","Washing Machine","Candy Cane","Blends","TV Simulator","Dynamic Smooth","Show Battery","Show Duty Cycle",
+"Show tire PSI","Show Trail Variability"
 ])=====";
 
 
