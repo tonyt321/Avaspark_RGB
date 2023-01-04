@@ -407,7 +407,6 @@ handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&B=255&G2=50&IX=" + trail_percent 
   if (filteredz > 100){ // if board is upright set board possition back to default
 board_upright();
 }
-  
 
   } // end of get IMU data
 
@@ -418,37 +417,6 @@ board_upright();
   upside_down = false;
   }
 
- void test_imu(){
-        
-         get_imu_data();
-
-         handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
-         String redstring = "win&SB=255&FX=98&SM=1&SS=1&IX=0&R=" + filteredx;   //combining multiple strings at once can result in unpredictable outcomes
-         String greenstring = "&G=" + filteredy;
-         String bluestring = "&B=" + filteredz;
-         String together1 = redstring + greenstring;
-         String together2 = together1 + bluestring;
-         if(imu_free_fall || imu_activity || imu_inactivity){
-         together2 = together2 + "&W=255";
-         }else{
-         together2 = together2 + "&W=0";
-         }
-
-         handleSet(nullptr, together2 , false );
-         
-         handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
-         String redstring1 = "win&SB=255&FX=98&SM=0&SS=0&IX=0&R=" + filteredx;  //combining multiple strings at once can result in unpredictable outcomes
-         String greenstring1 = "&G=" + filteredy;
-         String bluestring1 = "&B=" + filteredz;
-         String together3 = redstring + greenstring;
-         String together4 = together1 + bluestring;
-         if(imu_free_fall || imu_activity || imu_inactivity){
-         together2 = together2 + "&W=255";
-         }else{
-         together2 = together2 + "&W=0";
-         }
-         handleSet(nullptr, together4 , false );
- }
 
   void get_front_light()
   {
@@ -670,7 +638,9 @@ public:
 
 
 get_imu_data();
+get_imu_data(); // get imu data twice to populate filtered ints
 ///////////////////////////////////////////////////////  wifi
+   #ifndef TEST_MODE
           if (filteredz < 0){ // if right side up stop wifi
           apBehavior = AP_BEHAVIOR_BUTTON_ONLY;
           dnsServer.stop();
@@ -685,6 +655,7 @@ get_imu_data();
    //       WLED::instance().enableWiFi();
    //       apActive = true;
   // }    
+     #endif
 ///////////////////////////////////////////////////////
 
   }// end of start up 
@@ -703,11 +674,6 @@ get_imu_data();
     if ( client_numb != 0 ){
     return; 
     }
-
-     if (accel_test == false){
-      test_imu();
-      return;
-     }
 
     usermod_loop = ((millis()) - usermod_loop_time_last);
     usermod_loop_time_last = millis();
