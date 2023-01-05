@@ -125,7 +125,7 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT  118
+#define MODE_COUNT  121
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -850,11 +850,10 @@ class WS2812FX {
       mode_candy_cane(void),
       mode_blends(void),
       mode_tv_simulator(void),
-      mode_dynamic_smooth(void);
-
-      mode_display_battery(void);
-      mode_display_duty_cycle(void);
-      mode_display_tire_psi(void);
+      mode_dynamic_smooth(void),
+      mode_display_battery(void),
+      mode_display_duty_cycle(void),
+      mode_display_tire_psi(void),
       mode_display_trail_ruffness(void);
 
   private:

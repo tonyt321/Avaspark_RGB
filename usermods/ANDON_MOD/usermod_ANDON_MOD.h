@@ -736,7 +736,7 @@ get_imu_data();
     imu_inactivity = false;
   applyPreset(3);
 
-if (filteredz < -10 || /* filteredz < 0 */ ){upside_down = true;}
+if (filteredz < -10 /* ||  filteredz < 0 */ ){upside_down = true;}
 if (filteredy < -20){side_right = true;}
 if (filteredy > 20){side_left = true;}
   }
