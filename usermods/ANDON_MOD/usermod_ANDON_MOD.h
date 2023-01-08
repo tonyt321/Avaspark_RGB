@@ -70,40 +70,46 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
   int blink_app_lights = 0;
   unsigned long blink_app_lights_timing;
 
-
   bool stock = true;
-  bool accel_test = true;
 
-  unsigned int free_fall_duration = 5; // inches fallen
-  unsigned int free_fall_threshold = 35; // Recommended 10 s
   unsigned int free_fall_preset_time = 3; // animation length in sec
   unsigned int free_fall_preset = 1; // preset after free fall
   unsigned long free_fall_milisec; // for tracking how much time has past for free_fall animation preset
+  bool imu_free_fall = false;
+  
+  int rawx , rawy , rawz;
+  int filteredx , filteredy , filteredz;
+  int normx , normy , normz;
 
-  int rawx;
-  int rawy;
-  int rawz;
+  int roll , pitch;   //unused
+  int froll , fpitch;  //unused
 
-  int normx;
-  int normy;
-  int normz;
+  bool wifi_change = false;
 
-  int roll;
-  int pitch;
-  int froll;
-  int fpitch;
-
-  int filteredx;
-  int filteredy;
-  int filteredz;
+//////////////////////////////Global var for effects
+//int_display_tire_temp
+//int_display_battery
+//int_display_duty_cycle
+//int_display_tire_psi
+//int_display_trail_ruffness
+//int_imu_speed
 
   bool imu_activity = true;
   bool imu_inactivity = true;
-  bool imu_free_fall = false;
+  int imu_inactivity_count = 0;
+  int sec_before_inactive_dim = 25;
 
   bool side_left = false;   //how is the board on the ground
   bool side_right = false;
   bool upside_down = false;
+
+  int high_psi;   //unused yet
+  int low_psi;   //unused yet
+  int psi_search_time = 0;   //unused yet
+
+  int left_inactive_preset = 0;   //unused yet
+  int right_inactive_preset = 0;   //unused yet
+  String tpsm_mac = "82:EA:CA:31:0D:45";   //unused yet
 
   unsigned int trail_ruffness_max = 30;   // max activations per min for the bar graph
   unsigned long trail_ruffness = 0; //how ruff the trail is using active activations per min and how on pro version use motor disengadements
@@ -130,11 +136,15 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
   static const char _stock[];
   static const char _trail_ruffness_max[];
   static const char _free_fall_preset_time[];
-  static const char _free_fall_duration[];
-  static const char _free_fall_threshold[];
   static const char _free_fall_preset[];
-  static const char _accel_test[];
 
+  static const char _high_psi[];
+  static const char _low_psi[];
+  static const char _psi_search_time[];
+  static const char _sec_before_inactive_dim[];
+  static const char _left_inactive_preset[];
+  static const char _right_inactive_preset[];
+  static const char _tpsm_mac[];
 
 
 
@@ -259,6 +269,7 @@ handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&B=255&G2=50&IX=" + trail_percent 
             error_green = 0;
             }
         if (LIGHT_BAR_B == true){
+          imu_inactivity_count = 0;
           error_blue = 255;
           } else {
             error_blue = 0;
@@ -395,16 +406,22 @@ handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&B=255&G2=50&IX=" + trail_percent 
   // Inactivity
   if(adxl.triggered(interrupts, ADXL345_INACTIVITY)){
     imu_inactivity = true;
+    imu_inactivity_count = imu_inactivity_count + 1;
+if (filteredz < -10 /* ||  filteredz < 0 */ ){upside_down = true;}
+if (filteredy < -20){side_right = true;}
+if (filteredy > 20){side_left = true;}
   }
 
 
   // Activity
   if(adxl.triggered(interrupts, ADXL345_ACTIVITY)){
+    imu_inactivity_count = 0;
+    imu_inactivity = false;
     imu_activity = true;
     board_upright();
   }
 
-  if (filteredz > 100){ // if board is upright set board possition back to default
+  if (filteredz > 10){ // if board is upright set board possition back to default
 board_upright();
 }
 
@@ -417,6 +434,38 @@ board_upright();
   upside_down = false;
   }
 
+  void wifi_on(bool wifion){
+
+      if (wifi_change == wifion){
+        return;
+      }
+
+     if (wifion == false){ 
+      //////////////////////////////////////////////
+          apBehavior = AP_BEHAVIOR_BUTTON_ONLY;
+          dnsServer.stop();
+          WiFi.softAPdisconnect(true);
+          apActive = false;                       // Disable Wifi
+          WLED::instance().initAP(false);
+          WLED::instance().disableWiFi();
+          WLED::instance().handleConnection();
+      ///////////////////////////////////////////////
+                                                       // enable bluetooth
+      ///////////////////////////////////////////////
+   } else {
+    //////////////////////////////////////////////
+                                                    //disable bluetooth
+    //////////////////////////////////////////////
+          apBehavior = AP_BEHAVIOR_ALWAYS;
+          WLED::instance().initAP(true);
+          WLED::instance().enableWiFi();         //enable wifi
+          apActive = true;
+          WLED::instance().initAP(true);
+          WLED::instance().handleConnection();
+    //////////////////////////////////////////////
+   } 
+   wifi_change = wifion;   
+  }
 
   void get_front_light()
   {
@@ -565,8 +614,8 @@ public:
  
   // Set values for what is considered FREE FALL (0-255)
   adxl.setFreeFallThreshold(7);       // (5 - 9) recommended - 62.5mg per increment
-  //int fall_sec = ((sqrt(2 * (free_fall_duration * 25400)/ 981))*2);  // convert inches fallen to ms fallen devided by 5
-  adxl.setFreeFallDuration((sqrt((free_fall_duration * 50800)/ 981))*2);       // (20 - 70) recommended - 5ms per increment
+  //int fall_sec = ((sqrt((free_fall_inches * 50800)/ 981))*2);  // convert inches fallen to ms fallen devided by 5
+  adxl.setFreeFallDuration(30);       // (20 - 70) recommended - 5ms per increment
  
   // Setting all interupts to take place on INT1 pin
   adxl.setImportantInterruptMapping(1, 1, 1, 1, 1);     // Sets "adxl.setEveryInterruptMapping(single tap, double tap, free fall, activity, inactivity);" 
@@ -583,39 +632,7 @@ public:
    // adxl.setFIFOMode("FIFO"); //four available modes - Bypass, FIFO, Stream and Trigger.
    // adxl.set_bw(ADXL345_BW_25);         //set bitrate
 
-/*
-///////////////////////////////////turn AP on copied from wled>wled.cpp
-  escapedMac = WiFi.macAddress();
-  escapedMac.replace(":", "");
-  escapedMac.toLowerCase();
-  if (!apSSID[0])
-    strcpy_P(apSSID, PSTR(("Andon-" + escapedMac).c_str ()));
-  DEBUG_PRINT(F("Opening access point "));
-  DEBUG_PRINTLN(apSSID);
-  WiFi.softAPConfig(IPAddress(4, 3, 2, 1), IPAddress(4, 3, 2, 1), IPAddress(255, 255, 255, 0));
-  WiFi.softAP(apSSID, apPass, apChannel);
 
-
-//////////////////////////////////////////////////start wifi and portal
-    DEBUG_PRINTLN(F("Init AP interfaces"));
-    server.begin();
-    if (udpPort > 0 && udpPort != ntpLocalPort) {
-      udpConnected = notifierUdp.begin(udpPort);
-    }
-    if (udpRgbPort > 0 && udpRgbPort != ntpLocalPort && udpRgbPort != udpPort) {
-      udpRgbConnected = rgbUdp.begin(udpRgbPort);
-    }
-    if (udpPort2 > 0 && udpPort2 != ntpLocalPort && udpPort2 != udpPort && udpPort2 != udpRgbPort) {
-      udp2Connected = notifier2Udp.begin(udpPort2);
-    }
-    e131.begin(false, e131Port, e131Universe, E131_MAX_UNIVERSE_COUNT);
-
-    dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
-    dnsServer.start(53, "*", WiFi.softAPIP());
-    apActive = true;
-/////////////////////////////////end of turn AP on
-
-*/
 
  
   #ifdef TEST_MODE
@@ -639,24 +656,15 @@ public:
 
 get_imu_data();
 get_imu_data(); // get imu data twice to populate filtered ints
+if (filteredz < -10 /* ||  filteredz < 0 */ ){upside_down = true;} //  only used out side of inactivity interupt because we cant wait in startup for that
 ///////////////////////////////////////////////////////  wifi
-   #ifndef TEST_MODE
-          if (filteredz < 0){ // if right side up stop wifi
-          apBehavior = AP_BEHAVIOR_BUTTON_ONLY;
-          dnsServer.stop();
-          WiFi.softAPdisconnect(true);
-          apActive = false;
-         // WLED::instance().initAP(false);
-         // WLED::instance().disableWiFi();
-          WLED::instance().handleConnection();
-   }// else {
-   //       apBehavior = AP_BEHAVIOR_ALWAYS;
-   //       WLED::instance().initAP(true);
-   //       WLED::instance().enableWiFi();
-   //       apActive = true;
-  // }    
-     #endif
-///////////////////////////////////////////////////////
+  //#ifndef TEST_MODE
+   //if (upside_down == true){
+    wifi_on(true);
+  // } else {
+  //  wifi_on(false);
+  // }
+  //#endif
 
   }// end of start up 
 
@@ -664,9 +672,6 @@ get_imu_data(); // get imu data twice to populate filtered ints
   {
 
     if (strip.isUpdating()){return;}
-      
-
-
 
     wifi_sta_list_t stationList;  //skip looping code if user is on wifi so we dont change stuff while they are editing
     esp_wifi_ap_get_sta_list(&stationList);
@@ -675,8 +680,6 @@ get_imu_data(); // get imu data twice to populate filtered ints
     return; 
     }
 
-    usermod_loop = ((millis()) - usermod_loop_time_last);
-    usermod_loop_time_last = millis();
 
    #ifndef TEST_MODE // test mode skip get direction from front light becuase we dont have the hardware on test esp32
    get_front_light();  // handels truning on/off lights and forward/back detection
@@ -700,84 +703,42 @@ get_imu_data(); // get imu data twice to populate filtered ints
 get_imu_data();
 //flash lights to turn on wifi
    
-   if (blink_app_lights >= 3){ //if lights in Onewheel app are flashed on off 3 times
-          apBehavior = AP_BEHAVIOR_ALWAYS;
-          WLED::instance().initAP(true);
-          WLED::instance().enableWiFi();
-          apActive = true;
-   }// else{
- //   if ( client_numb == 0 ){ // if no one is on the wifi
- //         apBehavior = AP_BEHAVIOR_BUTTON_ONLY;
- //         dnsServer.stop();
- //         WiFi.softAPdisconnect(true);
- //         apActive = false;
- //         WLED::instance().initAP(false);
- //         WLED::instance().disableWiFi();
- //               //WLED::instance().reset(); // reboots the esp
- //   }
- //  }                                                                                                                 
+ //  if (blink_app_lights >= 3){ //if lights in Onewheel app are flashed on off 3 times
+ //      wifi_on(true);
+ //  } else{
+    //   wifi_on(false);
+  // }
 
 
-
-  
-
-
-/////////////////////////////////////// imu reactions
+/////////////////////////////////////// activity (used for trail detection) "interrupt"
 
   if (imu_activity)
   {
     imu_activity = false;
     trail_ruffness = trail_ruffness + 1;
-  applyPreset(1);
+    int_display_trail_ruffness = trail_ruffness;
+  //applyPreset(1);
   }
-
+/////////////////////////////////////////////////////inactivity "interrupt"
   if (imu_inactivity)
   {
     imu_inactivity = false;
-  applyPreset(3);
-
-if (filteredz < -10 /* ||  filteredz < 0 */ ){upside_down = true;}
-if (filteredy < -20){side_right = true;}
-if (filteredy > 20){side_left = true;}
+    if ((imu_inactivity_count * 5) >= (sec_before_inactive_dim)){
+        //dim lights here
+    }
+  //applyPreset(3);
   }
-
-    if (imu_free_fall)
+//////////////////////////////////////////////////////////////  free fall "interrupt"
+    if (imu_free_fall && (free_fall_preset_time != 0))
   {
-    //Serial.println("Free Fall Detected!");
-    imu_free_fall = false;
-    applyPreset(4);
-  }
-
-return;
-
-
-/////////////////////////////get this function working
-/*
-    if ((free_fall_preset_time != 0) && imu_free_fall == true){ // skip if free_fall_preset_time set to 0
     applyPreset(free_fall_preset);
     if ((free_fall_milisec + (free_fall_preset_time * 1000)) < millis()){
       imu_free_fall = false;
     }
-    return;  // returns loop if boot animation hasnt finished playing
-    }
-    
+    return;  // returns loop if free fall animation hasnt finished playing
+  }
+///////////////////////////////////////////////////////////
 
-/////////////////////////////////////// end of imu things
-if (imu_free_fall == true){
-applyPreset(free_fall_preset); //sets lights to the choosen preset for standard version
-return;
-}
-
-if (imu_activity == true){
-applyPreset(2); //sets lights to the choosen preset for standard version
-return;
-}
-
-if (imu_activity == false){
-applyPreset(3); 
-return;
-}
-*/
 
 
 
@@ -862,10 +823,6 @@ return;
       battery4.add(FRONT_LIGHT_W);                               //right side variable
       battery4.add(F(" WHITE GPIO read"));                      //right side thing
 
-                  JsonArray battery5 = user.createNestedArray("loop time");  //left side thing
-      battery5.add(usermod_loop);                               //right side variable
-      battery5.add(F(" ms"));                      //right side thing
-
                   JsonArray battery6 = user.createNestedArray("trail ruffness");  //left side thing
       battery6.add(trail_ruffness);                               //right side variable
       battery6.add(F(""));                      //right side thing
@@ -901,13 +858,17 @@ return;
     top[FPSTR(_backwards_preset)] = backwards_preset;  //int input
     top[FPSTR(_boot_preset)] = boot_preset;  //int input
     top[FPSTR(_boot_preset_time)] = boot_preset_time;  //int input
-    top[FPSTR(_free_fall_duration)] = free_fall_duration;  //int input
-    top[FPSTR(_free_fall_threshold)] = free_fall_threshold;  //int input
-    top[FPSTR(_free_fall_preset_time)] = free_fall_preset_time;  //int input
     top[FPSTR(_free_fall_preset)] = free_fall_preset;  //int input
     top[FPSTR(_trail_ruffness_max)] = trail_ruffness_max;  //int input
-    top[FPSTR(_accel_test)] = !accel_test;
-    
+    top[FPSTR(_high_psi)] = high_psi;  //int input
+    top[FPSTR(_low_psi)] = low_psi;  //int input
+    top[FPSTR(_psi_search_time)] = psi_search_time;  //int input
+    top[FPSTR(_tpsm_mac)] = tpsm_mac;  //int input
+    top[FPSTR(_left_inactive_preset)] = left_inactive_preset;  //int input
+    top[FPSTR(_right_inactive_preset)] = right_inactive_preset;  //int input
+    top[FPSTR(_sec_before_inactive_dim)] = sec_before_inactive_dim;  //int input
+
+      
 
     DEBUG_PRINTLN(F("Andon config saved."));
   }
@@ -943,13 +904,19 @@ return;
     boot_preset_time   = top[FPSTR(_boot_preset_time)] | boot_preset_time;     //int input
     stock            = !(top[FPSTR(_stock)] | !stock);       //bool
     free_fall_preset   = top[FPSTR(_free_fall_preset)] | free_fall_preset;     //int input
-    free_fall_preset_time   = top[FPSTR(_free_fall_preset_time)] | free_fall_preset_time;     //int input
-    free_fall_threshold   = top[FPSTR(_free_fall_threshold)] | free_fall_threshold;     //int input
-    free_fall_duration   = top[FPSTR(_free_fall_duration)] | free_fall_duration;     //int input
     trail_ruffness_max   = top[FPSTR(_trail_ruffness_max)] | trail_ruffness_max;     //int input
-    accel_test       = !(top[FPSTR(_accel_test)] | !accel_test);    //bool
+    high_psi   = top[FPSTR(_high_psi)] | high_psi;     //int input
+    low_psi   = top[FPSTR(_low_psi)] | low_psi;     //int input
+    psi_search_time   = top[FPSTR(_psi_search_time)] | psi_search_time;     //int input
+    left_inactive_preset   = top[FPSTR(_left_inactive_preset)] | left_inactive_preset;     //int input
+    right_inactive_preset   = top[FPSTR(_right_inactive_preset)] | right_inactive_preset;     //int input
+    sec_before_inactive_dim   = top[FPSTR(_sec_before_inactive_dim)] | sec_before_inactive_dim;     //int input
+    tpsm_mac   = top[FPSTR(_tpsm_mac)] | tpsm_mac;     //int input
     DEBUG_PRINT(FPSTR(_name));
     DEBUG_PRINTLN(F(" config (re)loaded."));
+
+
+
 
     // use "return !top["newestParameter"].isNull();" when updating Usermod with new features
     return true;
@@ -975,14 +942,21 @@ const char UsermodAndon::_motor_duty_fast[] PROGMEM = "fast motor duty %";
 #else
 const char UsermodAndon::_choosen_preset[] PROGMEM = "Preset animation to use while riding";
 #endif
+const char UsermodAndon::_sec_before_inactive_dim[] PROGMEM = "How long untill inavtive board dims lights";
+const char UsermodAndon::_left_inactive_preset[] PROGMEM = "Preset to show when board is inactive on left side";
+const char UsermodAndon::_right_inactive_preset[] PROGMEM = "Preset to show when board is inactive on right side";
 const char UsermodAndon::_backwards_preset[] PROGMEM = "Preset animation to use when riding backwards";
+
 const char UsermodAndon::_boot_preset[] PROGMEM = "Preset animation to use as boot animation";
 const char UsermodAndon::_boot_preset_time[] PROGMEM = "How long is boot preset in sec (0 to disable)";
 
 const char UsermodAndon::_free_fall_preset[] PROGMEM = "Preset to display after a free fall";
 const char UsermodAndon::_free_fall_preset_time[] PROGMEM = "How long is free fall preset in sec (0 to disable)";
 
-const char UsermodAndon::_free_fall_threshold[] PROGMEM = "how sensitive is a free fall detection 30 -60 g";
-const char UsermodAndon::_free_fall_duration[] PROGMEM = "inches for free fall detection";
 const char UsermodAndon::_trail_ruffness_max[] PROGMEM = "max trail ruffness for bar graph";
-const char UsermodAndon::_accel_test[] PROGMEM = "IMU test";
+
+const char UsermodAndon::_high_psi[] PROGMEM = "Highest PSI to display";
+const char UsermodAndon::_low_psi[] PROGMEM = "Lowest PSI to display";
+const char UsermodAndon::_psi_search_time[] PROGMEM = "How long to search for Tire pressure sensor before turnong on wifi";
+const char UsermodAndon::_tpsm_mac[] PROGMEM = "Tire Pressure Sensor bluetooth MAC address";
+

@@ -221,8 +221,16 @@ using PSRAMDynamicJsonDocument = BasicJsonDocument<PSRAM_Allocator>;
 #endif
 
 // Global Variable definitions
+WLED_GLOBAL  int int_display_battery        _INIT(0);
+WLED_GLOBAL  int int_display_duty_cycle     _INIT(0);
+WLED_GLOBAL  int int_display_tire_psi       _INIT(0);
+WLED_GLOBAL  int int_display_tire_temp       _INIT(0);
+WLED_GLOBAL  int int_display_trail_ruffness _INIT(0);
+WLED_GLOBAL  int int_imu_speed _INIT(0);
+
+
 WLED_GLOBAL char versionString[] _INIT(TOSTRING(WLED_VERSION));
-#define WLED_CODENAME MODEL + (if (PRO_VERSION == true){"Pro"} else {"Standard"}) //MODEL code name gt onewheel name
+#define WLED_CODENAME MODEL //MODEL code name gt onewheel name
 
 // AP and OTA default passwords (for maximum security change them!)
 WLED_GLOBAL char apPass[65]  _INIT(DEFAULT_AP_PASS);
@@ -693,6 +701,7 @@ class WLED {
   
 private:
   bool wifiDisabled = false;
+
 
 public:
   WLED();

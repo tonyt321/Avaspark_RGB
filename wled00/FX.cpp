@@ -4252,7 +4252,7 @@ uint16_t WS2812FX::mode_aurora(void) {
  */
 uint16_t WS2812FX::mode_display_battery(void) {
 
-	uint8_t percent = MAX(0, MIN(200, SEGMENT.intensity));
+	uint8_t percent = MAX(0, MIN(200, int_display_battery));
 	uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
                                          : SEGLEN * (200 - percent) / 100.0;
   
@@ -4296,7 +4296,7 @@ uint16_t WS2812FX::mode_display_battery(void) {
  */
 uint16_t WS2812FX::mode_display_duty_cycle(void) {
 
-	uint8_t percent = MAX(0, MIN(200, SEGMENT.intensity));
+	uint8_t percent = MAX(0, MIN(200, int_display_duty_cycle));
 	uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
                                          : SEGLEN * (200 - percent) / 100.0;
   
@@ -4340,7 +4340,7 @@ uint16_t WS2812FX::mode_display_duty_cycle(void) {
  */
 uint16_t WS2812FX::mode_display_tire_psi(void) {
 
-	uint8_t percent = MAX(0, MIN(200, SEGMENT.intensity));
+	uint8_t percent = MAX(0, MIN(200, int_display_tire_psi));
 	uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
                                          : SEGLEN * (200 - percent) / 100.0;
   
@@ -4384,7 +4384,7 @@ uint16_t WS2812FX::mode_display_tire_psi(void) {
  */
 uint16_t WS2812FX::mode_display_trail_ruffness(void) {
 
-	uint8_t percent = MAX(0, MIN(200, SEGMENT.intensity));
+	uint8_t percent = MAX(0, MIN(200, int_display_trail_ruffness));
 	uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
                                          : SEGLEN * (200 - percent) / 100.0;
   
