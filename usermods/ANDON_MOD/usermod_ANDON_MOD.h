@@ -84,7 +84,7 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
   int roll , pitch;   //unused
   int froll , fpitch;  //unused
 
-  bool wifi_change = false;
+  bool wifi_change = true;
 
 //////////////////////////////Global var for effects
 //int_display_tire_temp
@@ -215,24 +215,7 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
 
 
 
-    //use IMU data input to quantify the following:
-    // 1.) trail chunkiness - a function of z-variance detected by the IMU, measured over a long timescale
-    // 2.) altitude gain/loss - a function of the average slope of z acceleration measured over long distances
-    // 3.) average speed - a function of how high/low the average speed of a run is
-    // 4.) motor disengagement - worse trails require you to dismount more frequently, better trails do not. count 
-    // how many times the motor disengages during a given run
-    //how is the start/stop of a trail or segment measured?
-    //all of the above calculation results in a color assignment to the trail run, like how trails are rated green, blue, black, etc
-    void trailRate() {
-     float activations_per_min = (trail_ruffness / (millis() * 6000));
-     int trail_percent = (activations_per_min / trail_ruffness_max);
 
-handleSet(nullptr, "win&SB=255&FX=98&SM=0&SS=0&B=255&G2=50&IX=0" , false );
-handleSet(nullptr, "win&SB=255&FX=98&SM=0&SS=0&B=255&G2=50&IX=" + trail_percent , false );
-
-handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&B=255&G2=50&IX=0" , false );
-handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&B=255&G2=50&IX=" + trail_percent , false );
-    }
 
   #ifdef PRO_VERSION
     void MOTOR_ENGAGED() //determine if the motor is engaged (used as trigger for board-idle animations)
@@ -368,7 +351,18 @@ handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&B=255&G2=50&IX=" + trail_percent 
   }
 #endif
 
-
+    //use IMU data input to quantify the following:
+    // 1.) trail chunkiness - a function of z-variance detected by the IMU, measured over a long timescale
+    // 2.) altitude gain/loss - a function of the average slope of z acceleration measured over long distances
+    // 3.) average speed - a function of how high/low the average speed of a run is
+    // 4.) motor disengagement - worse trails require you to dismount more frequently, better trails do not. count 
+    // how many times the motor disengages during a given run
+    //how is the start/stop of a trail or segment measured?
+    //all of the above calculation results in a color assignment to the trail run, like how trails are rated green, blue, black, etc
+    void trailRate() {
+     float activations_per_min = (trail_ruffness / (millis() * 6000));
+     int_display_trail_ruffness = (activations_per_min / trail_ruffness_max);
+    }
 
   void get_imu_data(){
 
@@ -653,17 +647,13 @@ public:
 
    }
 
-
+get_imu_data();
 get_imu_data();
 get_imu_data(); // get imu data twice to populate filtered ints
 if (filteredz < -10 /* ||  filteredz < 0 */ ){upside_down = true;} //  only used out side of inactivity interupt because we cant wait in startup for that
 ///////////////////////////////////////////////////////  wifi
   //#ifndef TEST_MODE
-   //if (upside_down == true){
-    wifi_on(true);
-  // } else {
-  //  wifi_on(false);
-  // }
+    wifi_on(false);
   //#endif
 
   }// end of start up 
@@ -672,6 +662,14 @@ if (filteredz < -10 /* ||  filteredz < 0 */ ){upside_down = true;} //  only used
   {
 
     if (strip.isUpdating()){return;}
+
+
+    
+   if (upside_down == true){
+    wifi_on(true);
+    return;
+   }
+
 
     wifi_sta_list_t stationList;  //skip looping code if user is on wifi so we dont change stuff while they are editing
     esp_wifi_ap_get_sta_list(&stationList);
@@ -716,7 +714,6 @@ get_imu_data();
   {
     imu_activity = false;
     trail_ruffness = trail_ruffness + 1;
-    int_display_trail_ruffness = trail_ruffness;
   //applyPreset(1);
   }
 /////////////////////////////////////////////////////inactivity "interrupt"
