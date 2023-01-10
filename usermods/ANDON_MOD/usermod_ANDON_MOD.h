@@ -70,40 +70,46 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
   int blink_app_lights = 0;
   unsigned long blink_app_lights_timing;
 
-
   bool stock = true;
-  bool accel_test = true;
 
-  unsigned int free_fall_duration = 5; // inches fallen
-  unsigned int free_fall_threshold = 35; // Recommended 10 s
   unsigned int free_fall_preset_time = 3; // animation length in sec
   unsigned int free_fall_preset = 1; // preset after free fall
   unsigned long free_fall_milisec; // for tracking how much time has past for free_fall animation preset
+  bool imu_free_fall = false;
+  
+  int rawx , rawy , rawz;
+  int filteredx , filteredy , filteredz;
+  int normx , normy , normz;
 
-  int rawx;
-  int rawy;
-  int rawz;
+  int roll , pitch;   //unused
+  int froll , fpitch;  //unused
 
-  int normx;
-  int normy;
-  int normz;
+  bool wifi_change = true;
 
-  int roll;
-  int pitch;
-  int froll;
-  int fpitch;
-
-  int filteredx;
-  int filteredy;
-  int filteredz;
+//////////////////////////////Global var for effects
+//int_display_tire_temp
+//int_display_battery
+//int_display_duty_cycle
+//int_display_tire_psi
+//int_display_trail_ruffness
+//int_imu_speed
 
   bool imu_activity = true;
   bool imu_inactivity = true;
-  bool imu_free_fall = false;
+  int imu_inactivity_count = 0;
+  int sec_before_inactive_dim = 25;
 
   bool side_left = false;   //how is the board on the ground
   bool side_right = false;
   bool upside_down = false;
+
+  int high_psi;   //unused yet
+  int low_psi;   //unused yet
+  int psi_search_time = 0;   //unused yet
+
+  int left_inactive_preset = 0;   //unused yet
+  int right_inactive_preset = 0;   //unused yet
+  String tpsm_mac = "82:EA:CA:31:0D:45";   //unused yet
 
   unsigned int trail_ruffness_max = 30;   // max activations per min for the bar graph
   unsigned long trail_ruffness = 0; //how ruff the trail is using active activations per min and how on pro version use motor disengadements
@@ -130,11 +136,15 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
   static const char _stock[];
   static const char _trail_ruffness_max[];
   static const char _free_fall_preset_time[];
-  static const char _free_fall_duration[];
-  static const char _free_fall_threshold[];
   static const char _free_fall_preset[];
-  static const char _accel_test[];
 
+  static const char _high_psi[];
+  static const char _low_psi[];
+  static const char _psi_search_time[];
+  static const char _sec_before_inactive_dim[];
+  static const char _left_inactive_preset[];
+  static const char _right_inactive_preset[];
+  static const char _tpsm_mac[];
 
 
 
@@ -205,24 +215,7 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
 
 
 
-    //use IMU data input to quantify the following:
-    // 1.) trail chunkiness - a function of z-variance detected by the IMU, measured over a long timescale
-    // 2.) altitude gain/loss - a function of the average slope of z acceleration measured over long distances
-    // 3.) average speed - a function of how high/low the average speed of a run is
-    // 4.) motor disengagement - worse trails require you to dismount more frequently, better trails do not. count 
-    // how many times the motor disengages during a given run
-    //how is the start/stop of a trail or segment measured?
-    //all of the above calculation results in a color assignment to the trail run, like how trails are rated green, blue, black, etc
-    void trailRate() {
-     float activations_per_min = (trail_ruffness / (millis() * 6000));
-     int trail_percent = (activations_per_min / trail_ruffness_max);
 
-handleSet(nullptr, "win&SB=255&FX=98&SM=0&SS=0&B=255&G2=50&IX=0" , false );
-handleSet(nullptr, "win&SB=255&FX=98&SM=0&SS=0&B=255&G2=50&IX=" + trail_percent , false );
-
-handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&B=255&G2=50&IX=0" , false );
-handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&B=255&G2=50&IX=" + trail_percent , false );
-    }
 
   #ifdef PRO_VERSION
     void MOTOR_ENGAGED() //determine if the motor is engaged (used as trigger for board-idle animations)
@@ -259,6 +252,7 @@ handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&B=255&G2=50&IX=" + trail_percent 
             error_green = 0;
             }
         if (LIGHT_BAR_B == true){
+          imu_inactivity_count = 0;
           error_blue = 255;
           } else {
             error_blue = 0;
@@ -357,7 +351,18 @@ handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&B=255&G2=50&IX=" + trail_percent 
   }
 #endif
 
-
+    //use IMU data input to quantify the following:
+    // 1.) trail chunkiness - a function of z-variance detected by the IMU, measured over a long timescale
+    // 2.) altitude gain/loss - a function of the average slope of z acceleration measured over long distances
+    // 3.) average speed - a function of how high/low the average speed of a run is
+    // 4.) motor disengagement - worse trails require you to dismount more frequently, better trails do not. count 
+    // how many times the motor disengages during a given run
+    //how is the start/stop of a trail or segment measured?
+    //all of the above calculation results in a color assignment to the trail run, like how trails are rated green, blue, black, etc
+    void trailRate() {
+     float activations_per_min = (trail_ruffness / (millis() * 6000));
+     int_display_trail_ruffness = (activations_per_min / trail_ruffness_max);
+    }
 
   void get_imu_data(){
 
@@ -395,55 +400,66 @@ handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&B=255&G2=50&IX=" + trail_percent 
   // Inactivity
   if(adxl.triggered(interrupts, ADXL345_INACTIVITY)){
     imu_inactivity = true;
+    imu_inactivity_count = imu_inactivity_count + 1;
+if (filteredz < -10 /* ||  filteredz < 0 */ ){upside_down = true;}
+if (filteredy < -20){side_right = true;}
+if (filteredy > 20){side_left = true;}
   }
 
-  if (filteredz > 100){ // if board is upright set board possition back to default
-  side_left = false;  
-  side_right = false;
-  upside_down = false;
-}
 
-
-  
   // Activity
   if(adxl.triggered(interrupts, ADXL345_ACTIVITY)){
+    imu_inactivity_count = 0;
+    imu_inactivity = false;
     imu_activity = true;
-    trail_ruffness = trail_ruffness + 1;
+    board_upright();
   }
-  
+
+  if (filteredz > 10){ // if board is upright set board possition back to default
+board_upright();
+}
 
   } // end of get IMU data
 
- void test_imu(){
 
-         handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
-         String redstring = "win&SB=255&FX=98&SM=1&SS=1&IX=0&R=" + filteredx;   //combining multiple strings at once can result in unpredictable outcomes
-         String greenstring = "&G=" + filteredy;
-         String bluestring = "&B=" + filteredz;
-         String together1 = redstring + greenstring;
-         String together2 = together1 + bluestring;
-         if(imu_free_fall || imu_activity || imu_inactivity){
-         together2 = together2 + "&W=255";
-         }else{
-         together2 = together2 + "&W=0";
-         }
+  void board_upright(){
+  side_left = false;  
+  side_right = false;
+  upside_down = false;
+  }
 
-         handleSet(nullptr, together2 , false );
-         
-         handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
-         String redstring1 = "win&SB=255&FX=98&SM=0&SS=0&IX=0&R=" + filteredx;  //combining multiple strings at once can result in unpredictable outcomes
-         String greenstring1 = "&G=" + filteredy;
-         String bluestring1 = "&B=" + filteredz;
-         String together3 = redstring + greenstring;
-         String together4 = together1 + bluestring;
-         if(imu_free_fall || imu_activity || imu_inactivity){
-         together2 = together2 + "&W=255";
-         }else{
-         together2 = together2 + "&W=0";
-         }
-         handleSet(nullptr, together4 , false );
+  void wifi_on(bool wifion){
 
- }
+      if (wifi_change == wifion){
+        return;
+      }
+
+     if (wifion == false){ 
+      //////////////////////////////////////////////
+          apBehavior = AP_BEHAVIOR_BUTTON_ONLY;
+          dnsServer.stop();
+          WiFi.softAPdisconnect(true);
+          apActive = false;                       // Disable Wifi
+          WLED::instance().initAP(false);
+          WLED::instance().disableWiFi();
+          WLED::instance().handleConnection();
+      ///////////////////////////////////////////////
+                                                       // enable bluetooth
+      ///////////////////////////////////////////////
+   } else {
+    //////////////////////////////////////////////
+                                                    //disable bluetooth
+    //////////////////////////////////////////////
+          apBehavior = AP_BEHAVIOR_ALWAYS;
+          WLED::instance().initAP(true);
+          WLED::instance().enableWiFi();         //enable wifi
+          apActive = true;
+          WLED::instance().initAP(true);
+          WLED::instance().handleConnection();
+    //////////////////////////////////////////////
+   } 
+   wifi_change = wifion;   
+  }
 
   void get_front_light()
   {
@@ -592,8 +608,8 @@ public:
  
   // Set values for what is considered FREE FALL (0-255)
   adxl.setFreeFallThreshold(7);       // (5 - 9) recommended - 62.5mg per increment
-  //int fall_sec = ((sqrt(2 * (free_fall_duration * 25400)/ 981))*2);  // convert inches fallen to ms fallen devided by 5
-  adxl.setFreeFallDuration((sqrt((free_fall_duration * 50800)/ 981))*2);       // (20 - 70) recommended - 5ms per increment
+  //int fall_sec = ((sqrt((free_fall_inches * 50800)/ 981))*2);  // convert inches fallen to ms fallen devided by 5
+  adxl.setFreeFallDuration(30);       // (20 - 70) recommended - 5ms per increment
  
   // Setting all interupts to take place on INT1 pin
   adxl.setImportantInterruptMapping(1, 1, 1, 1, 1);     // Sets "adxl.setEveryInterruptMapping(single tap, double tap, free fall, activity, inactivity);" 
@@ -604,45 +620,13 @@ public:
   adxl.InactivityINT(1);
   adxl.ActivityINT(1);
   adxl.FreeFallINT(1);
-  adxl.doubleTapINT(1);
-  adxl.singleTapINT(1);
+  adxl.doubleTapINT(0);
+  adxl.singleTapINT(0);
 
    // adxl.setFIFOMode("FIFO"); //four available modes - Bypass, FIFO, Stream and Trigger.
-   // adxl.set_bw(ADXL345_BW_1600);         //set bitrate
-
-/*
-///////////////////////////////////turn AP on copied from wled>wled.cpp
-  escapedMac = WiFi.macAddress();
-  escapedMac.replace(":", "");
-  escapedMac.toLowerCase();
-  if (!apSSID[0])
-    strcpy_P(apSSID, PSTR(("Andon-" + escapedMac).c_str ()));
-  DEBUG_PRINT(F("Opening access point "));
-  DEBUG_PRINTLN(apSSID);
-  WiFi.softAPConfig(IPAddress(4, 3, 2, 1), IPAddress(4, 3, 2, 1), IPAddress(255, 255, 255, 0));
-  WiFi.softAP(apSSID, apPass, apChannel);
+   // adxl.set_bw(ADXL345_BW_25);         //set bitrate
 
 
-//////////////////////////////////////////////////start wifi and portal
-    DEBUG_PRINTLN(F("Init AP interfaces"));
-    server.begin();
-    if (udpPort > 0 && udpPort != ntpLocalPort) {
-      udpConnected = notifierUdp.begin(udpPort);
-    }
-    if (udpRgbPort > 0 && udpRgbPort != ntpLocalPort && udpRgbPort != udpPort) {
-      udpRgbConnected = rgbUdp.begin(udpRgbPort);
-    }
-    if (udpPort2 > 0 && udpPort2 != ntpLocalPort && udpPort2 != udpPort && udpPort2 != udpRgbPort) {
-      udp2Connected = notifier2Udp.begin(udpPort2);
-    }
-    e131.begin(false, e131Port, e131Universe, E131_MAX_UNIVERSE_COUNT);
-
-    dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
-    dnsServer.start(53, "*", WiFi.softAPIP());
-    apActive = true;
-/////////////////////////////////end of turn AP on
-
-*/
 
  
   #ifdef TEST_MODE
@@ -663,18 +647,29 @@ public:
 
    }
 
+get_imu_data();
+get_imu_data();
+get_imu_data(); // get imu data twice to populate filtered ints
+if (filteredz < -10 /* ||  filteredz < 0 */ ){upside_down = true;} //  only used out side of inactivity interupt because we cant wait in startup for that
+///////////////////////////////////////////////////////  wifi
+  //#ifndef TEST_MODE
+    wifi_on(false);
+  //#endif
+
   }// end of start up 
 
   void loop()
   {
 
-  //  if (strip.isUpdating())
-   //   return;
+    if (strip.isUpdating()){return;}
 
-     if (accel_test == false){
-      test_imu();
-      return;
-     }
+
+    
+   if (upside_down == true){
+    wifi_on(true);
+    return;
+   }
+
 
     wifi_sta_list_t stationList;  //skip looping code if user is on wifi so we dont change stuff while they are editing
     esp_wifi_ap_get_sta_list(&stationList);
@@ -683,10 +678,6 @@ public:
     return; 
     }
 
-
-
-    usermod_loop = ((millis()) - usermod_loop_time_last);
-    usermod_loop_time_last = millis();
 
    #ifndef TEST_MODE // test mode skip get direction from front light becuase we dont have the hardware on test esp32
    get_front_light();  // handels truning on/off lights and forward/back detection
@@ -707,77 +698,44 @@ public:
      }
 
 
-//flash lights to turn on wifi
-/*
-   if ((blink_app_lights >= 3) || (filteredz > 0)){ //if upside down or lights in Onewheel app are flashed on off 3 times
-    // turn wifi on
-   }else{
-    if ( client_numb == 0 ){ // if no one is on the wifi
-    // turn wifi off
-    }
-   }
-*/
-
-  
-
-
-/////////////////////////////////////// imu things
-
 get_imu_data();
+//flash lights to turn on wifi
+   
+ //  if (blink_app_lights >= 3){ //if lights in Onewheel app are flashed on off 3 times
+ //      wifi_on(true);
+ //  } else{
+    //   wifi_on(false);
+  // }
+
+
+/////////////////////////////////////// activity (used for trail detection) "interrupt"
 
   if (imu_activity)
   {
     imu_activity = false;
-  applyPreset(1);
+    trail_ruffness = trail_ruffness + 1;
+  //applyPreset(1);
   }
-
+/////////////////////////////////////////////////////inactivity "interrupt"
   if (imu_inactivity)
   {
     imu_inactivity = false;
-  applyPreset(3);
-
-if (filteredz < -100){upside_down = true;}
-if (filteredy < -200){side_right = true;}
-if (filteredy > 200){side_left = true;}
+    if ((imu_inactivity_count * 5) >= (sec_before_inactive_dim)){
+        //dim lights here
+    }
+  //applyPreset(3);
   }
-
-    if (imu_free_fall)
+//////////////////////////////////////////////////////////////  free fall "interrupt"
+    if (imu_free_fall && (free_fall_preset_time != 0))
   {
-    //Serial.println("Free Fall Detected!");
-    imu_free_fall = false;
-applyPreset(4);
-  }
-
-return;
-
-
-/////////////////////////////get this function working
-/*
-    if ((free_fall_preset_time != 0) && imu_free_fall == true){ // skip if free_fall_preset_time set to 0
     applyPreset(free_fall_preset);
     if ((free_fall_milisec + (free_fall_preset_time * 1000)) < millis()){
       imu_free_fall = false;
     }
-    return;  // returns loop if boot animation hasnt finished playing
-    }
-    
+    return;  // returns loop if free fall animation hasnt finished playing
+  }
+///////////////////////////////////////////////////////////
 
-/////////////////////////////////////// end of imu things
-if (imu_free_fall == true){
-applyPreset(free_fall_preset); //sets lights to the choosen preset for standard version
-return;
-}
-
-if (imu_activity == true){
-applyPreset(2); //sets lights to the choosen preset for standard version
-return;
-}
-
-if (imu_activity == false){
-applyPreset(3); 
-return;
-}
-*/
 
 
 
@@ -862,10 +820,6 @@ return;
       battery4.add(FRONT_LIGHT_W);                               //right side variable
       battery4.add(F(" WHITE GPIO read"));                      //right side thing
 
-                  JsonArray battery5 = user.createNestedArray("loop time");  //left side thing
-      battery5.add(usermod_loop);                               //right side variable
-      battery5.add(F(" ms"));                      //right side thing
-
                   JsonArray battery6 = user.createNestedArray("trail ruffness");  //left side thing
       battery6.add(trail_ruffness);                               //right side variable
       battery6.add(F(""));                      //right side thing
@@ -901,13 +855,17 @@ return;
     top[FPSTR(_backwards_preset)] = backwards_preset;  //int input
     top[FPSTR(_boot_preset)] = boot_preset;  //int input
     top[FPSTR(_boot_preset_time)] = boot_preset_time;  //int input
-    top[FPSTR(_free_fall_duration)] = free_fall_duration;  //int input
-    top[FPSTR(_free_fall_threshold)] = free_fall_threshold;  //int input
-    top[FPSTR(_free_fall_preset_time)] = free_fall_preset_time;  //int input
     top[FPSTR(_free_fall_preset)] = free_fall_preset;  //int input
     top[FPSTR(_trail_ruffness_max)] = trail_ruffness_max;  //int input
-    top[FPSTR(_accel_test)] = !accel_test;
-    
+    top[FPSTR(_high_psi)] = high_psi;  //int input
+    top[FPSTR(_low_psi)] = low_psi;  //int input
+    top[FPSTR(_psi_search_time)] = psi_search_time;  //int input
+    top[FPSTR(_tpsm_mac)] = tpsm_mac;  //int input
+    top[FPSTR(_left_inactive_preset)] = left_inactive_preset;  //int input
+    top[FPSTR(_right_inactive_preset)] = right_inactive_preset;  //int input
+    top[FPSTR(_sec_before_inactive_dim)] = sec_before_inactive_dim;  //int input
+
+      
 
     DEBUG_PRINTLN(F("Andon config saved."));
   }
@@ -943,13 +901,19 @@ return;
     boot_preset_time   = top[FPSTR(_boot_preset_time)] | boot_preset_time;     //int input
     stock            = !(top[FPSTR(_stock)] | !stock);       //bool
     free_fall_preset   = top[FPSTR(_free_fall_preset)] | free_fall_preset;     //int input
-    free_fall_preset_time   = top[FPSTR(_free_fall_preset_time)] | free_fall_preset_time;     //int input
-    free_fall_threshold   = top[FPSTR(_free_fall_threshold)] | free_fall_threshold;     //int input
-    free_fall_duration   = top[FPSTR(_free_fall_duration)] | free_fall_duration;     //int input
     trail_ruffness_max   = top[FPSTR(_trail_ruffness_max)] | trail_ruffness_max;     //int input
-    accel_test       = !(top[FPSTR(_accel_test)] | !accel_test);    //bool
+    high_psi   = top[FPSTR(_high_psi)] | high_psi;     //int input
+    low_psi   = top[FPSTR(_low_psi)] | low_psi;     //int input
+    psi_search_time   = top[FPSTR(_psi_search_time)] | psi_search_time;     //int input
+    left_inactive_preset   = top[FPSTR(_left_inactive_preset)] | left_inactive_preset;     //int input
+    right_inactive_preset   = top[FPSTR(_right_inactive_preset)] | right_inactive_preset;     //int input
+    sec_before_inactive_dim   = top[FPSTR(_sec_before_inactive_dim)] | sec_before_inactive_dim;     //int input
+    tpsm_mac   = top[FPSTR(_tpsm_mac)] | tpsm_mac;     //int input
     DEBUG_PRINT(FPSTR(_name));
     DEBUG_PRINTLN(F(" config (re)loaded."));
+
+
+
 
     // use "return !top["newestParameter"].isNull();" when updating Usermod with new features
     return true;
@@ -975,14 +939,21 @@ const char UsermodAndon::_motor_duty_fast[] PROGMEM = "fast motor duty %";
 #else
 const char UsermodAndon::_choosen_preset[] PROGMEM = "Preset animation to use while riding";
 #endif
+const char UsermodAndon::_sec_before_inactive_dim[] PROGMEM = "How long untill inavtive board dims lights";
+const char UsermodAndon::_left_inactive_preset[] PROGMEM = "Preset to show when board is inactive on left side";
+const char UsermodAndon::_right_inactive_preset[] PROGMEM = "Preset to show when board is inactive on right side";
 const char UsermodAndon::_backwards_preset[] PROGMEM = "Preset animation to use when riding backwards";
+
 const char UsermodAndon::_boot_preset[] PROGMEM = "Preset animation to use as boot animation";
 const char UsermodAndon::_boot_preset_time[] PROGMEM = "How long is boot preset in sec (0 to disable)";
 
 const char UsermodAndon::_free_fall_preset[] PROGMEM = "Preset to display after a free fall";
 const char UsermodAndon::_free_fall_preset_time[] PROGMEM = "How long is free fall preset in sec (0 to disable)";
 
-const char UsermodAndon::_free_fall_threshold[] PROGMEM = "how sensitive is a free fall detection 30 -60 g";
-const char UsermodAndon::_free_fall_duration[] PROGMEM = "inches for free fall detection";
 const char UsermodAndon::_trail_ruffness_max[] PROGMEM = "max trail ruffness for bar graph";
-const char UsermodAndon::_accel_test[] PROGMEM = "IMU test";
+
+const char UsermodAndon::_high_psi[] PROGMEM = "Highest PSI to display";
+const char UsermodAndon::_low_psi[] PROGMEM = "Lowest PSI to display";
+const char UsermodAndon::_psi_search_time[] PROGMEM = "How long to search for Tire pressure sensor before turnong on wifi";
+const char UsermodAndon::_tpsm_mac[] PROGMEM = "Tire Pressure Sensor bluetooth MAC address";
+
