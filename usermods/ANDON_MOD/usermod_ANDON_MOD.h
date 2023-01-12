@@ -93,6 +93,8 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
 //int_display_tire_psi
 //int_display_trail_ruffness
 //int_imu_speed
+  
+  bool dimmed_lights = false; // are the front lights dimmed
 
   bool imu_activity = true;
   bool imu_inactivity = true;
@@ -401,9 +403,6 @@ unsigned long usermod_loop; // for tracking how much time has past for each loop
   if(adxl.triggered(interrupts, ADXL345_INACTIVITY)){
     imu_inactivity = true;
     imu_inactivity_count = imu_inactivity_count + 1;
-if (filteredz < -10 /* ||  filteredz < 0 */ ){upside_down = true;}
-if (filteredy < -20){side_right = true;}
-if (filteredy > 20){side_left = true;}
   }
 
 
@@ -414,6 +413,12 @@ if (filteredy > 20){side_left = true;}
     imu_activity = true;
     board_upright();
   }
+
+if (dimmed_lights){
+if (filteredz < -10){upside_down = true;}
+if (filteredy < -20){side_right = true;}
+if (filteredy > 20){side_left = true;}
+}
 
   if (filteredz > 10){ // if board is upright set board possition back to default
 board_upright();
@@ -428,47 +433,26 @@ board_upright();
   upside_down = false;
   }
 
-  void wifi_on(bool wifion){
 
-      if (wifi_change == wifion){
-        return;
-      }
-
-     if (wifion == false){ 
-      //////////////////////////////////////////////
-          apBehavior = AP_BEHAVIOR_BUTTON_ONLY;
-          dnsServer.stop();
-          WiFi.softAPdisconnect(true);
-          apActive = false;                       // Disable Wifi
-          WLED::instance().initAP(false);
-          WLED::instance().disableWiFi();
-          WLED::instance().handleConnection();
-      ///////////////////////////////////////////////
-                                                       // enable bluetooth
-      ///////////////////////////////////////////////
-   } else {
-    //////////////////////////////////////////////
-                                                    //disable bluetooth
-    //////////////////////////////////////////////
-          apBehavior = AP_BEHAVIOR_ALWAYS;
-          WLED::instance().initAP(true);
-          WLED::instance().enableWiFi();         //enable wifi
-          apActive = true;
-          WLED::instance().initAP(true);
-          WLED::instance().handleConnection();
-    //////////////////////////////////////////////
-   } 
-   wifi_change = wifion;   
-  }
 
   void get_front_light()
   {
 
+    //0      on
+    //1659   inactive (when you get off the board and it dims the lights)
+    //4095   off
+    
+
     FRONT_LIGHT_W_ANALOG = analogRead(FRONT_LIGHT_W_PIN);
-    if (FRONT_LIGHT_W_ANALOG > 1000){FRONT_LIGHT_W = false;}else{FRONT_LIGHT_W = true;}
+
+    if (FRONT_LIGHT_W_ANALOG > 2000){
+      FRONT_LIGHT_W = false;
+      }else{
+        FRONT_LIGHT_W = true;
+        }
 
     FRONT_LIGHT_R_ANALOG = analogRead(FRONT_LIGHT_R_PIN);
-    if (FRONT_LIGHT_R_ANALOG > 1000){
+    if (FRONT_LIGHT_R_ANALOG > 2000){
       FRONT_LIGHT_R = false;
       app_lights_on = false;
       }else{
@@ -482,6 +466,11 @@ board_upright();
         forward = false;
       }
 
+  if ((FRONT_LIGHT_R_ANALOG > 1000) && (FRONT_LIGHT_R_ANALOG < 2000)){
+    dimmed_lights = true;
+  } else {
+    dimmed_lights = false;
+  }
 
         if (app_lights_on_last != app_lights_on){
           if ((millis() - blink_app_lights_timing) < BLINK_APP_LIGHTS_DELAY){ //if time seince last toggle less then 1 sec
@@ -607,9 +596,9 @@ public:
   adxl.setDoubleTapWindow(200);       // 1.25 ms per increment
  
   // Set values for what is considered FREE FALL (0-255)
-  adxl.setFreeFallThreshold(7);       // (5 - 9) recommended - 62.5mg per increment
+  adxl.setFreeFallThreshold(10);       // (5 - 9) recommended - 62.5mg per increment
   //int fall_sec = ((sqrt((free_fall_inches * 50800)/ 981))*2);  // convert inches fallen to ms fallen devided by 5
-  adxl.setFreeFallDuration(30);       // (20 - 70) recommended - 5ms per increment
+  adxl.setFreeFallDuration(20);       // (20 - 70) recommended - 5ms per increment
  
   // Setting all interupts to take place on INT1 pin
   adxl.setImportantInterruptMapping(1, 1, 1, 1, 1);     // Sets "adxl.setEveryInterruptMapping(single tap, double tap, free fall, activity, inactivity);" 
@@ -650,10 +639,18 @@ public:
 get_imu_data();
 get_imu_data();
 get_imu_data(); // get imu data twice to populate filtered ints
-if (filteredz < -10 /* ||  filteredz < 0 */ ){upside_down = true;} //  only used out side of inactivity interupt because we cant wait in startup for that
+if (filteredz < -10){upside_down = true;} //  only used out side of inactivity interupt because we cant wait in startup for that
 ///////////////////////////////////////////////////////  wifi
   //#ifndef TEST_MODE
-    wifi_on(false);
+  if (upside_down == true){
+          apBehavior = AP_BEHAVIOR_BUTTON_ONLY;
+          apActive = false;    
+          WLED::instance().initAP(false);
+          //dnsServer.stop();
+          WiFi.softAPdisconnect(true);           // Disable Wifi
+          WLED::instance().disableWiFi();
+          WLED::instance().handleConnection();
+  }
   //#endif
 
   }// end of start up 
@@ -664,11 +661,6 @@ if (filteredz < -10 /* ||  filteredz < 0 */ ){upside_down = true;} //  only used
     if (strip.isUpdating()){return;}
 
 
-    
-   if (upside_down == true){
-    wifi_on(true);
-    return;
-   }
 
 
     wifi_sta_list_t stationList;  //skip looping code if user is on wifi so we dont change stuff while they are editing
@@ -699,22 +691,20 @@ if (filteredz < -10 /* ||  filteredz < 0 */ ){upside_down = true;} //  only used
 
 
 get_imu_data();
-//flash lights to turn on wifi
    
  //  if (blink_app_lights >= 3){ //if lights in Onewheel app are flashed on off 3 times
- //      wifi_on(true);
  //  } else{
-    //   wifi_on(false);
   // }
 
-
+//////////////////////////////
+if (side_left == true){applyPreset(left_inactive_preset);}
+if (side_right == true){applyPreset(right_inactive_preset);}
 /////////////////////////////////////// activity (used for trail detection) "interrupt"
 
   if (imu_activity)
   {
     imu_activity = false;
     trail_ruffness = trail_ruffness + 1;
-  //applyPreset(1);
   }
 /////////////////////////////////////////////////////inactivity "interrupt"
   if (imu_inactivity)
@@ -812,12 +802,12 @@ get_imu_data();
       battery1.add(app_lights_on);                               //right side variable
       battery1.add(F(" app_lights_on"));                      //right side thing
 
-                  JsonArray battery3 = user.createNestedArray("red bool");  //left side thing
-      battery3.add(FRONT_LIGHT_R);                               //right side variable
+                  JsonArray battery3 = user.createNestedArray("red analog");  //left side thing
+      battery3.add(FRONT_LIGHT_R_ANALOG);                               //right side variable
       battery3.add(F(" RED GPIO read"));                      //right side thing
 
-            JsonArray battery4 = user.createNestedArray("white bool");  //left side thing
-      battery4.add(FRONT_LIGHT_W);                               //right side variable
+            JsonArray battery4 = user.createNestedArray("white analog");  //left side thing
+      battery4.add(FRONT_LIGHT_W_ANALOG);                               //right side variable
       battery4.add(F(" WHITE GPIO read"));                      //right side thing
 
                   JsonArray battery6 = user.createNestedArray("trail ruffness");  //left side thing
