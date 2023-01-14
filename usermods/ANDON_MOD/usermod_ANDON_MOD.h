@@ -405,16 +405,16 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
    {
 
     //0      on
-    //1659   inactive (when you get off the board and it dims the lights)
+    //1659   dim (when you get off the board and it dims the lights)
     //4095   off
     
 
     FRONT_LIGHT_W_ANALOG = analogRead(FRONT_LIGHT_W_PIN);
 
     if (FRONT_LIGHT_W_ANALOG > 2000){
-      FRONT_LIGHT_W = false;
+      forward = false;
       }else{
-        FRONT_LIGHT_W = true;
+        forward = true;
         }
 
     FRONT_LIGHT_R_ANALOG = analogRead(FRONT_LIGHT_R_PIN);
@@ -424,11 +424,6 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
         FRONT_LIGHT_R = true; app_lights_on = true;
         }
 
-      if (FRONT_LIGHT_W == FRONT_LIGHT_R){ 
-        forward = true;
-      } else {
-        forward = false;
-      }
 
    if ((FRONT_LIGHT_R_ANALOG > 1000) && (FRONT_LIGHT_R_ANALOG < 2000)){
     dimmed_lights = true;
@@ -533,11 +528,6 @@ void turn_all_light_on(){
 
 void set_preset(){
 
-
-  bool side_left = false;   //how is the board on the ground
-  bool side_right = false;
-  bool dimmed_lights = false; // are the front lights dimmed
-  bool forward = true; //on startup assume forware movment
   
   if(upright == true){
   if(forward){
@@ -648,14 +638,7 @@ public:
    #endif
    
 
-   if (stock){ // if emulate stock is off use boot up preset
 
-    if (boot_preset_time != 0){ // skip if boot_preset_time set to 0
-    start_milisec = millis();
-    applyPreset(boot_preset);// start up animation plays for 3 sec or so (still need to implement switching back)
-    }
-
-   }
 
    get_imu_data();
    get_imu_data();
@@ -664,6 +647,7 @@ public:
    ///////////////////////////////////////////////////////  wifi
    //#ifndef TEST_MODE
    if (upside_down == true){
+
           apBehavior = AP_BEHAVIOR_BUTTON_ONLY;
           apActive = false;    
           WLED::instance().initAP(false);
@@ -671,6 +655,21 @@ public:
           WiFi.softAPdisconnect(true);           // Disable Wifi
           WLED::instance().disableWiFi();
           WLED::instance().handleConnection();
+
+    if (stock){ // if emulate stock is off use boot up preset
+    if (boot_preset_time != 0){ // skip if boot_preset_time set to 0
+    start_milisec = millis();
+    applyPreset(boot_preset);// start up animation plays for 3 sec or so (still need to implement switching back)
+    }
+   }
+
+   }else{
+    //play wifi animation here 
+   handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+   handleSet(nullptr, "win&FX=10&IX=120&SX=255&FP=0&G=0&B=255&R=0&W=0&TT=1000&T=1&S=0&S2=13" , false );
+                         //&FX=effect   &IX=intensity   &SX=speed &FP=pallet
+   handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
+   handleSet(nullptr, "win&FX=10&IX=120&SX=255&FP=0&G=0&B=255&R=0&W=0&TT=3000&T=1&S=13&S2=26" , false );
    }
    //#endif
 
@@ -701,10 +700,7 @@ public:
    #endif
 
 
-   if (stock == false){
-   emulate_stock();
-   return; // skip rest of loop becuase we dont want to change lights besides forward/back
-   }
+   if (stock == false){emulate_stock();return;}
 
              
      if (((millis()) - start_milisec) < (boot_preset_time * 1000)){
@@ -846,8 +842,8 @@ public:
     top[FPSTR(_forwards_preset)] = forwards_preset;  //int input
     #endif
     top[FPSTR(_backwards_preset)] = backwards_preset;  //int input
-    top[FPSTR(_dim_backwards_preset)] = backwards_preset;  //int input
-    top[FPSTR(_dim_forwards_preset)] = backwards_preset;  //int input
+    top[FPSTR(_dim_backwards_preset)] = dim_backwards_preset;  //int input
+    top[FPSTR(_dim_forwards_preset)] = dim_forwards_preset;  //int input
     top[FPSTR(_dim_left_preset)] = dim_left_preset;  //int input
     top[FPSTR(_dim_right_preset)] = dim_right_preset;  //int input
 
@@ -888,8 +884,8 @@ public:
     forwards_preset   = top[FPSTR(_forwards_preset)] | forwards_preset;     //int input
     #endif
     backwards_preset   = top[FPSTR(_backwards_preset)] | backwards_preset;     //int input
-    backwards_preset   = top[FPSTR(_dim_backwards_preset)] | backwards_preset;     //int input
-    backwards_preset   = top[FPSTR(_dim_forwards_preset)] | backwards_preset;     //int input
+    dim_backwards_preset   = top[FPSTR(_dim_backwards_preset)] | dim_backwards_preset;     //int input
+    dim_forwards_preset   = top[FPSTR(_dim_forwards_preset)] | dim_forwards_preset;     //int input
     dim_left_preset   = top[FPSTR(_dim_left_preset)] | dim_left_preset;     //int input
     dim_right_preset   = top[FPSTR(_dim_right_preset)] | dim_right_preset;     //int input
 
