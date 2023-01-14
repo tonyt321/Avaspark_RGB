@@ -81,6 +81,7 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
   int rawx , rawy , rawz;
   int filteredx , filteredy , filteredz;
   int normx , normy , normz;
+  int smoothedy;
 
   bool wifi_change = true;
 
@@ -361,6 +362,7 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
     filteredy = rawy * ALPHA + (filteredy * (1.0 - ALPHA));
     filteredz = rawz * ALPHA + (filteredz * (1.0 - ALPHA));
 
+    smoothedy = rawy * 0.5 + (smoothedy * (1.0 - 0.5)); // higly smoothed for left/right turn signal
 
     // Calculate Pitch & Roll (Low Pass Filter)  only works when board isnt moving so when lights are dimmed basicly
     //fpitch = -(atan2(filteredx, sqrt(filteredy*filteredy + filteredz*filteredz))*180.0)/M_PI;
