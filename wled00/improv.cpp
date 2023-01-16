@@ -186,10 +186,10 @@ void sendImprovInfoResponse() {
   //out[8] = 2; //Length (set below)
   out[9] = ImprovRPCType::Request_Info;
   //out[10] = 0; //Data len (set below)
-  out[11] = 4; //Firmware len ("Andon")
+  out[11] = 4; //Firmware len ("WLED")
   out[12] = 'W'; out[13] = 'L'; out[14] = 'E'; out[15] = 'D';
   uint8_t lengthSum = 17;
-  uint8_t vlen = sprintf_P(out+lengthSum,PSTR("0.13.3/%i"),VERSION);
+  uint8_t vlen = sprintf_P(out+lengthSum,PSTR("0.14.0-b1/%i"),VERSION);
   out[16] = vlen; lengthSum += vlen;
   uint8_t hlen = 7;
   #ifdef ESP8266
@@ -200,8 +200,8 @@ void sendImprovInfoResponse() {
   #endif
   out[lengthSum] = hlen;
   lengthSum += hlen + 1;
-  //Use serverDescription if it has been changed from the default "Andon", else mDNS name
-  bool useMdnsName = (strcmp(serverDescription, "Andon") == 0 && strlen(cmDNS) > 0);
+  //Use serverDescription if it has been changed from the default "WLED", else mDNS name
+  bool useMdnsName = (strcmp(serverDescription, "WLED") == 0 && strlen(cmDNS) > 0);
   strcpy(out+lengthSum+1,useMdnsName ? cmDNS : serverDescription);
   uint8_t nlen = strlen(useMdnsName ? cmDNS : serverDescription);
   out[lengthSum] = nlen;

@@ -91,7 +91,7 @@ private:
     JsonObject device = doc.createNestedObject("device"); // attach the sensor to the same device
     device["identifiers"] = String("wled-sensor-") + mqttClientID;
     device["manufacturer"] = "Aircoookie";
-    device["model"] = "Andon";
+    device["model"] = "WLED";
     device["sw_version"] = VERSION;
     device["name"] = mqttClientID;
 
