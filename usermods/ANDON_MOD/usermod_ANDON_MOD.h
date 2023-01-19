@@ -7,9 +7,159 @@
 
 
 
+//int display_battery;
+//int display_duty_cycle;
+int display_tpmsp; //tpms pressure
+int display_tpmst; //tpms temp
+int display_trail_ruffness;
+
+
+#define PALETTE_SOLID_WRAP (strip.paletteBlend == 1 || strip.paletteBlend == 3)
+
+/*
+ * trail ratings display
+ * Intesity values from 0-100 turn on the leds.
+ */
+uint16_t mode_rate_trail(void) {
+  uint8_t percent = 50;
+  percent = constrain(percent, 0, 200);
+  uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
+                                         : SEGLEN * (200 - percent) / 100.0;
+  uint8_t size = (1 + (SEGLEN >> 11));
+
+  if (percent <= 100) {
+    for (int i = 0; i < SEGLEN; i++) {
+    	if (i < SEGENV.aux1) {
+        if (SEGMENT.check1)
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(map(percent,0,100,0,255), false, false, 0));
+        else
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+    	}
+    	else {
+        SEGMENT.setPixelColor(i, SEGCOLOR(1));
+    	}
+    }
+  } else {
+    for (int i = 0; i < SEGLEN; i++) {
+    	if (i < (SEGLEN - SEGENV.aux1)) {
+        SEGMENT.setPixelColor(i, SEGCOLOR(1));
+    	}
+    	else {
+        if (SEGMENT.check1)
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(map(percent,100,200,255,0), false, false, 0));
+        else
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+    	}
+    }
+  }
+  if(active_leds > SEGENV.aux1) {  // smooth transition to the target value
+    SEGENV.aux1 += size;
+    if (SEGENV.aux1 > active_leds) SEGENV.aux1 = active_leds;
+  } else if (active_leds < SEGENV.aux1) {
+    if (SEGENV.aux1 > size) SEGENV.aux1 -= size; else SEGENV.aux1 = 0;
+    if (SEGENV.aux1 < active_leds) SEGENV.aux1 = active_leds;
+  }
+ 	return FRAMETIME;
+}
+static const char _data_fx_mode_rate_trail[] = "Trail Rating Bar@,% of fill,,,,One color;!,!;!";
+
+/*
+ * trail ratings display
+ * Intesity values from 0-100 turn on the leds.
+ */
+uint16_t mode_tire_pressure(void) {
+  uint8_t percent = display_tpmsp;
+  percent = constrain(percent, 0, 200);
+  uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
+                                         : SEGLEN * (200 - percent) / 100.0;
+  uint8_t size = (1 + (SEGLEN >> 11));
+
+  if (percent <= 100) {
+    for (int i = 0; i < SEGLEN; i++) {
+    	if (i < SEGENV.aux1) {
+        if (SEGMENT.check1)
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(map(percent,0,100,0,255), false, false, 0));
+        else
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+    	}
+    	else {
+        SEGMENT.setPixelColor(i, SEGCOLOR(1));
+    	}
+    }
+  } else {
+    for (int i = 0; i < SEGLEN; i++) {
+    	if (i < (SEGLEN - SEGENV.aux1)) {
+        SEGMENT.setPixelColor(i, SEGCOLOR(1));
+    	}
+    	else {
+        if (SEGMENT.check1)
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(map(percent,100,200,255,0), false, false, 0));
+        else
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+    	}
+    }
+  }
+  if(active_leds > SEGENV.aux1) {  // smooth transition to the target value
+    SEGENV.aux1 += size;
+    if (SEGENV.aux1 > active_leds) SEGENV.aux1 = active_leds;
+  } else if (active_leds < SEGENV.aux1) {
+    if (SEGENV.aux1 > size) SEGENV.aux1 -= size; else SEGENV.aux1 = 0;
+    if (SEGENV.aux1 < active_leds) SEGENV.aux1 = active_leds;
+  }
+ 	return FRAMETIME;
+}
+static const char _data_fx_mode_tire_pressure[] = "Tire Pressure@,% of fill,,,,One color;!,!;!";
+
+/*
+ * wheel temp display
+ * Intesity values from 0-100 turn on the leds.
+ */
+uint16_t mode_wheel_temp(void) {
+  uint8_t percent = display_tpmst;
+  percent = constrain(percent, 0, 200);
+  uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
+                                         : SEGLEN * (200 - percent) / 100.0;
+  uint8_t size = (1 + (SEGLEN >> 11));
+
+  if (percent <= 100) {
+    for (int i = 0; i < SEGLEN; i++) {
+    	if (i < SEGENV.aux1) {
+        if (SEGMENT.check1)
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(map(percent,0,100,0,255), false, false, 0));
+        else
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+    	}
+    	else {
+        SEGMENT.setPixelColor(i, SEGCOLOR(1));
+    	}
+    }
+  } else {
+    for (int i = 0; i < SEGLEN; i++) {
+    	if (i < (SEGLEN - SEGENV.aux1)) {
+        SEGMENT.setPixelColor(i, SEGCOLOR(1));
+    	}
+    	else {
+        if (SEGMENT.check1)
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(map(percent,100,200,255,0), false, false, 0));
+        else
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+    	}
+    }
+  }
+  if(active_leds > SEGENV.aux1) {  // smooth transition to the target value
+    SEGENV.aux1 += size;
+    if (SEGENV.aux1 > active_leds) SEGENV.aux1 = active_leds;
+  } else if (active_leds < SEGENV.aux1) {
+    if (SEGENV.aux1 > size) SEGENV.aux1 -= size; else SEGENV.aux1 = 0;
+    if (SEGENV.aux1 < active_leds) SEGENV.aux1 = active_leds;
+  }
+ 	return FRAMETIME;
+}
+static const char _data_fx_mode_wheel_temp[] = "Wheel Temp@,% of fill,,,,One color;!,!;!";
+
 class UsermodAndon : public Usermod
 {
-private:
+public:
 
 
 ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
@@ -50,8 +200,10 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
   int dim_left_preset = 0;   //unused yet
   int dim_right_preset = 0;   //unused yet
 
-              
-  unsigned int free_fall_preset = 1; // preset after free fall
+  bool alt_mode = true;
+  int8_t alt_backwards_preset = 1;  //preset played as a boot animation
+  int8_t alt_forwards_preset = 1;  //preset played as a boot animation
+
   int8_t boot_preset = 1;  //preset played as a boot animation
   
   int boot_preset_time = 3; // boot animation length in sec
@@ -73,7 +225,8 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
   unsigned long blink_app_lights_timing;
 
   bool stock = true;
-
+  
+  unsigned int free_fall_preset = 1; // preset after free fall
   unsigned int free_fall_preset_time = 3; // animation length in sec
   unsigned long free_fall_milisec; // for tracking how much time has past for free_fall animation preset
   bool imu_free_fall = false;
@@ -86,13 +239,19 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
   bool wifi_change = true;
 
 //////////////////////////////Global var for effects
-//int_display_tire_temp
 //int_display_battery
 //int_display_duty_cycle
-//int_display_tire_psi
-//int_display_trail_ruffness
-//int_imu_speed
-  
+
+  int tpmsb; //tpms batt
+  float tpmsp; //tpms pressure
+  int tpmst; //tpms temp  shut off at 186 f
+
+  float pressure_range_low = 0;
+  float pressure_range_high = 30;
+  bool fahrenheit = true; // f or c
+  bool psi = true;     //psi or bar
+
+
   bool dimmed_lights = false; // are the front lights dimmed
 
   bool imu_activity = true;
@@ -103,11 +262,14 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
   bool upside_down = false;
   bool upright = true;
 
+  int trick; // unused for trick detection module input
+
+///////////////////////////////////////////////////////////////////////////////////
 
   unsigned int trail_ruffness_max = 30;   // max activations per min for the bar graph
   unsigned long trail_ruffness = 0; //how ruff the trail is using active activations per min and how on pro version use motor disengadements
   unsigned long inactive_millis; // subrated inactive sec from trail calculations
-   unsigned long inactive_millis_last; // subrated inactive sec from trail calculations
+  unsigned long inactive_millis_last; // subrated inactive sec from trail calculations
 
   // strings to reduce flash memory usage (used more than twice)
   static const char _name[];
@@ -128,8 +290,12 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
   static const char _backwards_preset[];
   static const char _dim_backwards_preset[];
   static const char _dim_forwards_preset[];
-    static const char _dim_left_preset[];
+  static const char _dim_left_preset[];
   static const char _dim_right_preset[];
+
+  static const char _alt_mode[];
+  static const char _alt_backwards_preset[];
+  static const char _alt_forwards_preset[];
 
   static const char _boot_preset[];
   static const char _boot_preset_time[];
@@ -139,7 +305,10 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
   static const char _free_fall_preset[];
 
 
-
+  static const char _pressure_range_low[];
+  static const char _pressure_range_high[];
+  static const char _fahrenheit[];
+  static const char _psi[];
 
 
 
@@ -248,14 +417,14 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
          String bluestring = "&B=" + error_blue;
          String together1 = redstring + greenstring;
          String together2 = together1 + bluestring;
-         handleSet(nullptr, together2 , false );
+         //handleSet(nullptr, together2 , false );
 
          String redstring1 = "win&SB=255&FX=98&SM=0&SS=0&IX=0&R=" + error_red;  //combining multiple strings at once can result in unpredictable outcomes
          String greenstring1 = "&G=" + error_green;
          String bluestring1 = "&B=" + error_blue;
          String together3 = redstring + greenstring;
          String together4 = together1 + bluestring;
-         handleSet(nullptr, together4 , false );
+         //handleSet(nullptr, together4 , false );
 
       }
     }
@@ -330,6 +499,23 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
   }
 #endif
 
+
+  void handle_tpms() {
+
+    if (psi) {
+      display_tpmsp = map((14.5038 * tpmsp), pressure_range_low, pressure_range_high, 0, 100);
+    } else {
+      display_tpmsp = map(tpmsp, pressure_range_low, pressure_range_high, 0, 100);
+    }
+
+    if (fahrenheit) {
+      display_tpmst = map(((tpmsp * 1.8) + 32), 100, 200, 0, 100); //100f to 200f range
+    } else {
+      display_tpmst = map(tpmsp, 100, 200, 38, 93); //100f to 200f range in c
+    }
+  }
+
+
     //use IMU data input to quantify the following:
     // 1.) trail chunkiness - a function of z-variance detected by the IMU, measured over a long timescale
     // 2.) altitude gain/loss - a function of the average slope of z acceleration measured over long distances
@@ -345,8 +531,9 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
       inactive_millis_last = millis();
 
      float activations_per_min = (trail_ruffness / ((millis() - inactive_millis) / 6000));
-     int_display_trail_ruffness = (activations_per_min / trail_ruffness_max);
+      display_trail_ruffness = (activations_per_min / trail_ruffness_max);
     }
+
 
   void get_imu_data(){
 
@@ -448,20 +635,22 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
    }
   }
 
-void turn_all_light_off(){
-     handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
-   handleSet(nullptr, "win&T=0&SB=0&S=0&S2=13" , false );// turn all off
 
-   handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
-   handleSet(nullptr, "win&T=0&SB=0&S=13&S2=26" , false );// turn all off
+
+void turn_all_light_off(){
+ //handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+ //handleSet(nullptr, "win&T=0&SB=0&S=0&S2=13" , false );// turn all off
+
+ //handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
+ //handleSet(nullptr, "win&T=0&SB=0&S=13&S2=26" , false );// turn all off
 }
 
 void turn_all_light_on(){
-     handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
-   handleSet(nullptr, "win&T=1&SB=255&S=0&S2=13" , false );// turn all on
+  //handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+  //handleSet(nullptr, "win&T=1&SB=255&S=0&S2=13" , false );// turn all on
 
-   handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
-   handleSet(nullptr, "win&T=1&SB=255&S=13&S2=26" , false );// turn all on
+  //handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
+  //handleSet(nullptr, "win&T=1&SB=255&S=13&S2=26" , false );// turn all on
 }
 
 //now it shows battery on front and back
@@ -471,89 +660,91 @@ void turn_all_light_on(){
   void BATTERY_VISUALIZER() //show battery % on lights
   {
 
- handleSet(nullptr, "win&SB=255&FX=98&SM=0&SS=0&G=255&R2=255&IX=0" , false );
- handleSet(nullptr, "win&SB=255&FX=98&SM=0&SS=0&G=255&R2=255&IX=" + battery_percent , false );
-
- handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&G=255&R2=255&IX=0" , false );
- handleSet(nullptr, "win&SB=255&FX=98&SM=1&SS=1&G=255&R2=255&IX=" + battery_percent , false );
-
  }
 #endif
 
   void emulate_stock()
    {
        if (app_lights_on == (false)){ //turns lights off if in app lights are off
-   handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
-   handleSet(nullptr, "win&T=0&SB=0&S=0&S2=13" , false );// turn all off
+   //handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+  //handleSet(nullptr, "win&T=0&SB=0&S=0&S2=13" , false );// turn all off
 
-   handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
-   handleSet(nullptr, "win&T=0&SB=0&S=13&S2=26" , false );// turn all off
+   //handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
+   //handleSet(nullptr, "win&T=0&SB=0&S=13&S2=26" , false );// turn all off
    return; // skip rest of loop becuase we dont want to change lights besides forward/back
    }else{
 
-   if ((forward) == true) {
+   if ((forward) == false) {
 
    if (dimmed_lights == true){
-   handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
-   handleSet(nullptr, "win&FX=0&G=0&B=0&R=100&W=0&TT=1000&T=1&S=0&S2=13" , false );
+   //handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+   //handleSet(nullptr, "win&FX=0&G=0&B=0&R=100&W=0&TT=1000&T=1&S=0&S2=13" , false );
  
-   handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
-   handleSet(nullptr, "win&FX=0&G=100&B=100&R=100&W=100&TT=3000&T=1&S=13&S2=26" , false );
+  //handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
+  //handleSet(nullptr, "win&FX=0&G=100&B=100&R=100&W=100&TT=3000&T=1&S=13&S2=26" , false );
 
    } else {
-   handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
-   handleSet(nullptr, "win&FX=0&G=0&B=0&R=255&W=0&TT=1000&T=1&S=0&S2=13" , false );
+  //handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+   //handleSet(nullptr, "win&FX=0&G=0&B=0&R=255&W=0&TT=1000&T=1&S=0&S2=13" , false );
  
-   handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
-   handleSet(nullptr, "win&FX=0&G=255&B=255&R=255&W=255&TT=3000&T=1&S=13&S2=26" , false );
+   //handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
+   //handleSet(nullptr, "win&FX=0&G=255&B=255&R=255&W=255&TT=3000&T=1&S=13&S2=26" , false );
    }
    } else {
    if (dimmed_lights == true){
-   handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
-   handleSet(nullptr, "win&FX=0&G=100&B=100&R=100&W=100&TT=1000&T=1&S=0&S2=13" , false );
+  //handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+  //handleSet(nullptr, "win&FX=0&G=100&B=100&R=100&W=100&TT=1000&T=1&S=0&S2=13" , false );
  
-   handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
-   handleSet(nullptr, "win&FX=0&G=0&B=0&R=100&W=0&TT=1000&T=1&S=13&S2=26" , false );
+   //handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
+   //handleSet(nullptr, "win&FX=0&G=0&B=0&R=100&W=0&TT=1000&T=1&S=13&S2=26" , false );
    } else {
-     handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
-     handleSet(nullptr, "win&FX=0&G=255&B=255&R=255&W=255&TT=1000&T=1&S=0&S2=13" , false );
+     //handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+     //handleSet(nullptr, "win&FX=0&G=255&B=255&R=255&W=255&TT=1000&T=1&S=0&S2=13" , false );
  
-     handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
-     handleSet(nullptr, "win&FX=0&G=0&B=0&R=255&W=0&TT=1000&T=1&S=13&S2=26" , false );
+     //handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
+     //handleSet(nullptr, "win&FX=0&G=0&B=0&R=255&W=0&TT=1000&T=1&S=13&S2=26" , false );
      }
     }
    }
 }
 
 
-void set_preset(){
+void set_preset() { // pick which preset based on direction, speed, dim, alt mode
 
-  
-  if(upright == true){
-  if(forward){
-    if(dimmed_lights == false){
-   #ifdef PRO_VERSION
-   set_motor_duty_preset();
-   #else
-   applyPreset(forwards_preset);
-   #endif
-
-   }else{
-    applyPreset(dim_forwards_preset);
-   }
-
-  }else{
-    if(dimmed_lights == false){
-      applyPreset(backwards_preset);  
-    }else{
-  applyPreset(dim_backwards_preset);
+  if (upright == true) {
+    if (forward) {
+      if (dimmed_lights == false) {
+        if (alt_mode) {
+          #ifdef PRO_VERSION
+          set_motor_duty_preset();
+          #else
+          applyPreset(forwards_preset);
+          #endif
+        } else {
+          applyPreset(alt_backwards_preset);
+        }
+      } else {
+        applyPreset(dim_forwards_preset);
+      }
+    } else {
+      if (dimmed_lights == false) {
+        if (alt_mode) {
+          applyPreset(backwards_preset);
+        } else {
+          applyPreset(alt_backwards_preset);
+        }
+      } else {
+        applyPreset(dim_backwards_preset);
+      }
+    }
+  } else {
+    if (side_left == true) {
+      applyPreset(dim_left_preset);
+    }
+    if (side_right == true) {
+      applyPreset(dim_right_preset);
     }
   }
-  }else{
- if (side_left == true){applyPreset(dim_left_preset);}
- if (side_right == true){applyPreset(dim_right_preset);}
-  }
-
 }
 
 
@@ -561,6 +752,9 @@ public:
   void setup()
   {
     // set pin modes
+    strip.addEffect(FX_MODE_TRAILRATE, &mode_rate_trail, _data_fx_mode_rate_trail);
+    strip.addEffect(FX_MODE_WHEELTEMP, &mode_wheel_temp, _data_fx_mode_wheel_temp);
+    strip.addEffect(FX_MODE_TIREPRESSURE, &mode_tire_pressure, _data_fx_mode_tire_pressure);
 
     pinMode(FRONT_LIGHT_W_PIN, INPUT);
     pinMode(FRONT_LIGHT_R_PIN, INPUT);
@@ -578,44 +772,41 @@ public:
     #endif
 
 
-
-
    adxl.powerOn();                     // Power on the ADXL345
 
-   adxl.setRangeSetting(16);           // Give the range settings
-                                      // Accepted values are 2g, 4g, 8g or 16g
+   adxl.setRangeSetting(16);          // Accepted values are 2g, 4g, 8g or 16g
                                       // Higher Values = Wider Measurement Range
                                       // Lower Values = Greater Sensitivity
 
    adxl.setSpiBit(0);                  // Configure the device to be in 4 wire SPI mode when set to '0' or 3 wire SPI mode when set to 1
                                       // Default: Set to 1
                                       // SPI pins on the ATMega328: 11, 12 and 13 as reference in SPI Library 
-   
+
    adxl.setActivityXYZ(1, 1, 1);       // Set to activate movement detection in the axes "adxl.setActivityXYZ(X, Y, Z);" (1 == ON, 0 == OFF)
    adxl.setActivityThreshold(150);      // 62.5mg per increment   // Set activity   // Inactivity thresholds (0-255)
- 
+
    adxl.setInactivityXYZ(1, 1, 1);     // Set to detect inactivity in all the axes "adxl.setInactivityXYZ(X, Y, Z);" (1 == ON, 0 == OFF)
    adxl.setInactivityThreshold(75);    // 62.5mg per increment   // Set inactivity // Inactivity thresholds (0-255)
    adxl.setTimeInactivity(10);         // How many seconds of no activity is inactive?
 
    adxl.setTapDetectionOnXYZ(1, 1, 1); // Detect taps in the directions turned ON "adxl.setTapDetectionOnX(X, Y, Z);" (1 == ON, 0 == OFF)
- 
+
    // Set values for what is considered a TAP and what is a DOUBLE TAP (0-255)
    adxl.setTapThreshold(50);           // 62.5 mg per increment
    adxl.setTapDuration(15);            // 625 μs per increment
    adxl.setDoubleTapLatency(80);       // 1.25 ms per increment
    adxl.setDoubleTapWindow(200);       // 1.25 ms per increment
- 
+
    // Set values for what is considered FREE FALL (0-255)
    adxl.setFreeFallThreshold(10);       // (5 - 9) recommended - 62.5mg per increment
    //int fall_sec = ((sqrt((free_fall_inches * 50800)/ 981))*2);  // convert inches fallen to ms fallen devided by 5
    adxl.setFreeFallDuration(20);       // (20 - 70) recommended - 5ms per increment
- 
+
    // Setting all interupts to take place on INT1 pin
    adxl.setImportantInterruptMapping(1, 1, 1, 1, 1);     // Sets "adxl.setEveryInterruptMapping(single tap, double tap, free fall, activity, inactivity);" 
                                                         // Accepts only 1 or 2 values for pins INT1 and INT2. This chooses the pin on the ADXL345 to use for Interrupts.
                                                         // This library may have a problem using INT2 pin. Default to INT1 pin.
-  
+
    // Turn on Interrupts for each mode (1 == ON, 0 == OFF)
    adxl.InactivityINT(1);
    adxl.ActivityINT(1);
@@ -627,8 +818,6 @@ public:
    // adxl.set_bw(ADXL345_BW_25);         //set bitrate
 
 
-
- 
    #ifdef TEST_MODE
    app_lights_on = true;  // set as if lights are detected as always on in test mode
    #endif
@@ -636,20 +825,19 @@ public:
    #ifndef TEST_MODE // test mode skip get front light becuase we dont have the hardware on test esp32
    get_front_light();  // handels truning on/off lights and forward/back detection
    #endif
-   
 
 
 
    get_imu_data();
    get_imu_data();
    get_imu_data(); // get imu data twice to populate filtered ints
-   if (filteredz < -10){upside_down = true;} //  only used out side of inactivity interupt because we cant wait in startup for that
+   if (filteredy < -20){side_right = true;}
    ///////////////////////////////////////////////////////  wifi
    //#ifndef TEST_MODE
-   if (upside_down == true){
+   if (side_right == true){
 
           apBehavior = AP_BEHAVIOR_BUTTON_ONLY;
-          apActive = false;    
+          apActive = false;
           WLED::instance().initAP(false);
           //dnsServer.stop();
           WiFi.softAPdisconnect(true);           // Disable Wifi
@@ -663,16 +851,17 @@ public:
    }
 
    }else{
-    //play wifi animation here 
-   handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
-   handleSet(nullptr, "win&FX=10&IX=120&SX=255&FP=0&G=0&B=255&R=0&W=0&TT=1000&T=1&S=0&S2=13" , false );
+    applyPreset(boot_preset);
+    //play wifi animation here
+   //handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
+   //handleSet(nullptr, "win&FX=10&IX=120&SX=255&FP=0&G=0&B=255&R=0&W=0&TT=1000&T=1&S=0&S2=13" , false );
                          //&FX=effect   &IX=intensity   &SX=speed &FP=pallet
-   handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
-   handleSet(nullptr, "win&FX=10&IX=120&SX=255&FP=0&G=0&B=255&R=0&W=0&TT=3000&T=1&S=13&S2=26" , false );
+   //handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
+   //handleSet(nullptr, "win&FX=10&IX=120&SX=255&FP=0&G=0&B=255&R=0&W=0&TT=3000&T=1&S=13&S2=26" , false );
    }
    //#endif
 
-}// end of start up 
+}// end of start up
 
   void loop()
   {
@@ -680,14 +869,12 @@ public:
     if (strip.isUpdating()){return;}
 
 
-
-
     wifi_sta_list_t stationList;  //skip looping code if user is on wifi so we dont change stuff while they are editing
     esp_wifi_ap_get_sta_list(&stationList);
     client_numb = stationList.num;
     if ( client_numb != 0 ){
-      handleSet(nullptr, "win&T=1" , false );// turn all on
-    return; 
+      //handleSet(nullptr, "win&T=1" , false );// turn all on
+    return;
     }
 
 
@@ -698,25 +885,25 @@ public:
    }
    #endif
 
-
    if (stock == false){emulate_stock();return;}
 
-             
+get_imu_data();
+
+     if (((millis()) - start_milisec) < (10 * 1000)){
+      if (side_left){alt_mode = true;}
+     }
+
      if (((millis()) - start_milisec) < (boot_preset_time * 1000)){
       return;  // returns loop if boot animation hasnt finished playing
      }
 
-
-   get_imu_data();
    set_preset();
-
 
  //  if (blink_app_lights >= 3){ //if lights in Onewheel app are flashed on off 3 times
  //  } else{
-  // }
+ //  }
 
 /////////////////////////////////////// activity (used for trail detection) "interrupt"
-
   if (imu_activity)
   {
     imu_activity = false;
@@ -736,13 +923,8 @@ public:
     return;  // returns loop if free fall animation hasnt finished playing
   }
 ///////////////////////////////////////////////////////////
-
-
-
-
    #ifdef PRO_VERSION  //rest of loop is pro only features
     GET_BATT_LEVEL();
-    
 
     if ((Status_bar) == true){
     MIMIC_ERROR_CODES(); // sets front and back to same color as status bar when error and disengaged
@@ -761,56 +943,67 @@ public:
      BATTERY_VISUALIZER();   //show battery % of front and back lights
      }
    #endif
-   
+
   } // end of main loop
 
-  void addToJsonInfo(JsonObject &root)
+
+      void readFromJsonState(JsonObject& root)  //serial json iputs go in here
+    {
+      tpmsp = root["tpmsp"] | tpmsp; //if "user0" key exists in JSON, update, else keep old value
+      tpmsb = root["tpmsb"] | tpmsb; //if "user0" key exists in JSON, update, else keep old value
+      tpmst = root["tpmst"] | tpmst; //if "user0" key exists in JSON, update, else keep old value
+      trick = root["trick"] | trick; //if "user0" key exists in JSON, update, else keep old value
+      //if (root["bri"] == 255) Serial.println(F("Don't burn down your garage!"));
+    }
+
+
+  void addToJsonInfo(JsonObject &root)  //serial json outputs go here
   {
     JsonObject user = root[F("u")];
     if (user.isNull())
       user = root.createNestedObject(F("u"));
 
-
 #ifdef PRO_VERSION
-    JsonArray lux = user.createNestedArray(F(" lol")); //left side thing
+    JsonArray lux = user.createNestedArray(F("RED analog read")); //left side thing
     lux.add(LIGHT_BAR_R_ANALOG);                       //right side variable
-    lux.add(F(" RED analog read"));                    //right side thing
 
 
       JsonArray battery = user.createNestedArray("blue level");  //left side thing
       battery.add(LIGHT_BAR_B);                               //right side variable
-      battery.add(F(" BLUE GPIO read"));                      //right side thing
 #endif
       JsonArray shop = user.createNestedArray("Andon Origin");  //left side thing
       shop.add(SHOP_NAME);                               //right side variable
 
       JsonArray lights = user.createNestedArray("X Axis");  //left side thing
       lights.add(filteredx);                               //right side variable
-      lights.add(F(" xAxis"));                      //right side thing
 
             JsonArray lights1 = user.createNestedArray("y Axis");  //left side thing
       lights1.add(filteredy);                               //right side variable
-      lights1.add(F(" yAxis"));                      //right side thing
 
             JsonArray lights2 = user.createNestedArray("z Axis");  //left side thing
       lights2.add(filteredz);                               //right side variable
-      lights2.add(F(" zAxis"));                      //right side thing
 
             JsonArray battery1 = user.createNestedArray("app_lights_on");  //left side thing
       battery1.add(app_lights_on);                               //right side variable
-      battery1.add(F(" app_lights_on"));                      //right side thing
 
                   JsonArray battery3 = user.createNestedArray("red analog");  //left side thing
       battery3.add(FRONT_LIGHT_R_ANALOG);                               //right side variable
-      battery3.add(F(" RED GPIO read"));                      //right side thing
 
             JsonArray battery4 = user.createNestedArray("white analog");  //left side thing
       battery4.add(FRONT_LIGHT_W_ANALOG);                               //right side variable
-      battery4.add(F(" WHITE GPIO read"));                      //right side thing
 
                   JsonArray battery6 = user.createNestedArray("activations per min");  //left side thing
-      battery6.add(int_display_trail_ruffness);                               //right side variable
-      battery6.add(F(""));                      //right side thing
+      battery6.add(display_trail_ruffness);                               //right side variable
+
+                  JsonArray battery9 = user.createNestedArray("Tire Pressure");  //left side thing
+      if (psi) {battery9.add((14.5038 * tpmsp));battery9.add(F(" PSI"));} else {battery9.add(tpmsp);battery9.add(F(" Bar"));}
+
+                        JsonArray battery16 = user.createNestedArray("Tire sensor Temp");  //left side thing
+     if (fahrenheit) {battery16.add(((tpmst * 1.8) + 32));battery16.add(F(" F"));} else {battery16.add(tpmst);battery16.add(F(" C"));}
+
+                        JsonArray battery26 = user.createNestedArray("Tire sensor battery %");  //left side thing
+      battery26.add(tpmsb);                               //right side variable
+
   }
 
   uint16_t getId()
@@ -826,6 +1019,12 @@ public:
     // we add JSON object.
     JsonObject top = root.createNestedObject(FPSTR(_name)); // usermodname
     top[FPSTR(_stock)] = !stock;
+    top[FPSTR(_alt_mode)] = !alt_mode;
+    top[FPSTR(_psi)] = !psi;
+    top[FPSTR(_fahrenheit)] = !fahrenheit;
+    top[FPSTR(_pressure_range_low)] = pressure_range_low;  //int input
+    top[FPSTR(_pressure_range_high)] = pressure_range_high;  //int input
+
     #ifdef PRO_VERSION
     top[FPSTR(_Status_bar)] = !Status_bar;   //bool
     top[FPSTR(_battery_bar)] = !battery_bar; //bool
@@ -840,9 +1039,12 @@ public:
     #else
     top[FPSTR(_forwards_preset)] = forwards_preset;  //int input
     #endif
+
     top[FPSTR(_backwards_preset)] = backwards_preset;  //int input
     top[FPSTR(_dim_backwards_preset)] = dim_backwards_preset;  //int input
     top[FPSTR(_dim_forwards_preset)] = dim_forwards_preset;  //int input
+    top[FPSTR(_alt_backwards_preset)] = alt_backwards_preset;  //int input
+    top[FPSTR(_alt_forwards_preset)] = alt_forwards_preset;  //int input
     top[FPSTR(_dim_left_preset)] = dim_left_preset;  //int input
     top[FPSTR(_dim_right_preset)] = dim_right_preset;  //int input
 
@@ -850,8 +1052,6 @@ public:
     top[FPSTR(_boot_preset_time)] = boot_preset_time;  //int input
     top[FPSTR(_free_fall_preset)] = free_fall_preset;  //int input
     top[FPSTR(_trail_ruffness_max)] = trail_ruffness_max;  //int input
-
-      
 
     DEBUG_PRINTLN(F("Andon config saved."));
   }
@@ -885,19 +1085,27 @@ public:
     backwards_preset   = top[FPSTR(_backwards_preset)] | backwards_preset;     //int input
     dim_backwards_preset   = top[FPSTR(_dim_backwards_preset)] | dim_backwards_preset;     //int input
     dim_forwards_preset   = top[FPSTR(_dim_forwards_preset)] | dim_forwards_preset;     //int input
+
+    alt_backwards_preset   = top[FPSTR(_alt_backwards_preset)] | alt_backwards_preset;     //int input
+    alt_forwards_preset   = top[FPSTR(_alt_forwards_preset)] | alt_forwards_preset;     //int input
+
     dim_left_preset   = top[FPSTR(_dim_left_preset)] | dim_left_preset;     //int input
     dim_right_preset   = top[FPSTR(_dim_right_preset)] | dim_right_preset;     //int input
 
     boot_preset   = top[FPSTR(_boot_preset)] | boot_preset;     //int input
     boot_preset_time   = top[FPSTR(_boot_preset_time)] | boot_preset_time;     //int input
     stock            = !(top[FPSTR(_stock)] | !stock);       //bool
+    alt_mode            = !(top[FPSTR(_alt_mode)] | !alt_mode);       //bool
     free_fall_preset   = top[FPSTR(_free_fall_preset)] | free_fall_preset;     //int input
     trail_ruffness_max   = top[FPSTR(_trail_ruffness_max)] | trail_ruffness_max;     //int input
+
+    pressure_range_low   = top[FPSTR(_pressure_range_low)] | pressure_range_low;     //int input
+    pressure_range_high   = top[FPSTR(_pressure_range_high)] | pressure_range_high;     //int input
+    fahrenheit            = !(top[FPSTR(_fahrenheit)] | !fahrenheit);       //bool
+    psi            = !(top[FPSTR(_psi)] | !psi);       //bool
+
     DEBUG_PRINT(FPSTR(_name));
     DEBUG_PRINTLN(F(" config (re)loaded."));
-
-
-
 
     // use "return !top["newestParameter"].isNull();" when updating Usermod with new features
     return true;
@@ -921,23 +1129,29 @@ const char UsermodAndon::_motor_duty_slow[] PROGMEM = "Slow motor duty %";
 const char UsermodAndon::_motor_duty_med[] PROGMEM = "Med motor duty %";
 const char UsermodAndon::_motor_duty_fast[] PROGMEM = "fast motor duty %";
 #else
-const char UsermodAndon::_forwards_preset[] PROGMEM = "Preset animation to use while riding forwards";
+const char UsermodAndon::_forwards_preset[] PROGMEM = "Preset to use while riding forwards";
 #endif
-const char UsermodAndon::_dim_forwards_preset[] PROGMEM = "Preset animation to use when board is inactive going forwards";
-const char UsermodAndon::_backwards_preset[] PROGMEM = "Preset animation to use when riding backwards";
-const char UsermodAndon::_dim_backwards_preset[] PROGMEM = "Preset animation to use when board is inactive going backwards";
+const char UsermodAndon::_dim_forwards_preset[] PROGMEM = "Preset to use when board is inactive going forwards";
 
-const char UsermodAndon::_dim_left_preset[] PROGMEM = "Preset animation to use when board is inactive on left side";
-const char UsermodAndon::_dim_right_preset[] PROGMEM = "Preset animation to use when board is inactive on right side";
+const char UsermodAndon::_backwards_preset[] PROGMEM = "Preset to use when riding backwards";
+const char UsermodAndon::_dim_backwards_preset[] PROGMEM = "Preset to use when board is inactive going backwards";
 
+const char UsermodAndon::_alt_mode[] PROGMEM = "Use alt presets by turning board on its left side after boot within 10 sec";
+const char UsermodAndon::_alt_forwards_preset[] PROGMEM = "Alt mode Preset to use when board is going forwards";
+const char UsermodAndon::_alt_backwards_preset[] PROGMEM = "Alt mode Preset to use when board is going forwards";
 
-const char UsermodAndon::_boot_preset[] PROGMEM = "Preset animation to use as boot animation";
-const char UsermodAndon::_boot_preset_time[] PROGMEM = "How long is boot preset in sec (0 to disable)";
+const char UsermodAndon::_dim_left_preset[] PROGMEM = "Preset to use when board is inactive on left side";
+const char UsermodAndon::_dim_right_preset[] PROGMEM = "Preset to use when board is inactive on right side";
+
+const char UsermodAndon::_boot_preset[] PROGMEM = "Preset to use as boot animation";
+const char UsermodAndon::_boot_preset_time[] PROGMEM = "How long is boot animation sec (0 to disable)";
 
 const char UsermodAndon::_free_fall_preset[] PROGMEM = "Preset to display after a free fall";
 const char UsermodAndon::_free_fall_preset_time[] PROGMEM = "How long is free fall preset in sec (0 to disable)";
 
-const char UsermodAndon::_trail_ruffness_max[] PROGMEM = "max trail ruffness for bar graph";
+const char UsermodAndon::_trail_ruffness_max[] PROGMEM = "max trail ruffness for bar graph (dev setting)";
 
-
-
+const char UsermodAndon::_pressure_range_low[] PROGMEM = "Pressure range low";
+const char UsermodAndon::_pressure_range_high[] PROGMEM = "Pressure range high";
+const char UsermodAndon::_fahrenheit[] PROGMEM = "Fahrenheit / Celsius";
+const char UsermodAndon::_psi[] PROGMEM = "PSI / Bar";

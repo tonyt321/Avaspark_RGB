@@ -93,7 +93,7 @@ void handleSerial()
           handleImprovPacket();
           return;
         } else if (next == 'v') {
-          Serial.print("WLED"); Serial.write(' '); Serial.println(VERSION);
+          Serial.print("ANDONN"); Serial.write(' '); Serial.println(VERSION);
      
         } else if (next == 0xB0) {updateBaudRate( 115200);
         } else if (next == 0xB1) {updateBaudRate( 230400);

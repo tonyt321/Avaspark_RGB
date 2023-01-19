@@ -108,7 +108,7 @@ class MyExampleUsermod : public Usermod {
 
     /*
      * readFromJsonState() can be used to receive data clients send to the /json/state part of the JSON API (state object).
-     * Values in the state object may be modified by connected clients
+     * Values in  the state object may be modified by connected clients
      */
     void readFromJsonState(JsonObject& root)
     {
@@ -145,11 +145,11 @@ class MyExampleUsermod : public Usermod {
      *   - Tip: use int8_t to store the pin value in the Usermod, so a -1 value (pin not set) can be used
      *
      * See usermod_v2_auto_save.h for an example that saves Flash space by reusing ArduinoJson key name strings
-     * 
+     *
      * If you need a dedicated settings page with custom layout for your Usermod, that takes a lot more work.  
      * You will have to add the setting to the HTML, xml.cpp and set.cpp manually.
      * See the WLED Soundreactive fork (code and wiki) for reference.  https://github.com/atuline/WLED
-     * 
+     *
      * I highly recommend checking out the basics of ArduinoJson serialization and deserialization in order to use custom settings!
      */
     void addToConfig(JsonObject& root)
@@ -164,7 +164,7 @@ class MyExampleUsermod : public Usermod {
       top["testString"] = testString;
       JsonArray pinArray = top.createNestedArray("pin");
       pinArray.add(testPins[0]);
-      pinArray.add(testPins[1]); 
+      pinArray.add(testPins[1]);
     }
 
 

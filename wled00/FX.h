@@ -311,8 +311,11 @@
 #define FX_MODE_WAVESINS               184
 #define FX_MODE_ROCKTAVES              185
 #define FX_MODE_2DAKEMI                186
+#define FX_MODE_TRAILRATE              187
+#define FX_MODE_WHEELTEMP              188
+#define FX_MODE_TIREPRESSURE           189
 
-#define MODE_COUNT                     187
+#define MODE_COUNT                     190
 
 typedef enum mapping1D2D {
   M12_Pixels = 0,

@@ -309,7 +309,7 @@ WLED_GLOBAL bool noWifiSleep _INIT(false);
 #endif
 
 // LED CONFIG
-WLED_GLOBAL bool turnOnAtBoot _INIT(true);                // turn on LEDs at power-up
+WLED_GLOBAL bool turnOnAtBoot _INIT(false);                // turn on LEDs at power-up
 WLED_GLOBAL byte bootPreset   _INIT(0);                   // save preset to load after power-up
 
 //if true, a segment per bus will be created on boot and LED settings save
@@ -335,7 +335,7 @@ WLED_GLOBAL byte briMultiplier _INIT(100);          // % of brightness to set (t
 
 // User Interface CONFIG
 #ifndef SERVERNAME
-WLED_GLOBAL char serverDescription[33] _INIT("WLED");  // Name of module - use default
+WLED_GLOBAL char serverDescription[33] _INIT("ANDONN");  // Name of module - use default
 #else
 WLED_GLOBAL char serverDescription[33] _INIT(SERVERNAME);  // use predefined name
 #endif
