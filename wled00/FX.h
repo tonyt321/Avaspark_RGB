@@ -314,8 +314,19 @@
 #define FX_MODE_TRAILRATE              187
 #define FX_MODE_WHEELTEMP              188
 #define FX_MODE_TIREPRESSURE           189
+#define FX_MODE_COUNTDOWN              190
+#define FX_MODE_F_ACCELERATION_BLINK   191
+#define FX_MODE_B_ACCELERATION_BLINK   192
+#define FX_MODE_FB_ACCELERATION_BLINK  193
+#define FX_MODE_STOCK_BACK             194
+#define FX_MODE_STOCK_FRONT            195
+#define FX_MODE_ACCEL_TEST             196
+#define FX_MODE_COUNTDOWN_FADE         197
+#define FX_MODE_RATE_TRAIL_FADE        198
+#define FX_MODE_TIRE_PRESSURE_FADE     199
+#define FX_MODE_WHEEL_TEMP_FADE        200
 
-#define MODE_COUNT                     190
+#define MODE_COUNT                     201
 
 typedef enum mapping1D2D {
   M12_Pixels = 0,
