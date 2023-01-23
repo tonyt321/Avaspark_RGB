@@ -9,6 +9,7 @@
 
 //int display_battery;
 //int display_duty_cycle;
+int shop = 0;// shop mode
 int motod = 0;// input from msense
 int motor_duty_display;
 int shutdown_display;
@@ -18,6 +19,19 @@ int display_trail_ruffness;
 int filteredx , filteredy , filteredz;
 bool forward = true;
 bool dimmed_lights = false;
+float battery_voltage;
+
+int cvt[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};  //cell voltage table
+int tempt[] = {0, 0, 0, 0, 0};  // battery tempature table
+
+int tv2 = 0; //totale volatage
+int ca2 = 0; //current amps
+int bmss = 0; //bms state of charge
+int ucm = 0; //used charge mah                stuff for pint and XR owie
+int rcm = 0; //regen mah
+
+
+
 
 #define PALETTE_SOLID_WRAP (strip.paletteBlend == 1 || strip.paletteBlend == 3)
 
@@ -54,21 +68,6 @@ uint16_t blink(uint32_t color1, uint32_t color2, uint32_t intensity1, bool do_pa
 
   return FRAMETIME;
 }
-
-/*
- * Fades the LEDs between two colors
- */
-uint16_t mode_aafade(void) {
-  uint16_t counter = (SEGMENT.speed);
-
-  for (int i = 0; i < SEGLEN; i++) {
-    SEGMENT.setPixelColor(i, color_blend(SEGCOLOR(1), SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0), counter));
-  }
-
-  return FRAMETIME;
-}
-static const char _data_fx_mode_aafade[] PROGMEM = "aaFade@!;!,!;!";
-
 
 
 uint16_t mode_accel_test(void)
@@ -435,10 +434,10 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
   bool battery_bar = false;
 
 
-  
+
   unsigned long motor_duty_est; // slow on the build up quick on the slow down
   //unable to shape with caps diffrently without being more space on the pcb and thru hole sodlering
-  unsigned long battery_voltage_est; // estimated battery voltage (might be a bit off due to ADC non linearaity)
+  float battery_voltage_est; // estimated battery voltage (might be a bit off due to ADC non linearaity)
   //https://i0.wp.com/randomnerdtutorials.com/wp-content/uploads/2019/05/ADC-non-linear-ESP32.png?w=768&quality=100&strip=all&ssl=1
   int battery_percent;
 
@@ -471,7 +470,6 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
   int8_t boot_preset = 1;  //preset played as a boot animation
 
   int boot_preset_time = 3; // boot animation length in sec
-  unsigned long start_milisec; // for tracking how much time has past for boot animation preset
 
 
   bool FRONT_LIGHT_R = false;
@@ -488,7 +486,6 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
   int blink_app_lights = 0;
   unsigned long blink_app_lights_timing;
 
-  bool stock = true;
   unsigned int stock_preset = 0;
 
   unsigned int free_fall_preset = 1; // preset after free fall
@@ -719,9 +716,17 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
   {                            // (analong read 0 - 4095) * (max v/max A read) * (resistor voltage divider) 
     battery_voltage_est = ((analogRead(BATTERY_VOLTAGE_PIN)) * (3.2/4095) * (1/24)); //resistor voltage divider used 1k and 24k
     //                map(value, fromLow, fromHigh, toLow, toHigh)            does not use voltage curves
-    if (MODEL == 0){battery_percent = map(battery_voltage_est, 59.4, 73.8, 0, 100);}
-    if (MODEL == 1){battery_percent = map(battery_voltage_est, 49.5, 61.5, 0, 100);}
-    if (MODEL == 2){battery_percent = map(battery_voltage_est, 49.5, 61.5, 0, 100);}
+    battery_percent = map(battery_voltage_est, 59.4, 73.8, 0, 100);
+
+
+    if (tv2 == 0){
+      battery_voltage = battery_voltage_est;
+      }else{
+        battery_voltage = tv2;
+        }
+
+    bmss = battery_percent;
+
   }
 #endif
 
@@ -948,7 +953,13 @@ void turn_all_light_on(){
 
 
 void set_preset() { // pick which preset based on direction, speed, dim, alt mode
- if (stock_preset != 0){applyPreset(stock_preset);return;}
+
+    if (stock_preset != 0){
+    applyPreset(stock_preset);
+    return;}
+
+    if (imu_free_fall){return;}
+
 
   if (upright == false) {
     if (side_left == true) {applyPreset(dim_left_preset);}
@@ -988,8 +999,8 @@ public:
   void setup()
   {
 
-  if (stock_preset == 0){stock == true;}else{stock == false;}
-
+    briS = 255;
+    bootPreset = boot_preset;
     // set pin modes
     strip.addEffect(FX_MODE_FB_ACCELERATION_BLINK, &mode_fb_acceleration_blink, _data_fx_fb_acceleration_blink);
     strip.addEffect(FX_MODE_F_ACCELERATION_BLINK, &mode_f_acceleration_blink, _data_fx_f_acceleration_blink);
@@ -1071,6 +1082,7 @@ public:
    // adxl.setFIFOMode("FIFO"); //four available modes - Bypass, FIFO, Stream and Trigger.
    // adxl.set_bw(ADXL345_BW_25);         //set bitrate
 
+   shop = 0;// if display / other esp connected set to 1 to allow more devices connected with blocking main loop
 
    #ifdef TEST_MODE
    app_lights_on = true;  // set as if lights are detected as always on in test mode
@@ -1080,34 +1092,33 @@ public:
    get_front_light();  // handels truning on/off lights and forward/back detection
    #endif
 
-
-
+   get_imu_data();
+   get_imu_data();
    get_imu_data();
    get_imu_data();
    get_imu_data(); // get imu data twice to populate filtered ints
-   if (filteredy < -20){side_right = true;}
+   if (filteredy < -10){side_right = true;}
+   if (filteredy > 10){side_right = true;}
    ///////////////////////////////////////////////////////  wifi
    //#ifndef TEST_MODE
-   if (side_right == true){
-
-          apBehavior = AP_BEHAVIOR_BUTTON_ONLY;
-          apActive = false;
-          WLED::instance().initAP(false);
-          //dnsServer.stop();
-          WiFi.softAPdisconnect(true);           // Disable Wifi
-          WLED::instance().handleConnection();
-
-    if (stock_preset == 0){ // if emulate stock is off use boot up preset
+   if (side_right == false){
+   //       apBehavior = AP_BEHAVIOR_BUTTON_ONLY;
+   //       apActive = false;
+   //       WLED::instance().initAP(false);
+   //       //dnsServer.stop();
+   //       WiFi.softAPdisconnect(true);           // Disable Wifi
+   //       WLED::instance().handleConnection();
+    apHide = true; // hide wifi
     if (boot_preset_time != 0){ // skip if boot_preset_time set to 0
-    start_milisec = millis();
     applyPreset(boot_preset);// start up animation plays for 3 sec or so (still need to implement switching back)
-    }
-   }else{applyPreset(stock_preset);}
-
+    }else{set_preset();}
+   /////////////////////////when wifi is off
    }else{
-    applyPreset(boot_preset);//play wifi animation here
+    ////////////////////////when wifi is on
+    apHide = false; // show wifi
+    applyPreset(free_fall_preset);//use free fall preset as wifi on boot animation
    }
-}// end of start up
+   }// end of start up
 
   void loop()
   {
@@ -1117,11 +1128,9 @@ public:
     wifi_sta_list_t stationList;  //skip looping code if user is on wifi so we dont change stuff while they are editing
     esp_wifi_ap_get_sta_list(&stationList);
     client_numb = stationList.num;
-    if ( client_numb != 0 ){
-      //handleSet(nullptr, "win&T=1" , false );// turn all on
-    return;
+    if ((client_numb > shop) || (free_fall_preset != 250)){
+        return;
     }
-
 
    #ifndef TEST_MODE // test mode skip get direction from front light becuase we dont have the hardware on test esp32
    get_front_light();  // handels truning on/off lights and forward/back detection
@@ -1141,7 +1150,7 @@ get_imu_data();
      }
      }
 
-     if (((millis()) - start_milisec) < (boot_preset_time * 1000)){
+     if ((millis()) < (boot_preset_time * 1000)){
       return;  // returns loop if boot animation hasnt finished playing
      }
 
@@ -1150,9 +1159,11 @@ get_imu_data();
 
 
 
-if (imu_free_fall == false){
-   set_preset();
-}
+
+
+  set_preset();
+
+  if (stock_preset != 0){return;}
 
 
 
@@ -1207,25 +1218,88 @@ if (imu_free_fall == false){
       tpmst = root["tpmst"] | tpmst; //TPMS temp
       trick = root["trick"] | trick; //trick number
       motod = root["motod"] | motod; //motor duty cycle from msense
+      shop  = root["shop"] | shop; //allows for display to be connected while user mod still runs loop
 
-    // int cvt[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    // int tempt[] = {0, 0, 0, 0, 0}
+      tv2 = root["tv2"] | tv2; //totale volatage
+      ca2 = root["ca2"] | ca2; //current amps
+      bmss = root["bmss"] | bmss; //bms state of charge
+      ucm = root["ucm"] | ucm; //used charge mah                stuff for pint and XR owie
+      rcm = root["rcm"] | rcm; //regen mah
+      cvt[0] = root["cvt"][0] | cvt[0]; //cell voltage table
+      cvt[1] = root["cvt"][1] | cvt[1]; //cell voltage table
+      cvt[2] = root["cvt"][2] | cvt[2]; //cell voltage table
+      cvt[3] = root["cvt"][3] | cvt[3]; //cell voltage table
+      cvt[4] = root["cvt"][4] | cvt[4]; //cell voltage table
 
-    //  tv = root["tv"] | tv; //totale volatage
-    //  ca = root["ca"] | ca; //current amps
-    //  bmss = root["bmss"] | bmss; //bms state of charge
-    //  ucm = root["ucm"] | ucm; //used charge mah                stuff for pint and XR owie
-    //  rcm = root["rcm"] | rcm; //regen mah
-    //  cvt = root["cvt"] | cvt; //cell voltage table
-    //  tempt = root["tempt"] | tempt; //temp voltage table
+      tempt[1] = root["tempt"][1] | tempt[1]; //temp voltage table
+      tempt[2] = root["tempt"][2] | tempt[2]; //temp voltage table  there is probably a better way to do this
+      tempt[3] = root["tempt"][3] | tempt[3]; //temp voltage table
+      tempt[4] = root["tempt"][4] | tempt[4]; //temp voltage table
+      tempt[5] = root["tempt"][5] | tempt[5]; //temp voltage table
+      tempt[6] = root["tempt"][6] | tempt[6]; //temp voltage table
+      tempt[7] = root["tempt"][7] | tempt[7]; //temp voltage table
+      tempt[8] = root["tempt"][8] | tempt[8]; //temp voltage table
+      tempt[9] = root["tempt"][9] | tempt[9]; //temp voltage table
+      tempt[10] = root["tempt"][10] | tempt[10]; //temp voltage table
+      tempt[11] = root["tempt"][11] | tempt[11]; //temp voltage table
+      tempt[12] = root["tempt"][12] | tempt[12]; //temp voltage table
+      tempt[13] = root["tempt"][13] | tempt[13]; //temp voltage table
+      tempt[14] = root["tempt"][14] | tempt[14]; //temp voltage table
 
-      if (root["ainfo"] == 255){
-        Serial.println("Don't burn down your garage!");
-        }
     }
 
   void addToJsonInfo(JsonObject &root)  //serial json outputs go here
   {
+
+    JsonObject hidden = root[F("h")];
+    if (hidden.isNull())
+      hidden = root.createNestedObject(F("h"));
+
+
+
+        JsonArray lux2 = hidden.createNestedArray(F("tpsm")); //left side thing
+    lux2.add(tpmsp);
+    lux2.add(psi);
+    lux2.add(tpmst);
+    lux2.add(fahrenheit);
+    lux2.add(tpmsb);
+
+            JsonArray lux6 = hidden.createNestedArray(F("lights")); //left side thing
+    lux6.add(app_lights_on);
+    lux6.add(forward);
+    lux6.add(dimmed_lights);
+    lux6.add(blink_app_lights);
+
+        JsonArray lux7 = hidden.createNestedArray(F("accel")); //left side thing
+    lux7.add(filteredx);
+    lux7.add(filteredy);
+    lux7.add(filteredz);
+
+        JsonArray lux4 = hidden.createNestedArray(F("trail")); //left side thing
+    lux4.add(display_trail_ruffness);                       //right side variable
+
+            JsonArray lux1 = hidden.createNestedArray(F("duty")); //left side thing
+    lux1.add(motor_duty_display);                       //right side variable
+
+            JsonArray bat1 = hidden.createNestedArray(F("tv")); //totale volatage
+    bat1.add(battery_voltage);
+                JsonArray bat2 = hidden.createNestedArray(F("ca")); //current amps
+    bat2.add(ca2);
+                JsonArray bat3 = hidden.createNestedArray(F("bmss")); //bms state of charge
+    bat3.add(bmss);
+                JsonArray bat4 = hidden.createNestedArray(F("ucm")); //used charge mah
+    bat4.add(ucm);
+                JsonArray bat5 = hidden.createNestedArray(F("rcm")); //regen mah
+    bat5.add(rcm);
+                JsonArray bat6 = hidden.createNestedArray(F("cvt")); //batt cell voltage table
+    bat6.add(cvt[0]);bat6.add(cvt[1]);bat6.add(cvt[2]);bat6.add(cvt[3]);bat6.add(cvt[4]);bat6.add(cvt[5]);bat6.add(cvt[6]);bat6.add(cvt[7]);bat6.add(cvt[8]);bat6.add(cvt[9]);bat6.add(cvt[10]);bat6.add(cvt[11]);bat6.add(cvt[12]);bat6.add(cvt[13]);bat6.add(cvt[14]);
+
+                JsonArray bat7 = hidden.createNestedArray(F("tempt")); //batt temp table
+    bat7.add(tempt[0]);bat7.add(tempt[1]);bat7.add(tempt[2]);bat7.add(tempt[3]);bat7.add(tempt[4]);
+
+
+
+
     JsonObject user = root[F("u")];
     if (user.isNull())
       user = root.createNestedObject(F("u"));
@@ -1245,11 +1319,11 @@ if (imu_free_fall == false){
       battery6.add(display_trail_ruffness);                               //right side variable
 
           JsonArray battery9;
-           if (psi) {battery9 = user.createNestedArray("Tire Pressure PSI");}else{battery9 = user.createNestedArray("Tire Pressure Bar");}  //left side thing
+           if (psi) {battery9 = user.createNestedArray("Tire PSI");}else{battery9 = user.createNestedArray("Tire Bar");}  //left side thing
       battery9.add((14.5038 * tpmsp));
 
           JsonArray battery16;
-         if (fahrenheit) {battery16 = user.createNestedArray("Tire sensor Temp F");}else{battery16 = user.createNestedArray("Tire sensor Temp C");}  //left side thing
+         if (fahrenheit) {battery16 = user.createNestedArray("Tire Temp F");}else{battery16 = user.createNestedArray("Tire Temp C");}  //left side thing
          battery16.add(((tpmst * 1.8) + 32));
 
                         JsonArray battery26 = user.createNestedArray("Tire sensor battery %");  //left side thing
