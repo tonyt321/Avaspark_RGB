@@ -1309,7 +1309,7 @@ get_imu_data();
       JsonArray battery = user.createNestedArray("blue level");  //left side thing
       battery.add(LIGHT_BAR_B);                               //right side variable
 #endif
-      JsonArray shop = user.createNestedArray("Andon Origin");  //left side thing
+      JsonArray shop = user.createNestedArray("Andonn Origin");  //left side thing
       shop.add(SHOP_NAME);                               //right side variable
 
                   JsonArray battery6 = user.createNestedArray("activations per min");  //left side thing
@@ -1376,7 +1376,7 @@ get_imu_data();
     top[FPSTR(_fahrenheit)] = !fahrenheit;
 
 
-    DEBUG_PRINTLN(F("Andon config saved."));
+    DEBUG_PRINTLN(F("Andonn config saved."));
   }
 
   /**
