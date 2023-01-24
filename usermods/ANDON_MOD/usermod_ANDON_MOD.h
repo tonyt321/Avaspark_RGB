@@ -952,7 +952,7 @@ void turn_all_light_on(){
 
 
 
-void set_preset() { // pick which preset based on direction, speed, dim, alt mode
+void set_preset() { // pick which preset based on direction, speed, dim, alt mode  
 
     if (stock_preset != 0){
     applyPreset(stock_preset);
