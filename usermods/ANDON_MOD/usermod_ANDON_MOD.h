@@ -954,12 +954,6 @@ void turn_all_light_on(){
 
 void set_preset() { // pick which preset based on direction, speed, dim, alt mode
 
-    if (stock_preset != 0){
-    applyPreset(stock_preset);
-    return;}
-
-    if (imu_free_fall){return;}
-
 
   if (upright == false) {
     if (side_left == true) {applyPreset(dim_left_preset);}
@@ -1082,7 +1076,7 @@ public:
    // adxl.setFIFOMode("FIFO"); //four available modes - Bypass, FIFO, Stream and Trigger.
    // adxl.set_bw(ADXL345_BW_25);         //set bitrate
 
-   shop = 0;// if display / other esp connected set to 1 to allow more devices connected with blocking main loop
+   shop = 1;// if display / other esp connected set to 1 to allow more devices connected with blocking main loop
 
    #ifdef TEST_MODE
    app_lights_on = true;  // set as if lights are detected as always on in test mode
@@ -1128,7 +1122,8 @@ public:
     wifi_sta_list_t stationList;  //skip looping code if user is on wifi so we dont change stuff while they are editing
     esp_wifi_ap_get_sta_list(&stationList);
     client_numb = stationList.num;
-    if ((client_numb > shop) || (free_fall_preset != 250)){
+   // if ((client_numb >= shop) || (free_fall_preset != 250)){
+    if (client_numb != 0){
         return;
     }
 
@@ -1159,11 +1154,13 @@ get_imu_data();
 
 
 
+    if (stock_preset != 0){
+    applyPreset(stock_preset);
+    return;}
 
-
-  set_preset();
-
-  if (stock_preset != 0){return;}
+    if (!imu_free_fall){
+      set_preset();
+    }
 
 
 
