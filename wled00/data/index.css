@@ -728,7 +728,7 @@ input[type=range]::-moz-range-thumb {
 
 #Colors .sliderwrap {
 	width: 260px;
-	margin: 10px 0 0;
+	/* removed empty spaces from slider margin: 10px 0 0; */
 }
 
 /* Dynamically hide brightness slider label */
@@ -1507,3 +1507,5 @@ TD .checkmark, TD .radiomark {
 		display: none;
 	}
 }
+#kwrap{display: none!important;}
+.sbs i,#filters{display: none !important;}

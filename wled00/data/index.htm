@@ -6,7 +6,7 @@
 	<meta name="theme-color" content="#222222">
 	<meta content="yes" name="apple-mobile-web-app-capable">
 	<link rel="shortcut icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAEAGACGAAAAFgAAAIlQTkcNChoKAAAADUlIRFIAAAAQAAAAEAgGAAAAH/P/YQAAAE1JREFUOI1j/P//PwOxgNGeAUMxE9G6cQCKDWAhpADZ2f8PMjBS3QW08QK20KaZC2gfC9hCnqouoNgARgY7zMxAyNlUdQHlXiAlO2MDAD63EVqNHAe0AAAAAElFTkSuQmCC"/>
-	<title>WLED</title>
+	<title>ANDONN</title>
 	<script>
 	function feedback(){}
 	// instead of including [script src="iro.js"][/script] and [script src="rangetouch.js"][/script]
@@ -54,23 +54,24 @@
 </head>
 <body>
 
-<div id="cv" class="overlay">Loading WLED UI...</div>
-<noscript><div class="overlay" style="opacity:1;">Sorry, WLED UI needs JavaScript!</div></noscript>
+<div id="cv" class="overlay">Loading ANDONN UI...</div>
+<noscript><div class="overlay" style="opacity:1;">Sorry, ANDONN UI needs JavaScript!</div></noscript>
 <div id="bg"></div>
 
 <div class="wrapper" id="top">
 	<div class="tab top">
 		<div class="btnwrap">
 			<button id="buttonPower" onclick="togglePower()" class="tgl"><i class="icons">&#xe08f;</i><p class="tab-label">Power</p></button>
-			<button id="buttonNl" onclick="toggleNl()"><i class="icons">&#xe2a2;</i><p class="tab-label">Timer</p></button>
-			<button id="buttonSync" onclick="toggleSync()"><i class="icons">&#xe116;</i><p class="tab-label">Sync</p></button>
+			<button  style="display: none !important;"  id="buttonNl" onclick="toggleNl()"><i class="icons">&#xe2a2;</i><p class="tab-label">Timer</p></button>
+			<button  style="display: none !important;" id="buttonSync" onclick="toggleSync()"><i class="icons">&#xe116;</i><p class="tab-label">Sync</p></button>
 			<button id="buttonSr" onclick="toggleLiveview()"><i class="icons">&#xe410;</i><p class="tab-label">Peek</p></button>
-			<button id="buttonI" onclick="toggleInfo()"><i class="icons">&#xe066;</i><p class="tab-label">Info</p></button>
-			<button id="buttonNodes" onclick="toggleNodes()"><i class="icons">&#xe22d;</i><p class="tab-label">Nodes</p></button>
-			<button onclick="window.location.href='/settings';"><i class="icons">&#xe0a2;</i><p class="tab-label">Config</p></button>
-			<button id="buttonPcm" onclick="togglePcMode(true)"><i class="icons">&#xe23d;</i><p class="tab-label">PC Mode</p></button>
+			<button  style="display: none !important;" id="buttonI" onclick="toggleInfo()"><i class="icons">&#xe066;</i><p class="tab-label">Info</p></button>
+			<button  style="display: none !important;" id="buttonNodes" onclick="toggleNodes()"><i class="icons">&#xe22d;</i><p class="tab-label">Nodes</p></button>
+			<button  style="display: none !important;" onclick="window.location.href='/settings';"><i class="icons">&#xe0a2;</i><p class="tab-label">Config</p></button>
+			<button style="display: none !important;"  id="buttonPcm" onclick="togglePcMode(true)"><i class="icons">&#xe23d;</i><p class="tab-label">PC Mode</p></button>
+			<button onclick="window.location.href = '/settings/um';"><i class="icons">&#xe0a2;</i><p class="tab-label">Config</p></button>
 		</div>
-		<div id="briwrap">
+		<div style="display: none !important;" id="briwrap">
 			<p class="hd">Brightness</p>
 			<div class="il">
 				<i class="icons slider-icon" onclick="tglTheme()">&#xe2a6;</i>
@@ -87,6 +88,9 @@
 
 <div class ="container">
 	<div id="Colors" class="tabcontent">
+		<div id="segcont">
+			Loading...
+		</div>
 		<div id="picker" class="noslide"></div>
 		<div id="hwrap">
 			<!--p class="labels hd">Hue</p-->
@@ -109,7 +113,7 @@
 				<div class="sliderdisplay"></div>
 			</div><br>
 		</div>
-		<div id="kwrap">
+		<div style="display: none !important;" id="kwrap">
 			<!--p class="labels hd">Temperature</p-->
 			<div class="sliderwrap il">
 				<input id="sliderK" class="noslide" oninput="fromK()" onchange="setColor(0)" max="10091" min="1900" type="range" value="6550" />
@@ -299,6 +303,15 @@
 				</label>
 			</div>
 		</div>
+		<div id="Segments" style="width: 100%;height: 46%;margin-top: 4%;" class="tabcontent">
+			<div id="segutil">
+	
+			</div>
+			<div id="segutil2">
+				<button class="btn btn-s" id="rsbtn" onclick="rSegs()">Reset segments</button>
+			</div>
+		<p>Transition: <input id="tt" class="noslide" type="number" min="0" max="65.5" step="0.1" value="0.7">s</p>
+		</div>
 	</div>
 
 	<div id="Segments" class="tabcontent">
@@ -334,13 +347,13 @@
 <div class="tab bot" id="bot">
 	<button class="tablinks" onclick="openTab(0)"><i class="icons">&#xe2b3;</i><p class="tab-label">Colors</p></button>
 	<button class="tablinks" onclick="openTab(1)"><i class="icons">&#xe23d;</i><p class="tab-label">Effects</p></button>
-	<button class="tablinks" onclick="openTab(2)"><i class="icons">&#xe34b;</i><p class="tab-label">Segments</p></button>
+	<button  style="display: none !important;" class="tablinks" onclick="openTab(2)"><i class="icons">&#xe34b;</i><p class="tab-label">Segments</p></button>
 	<button class="tablinks" onclick="openTab(3)"><i class="icons">&#xe04c;</i><p class="tab-label">Presets</p></button>
 </div>
 
 <div id="connind"></div>
 <div id="toast" onclick="clearErrorToast(100);"></div>
-<div id="namelabel" onclick="toggleNodes()"></div>
+<div id="namelabel" onclick="toggleInfo()"></div>
 <div id="info" class="modal">
 	<button class="btn btn-xs close" onclick="toggleInfo()"><i class="icons rot45">&#xe18a;</i></button>
 	<div id="imgw">
@@ -350,16 +363,15 @@
 	<div>
 		<button class="btn infobtn" onclick="requestJson()">Refresh</button>
 		<button class="btn infobtn" onclick="toggleNodes()">Instance List</button>
-		<button class="btn infobtn" onclick="window.open('/update','_self');">Update WLED</button>
-		<button class="btn infobtn" id="resetbtn" onclick="cnfReset()">Reboot WLED</button>
+		<button class="btn infobtn" onclick="window.open('/settings/wifi','_self');">Wifi Settings</button>
+		<button class="btn infobtn" id="resetbtn" onclick="cnfReset()">Reboot ANDONN</button>
 	</div>
 	<br>
-	<span class="h">Made with <span id="heart">&#10084;&#xFE0E;</span> by Aircoookie and the <a href="https://wled.discourse.group/" target="_blank">WLED community</a></span>
 </div>
 
 <div id="nodes" class="modal">
 	<button class="btn btn-xs close" onclick="toggleNodes()"><i class="icons rot45">&#xe18a;</i></button>
-	<div id="ndlt">WLED instances</div>
+	<div id="ndlt">Devices</div>
 	<div id="kn">Loading...</div>
 	<div style="position:sticky;bottom:0;">
 		<button class="btn infobtn" onclick="loadNodes()">Refresh</button>
