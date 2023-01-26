@@ -916,29 +916,13 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
     app_lights_on_last = app_lights_on;
 
    if (app_lights_on == false){ //turns lights off if in app lights are off
-   turn_all_light_off();
+   bri = 0;stateUpdated(1);
    }else{
-    turn_all_light_on();
+    bri = 255;stateUpdated(1);
    }
   }
 
 
-
-void turn_all_light_off(){
- //handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
- //handleSet(nullptr, "win&T=0&SB=0&S=0&S2=13" , false );// turn all off
-
- //handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
- //handleSet(nullptr, "win&T=0&SB=0&S=13&S2=26" , false );// turn all off
-}
-
-void turn_all_light_on(){
-  //handleSet(nullptr, "win&S=0&S2=13&SS=0&SM=0&SV=2" , false );  // select seg 0 & set main seg 0 & de select other seg
-  //handleSet(nullptr, "win&T=1&SB=255&S=0&S2=13" , false );// turn all on
-
-  //handleSet(nullptr, "win&S=13&S2=26&SS=1&SM=1&SV=2" , false );
-  //handleSet(nullptr, "win&T=1&SB=255&S=13&S2=26" , false );// turn all on
-}
 
 //now it shows battery on front and back
 //when the board is idle, display the battery level as a bar graph upon the rear led pcb upon the ground
