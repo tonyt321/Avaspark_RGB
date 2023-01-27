@@ -913,13 +913,16 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
           }
     blink_app_lights_timing = millis();
     }
-    app_lights_on_last = app_lights_on;
 
+  if(app_lights_on_last != app_lights_on){
    if (app_lights_on == false){ //turns lights off if in app lights are off
-   bri = 0;stateUpdated(1);
+    bri = 0;stateUpdated(1);
    }else{
     bri = 255;stateUpdated(1);
    }
+  }
+
+    app_lights_on_last = app_lights_on;
   }
 
 
