@@ -845,7 +845,7 @@ unsigned long a_read_milisec;  // analog read limit
 
     // Free Fall Detection
     if(adxl.triggered(interrupts, ADXL345_FREE_FALL)){
-      if (free_fall_preset_time != 0){
+      if (free_fall_preset_time != 0 && !dimmed_lights){
     imu_free_fall = true;
     free_fall_milisec = millis();
     }
