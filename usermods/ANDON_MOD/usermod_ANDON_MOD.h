@@ -496,11 +496,11 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
   int rawx , rawy , rawz;
   //int filteredx , filteredy , filteredz;  //moved to global values
   int normx , normy , normz;
-  int smoothedy;
+  int smoothedy;  // unused
 
-  bool wifi_change = true;
+unsigned long a_read_milisec;  // analog read limit
 
-//////////////////////////////Global var for effects
+//////////////////////////////tpsm vars
 
   int tpmsb = 0; //tpms batt
   float tpmsp = 0; //tpms pressure
@@ -941,6 +941,9 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
 
 void set_preset() { // pick which preset based on direction, speed, dim, alt mode
 
+    if (stock_preset != 0){
+    applyPreset(stock_preset);
+    return;}
 
   if (upright == false) {
     if (side_left == true) {applyPreset(dim_left_preset);}
@@ -1090,9 +1093,12 @@ public:
    //       WiFi.softAPdisconnect(true);           // Disable Wifi
    //       WLED::instance().handleConnection();
     apHide = true; // hide wifi
-    if (boot_preset_time != 0){ // skip if boot_preset_time set to 0
+
+
+    if (boot_preset_time != 0 && ((stock_preset != 0) == false)){ // skip if boot_preset_time set to 0
     applyPreset(boot_preset);// start up animation plays for 3 sec or so (still need to implement switching back)
     }else{set_preset();}
+    }//end of if not stock preset
    /////////////////////////when wifi is off
    }else{
     ////////////////////////when wifi is on
@@ -1111,20 +1117,30 @@ public:
     client_numb = stationList.num;
    // if ((client_numb >= shop) || (free_fall_preset != 250)){
     if (client_numb != 0){
-        return;
-    }
+      if (person_on_ui){return;}
+    }else{person_on_ui = false;}
 
-   #ifndef TEST_MODE // test mode skip get direction from front light becuase we dont have the hardware on test esp32
-   get_front_light();  // handels truning on/off lights and forward/back detection
+if ((a_read_milisec + 100) < millis()){    // limit loop to 10 times a sec
+a_read_milisec = millis();
+
+get_front_light();  // handels truning on/off lights and forward/back detection
+
+}else{
+  return; // skip rest of loop
+}
+
+
    if (app_lights_on == false){
        return; // skip rest of loop
    }
-   #endif
 
 
 last_active();//updates when board was last active
 get_imu_data();
 
+    if (stock_preset != 0){
+    applyPreset(stock_preset);
+    return;}
 
   if(alt_mode_user){  //if alt mode user is set true enable alt mode detection
      if ((millis()) < (10 * 1000)){
@@ -1141,9 +1157,7 @@ get_imu_data();
 
 
 
-    if (stock_preset != 0){
-    applyPreset(stock_preset);
-    return;}
+
 
     if (!imu_free_fall){
       set_preset();
