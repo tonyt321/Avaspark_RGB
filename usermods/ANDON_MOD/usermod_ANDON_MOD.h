@@ -1097,7 +1097,8 @@ public:
 
     if (boot_preset_time != 0 && ((stock_preset != 0) == false)){ // skip if boot_preset_time set to 0
     applyPreset(boot_preset);// start up animation plays for 3 sec or so (still need to implement switching back)
-    }else{set_preset();}
+    }else{
+      set_preset();
     }//end of if not stock preset
    /////////////////////////when wifi is off
    }else{
