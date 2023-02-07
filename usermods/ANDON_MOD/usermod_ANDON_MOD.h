@@ -42,7 +42,7 @@ int rcm = 0; //regen mah
  * Alternate between color1 and color2
  * if(strobe == true) then create a strobe effect
  */
-uint16_t blink(uint32_t color1, uint32_t color2, uint32_t intensity1, bool do_palette, uint32_t speed1) {
+ uint16_t blink(uint32_t color1, uint32_t color2, uint32_t intensity1, bool do_palette, uint32_t speed1) {
   uint32_t cycleTime = (255 - speed1)*20;
   uint32_t onTime = FRAMETIME;
   if (!false) onTime += ((cycleTime * intensity1) >> 8);
@@ -67,10 +67,10 @@ uint16_t blink(uint32_t color1, uint32_t color2, uint32_t intensity1, bool do_pa
   } else SEGMENT.fill(color);
 
   return FRAMETIME;
-}
+ }
 
 
-uint16_t mode_accel_test(void)
+ uint16_t mode_accel_test(void)
  {  
   int x = (filteredx * 3); if(x > 255){x = 255;} if(x < 0){x = 0;}
   int y = (filteredy * 3); if(y > 255){y = 255;} if(y < 0){y = 0;}
@@ -78,11 +78,11 @@ uint16_t mode_accel_test(void)
   
   for (int i = 0 ; i < SEGLEN; i++) {SEGMENT.setPixelColor(i, x, y, z, 0);}
   return FRAMETIME;
-}
-static const char _data_fx_mode_accel_test[] PROGMEM = "Accel test@!;;";
+ }
+ static const char _data_fx_mode_accel_test[] PROGMEM = "Accel test@!;;";
 
 
-uint16_t mode_stock_front(void)
+ uint16_t mode_stock_front(void)
  {
  if (forward){
   if(dimmed_lights){
@@ -98,11 +98,11 @@ uint16_t mode_stock_front(void)
  }
  }
   return FRAMETIME;
-}
-static const char _data_fx_mode_stock_front[] PROGMEM = "Stock front@!;;";
+ }
+ static const char _data_fx_mode_stock_front[] PROGMEM = "Stock front@!;;";
 
 
-uint16_t mode_stock_back(void)
+ uint16_t mode_stock_back(void)
  {
  if (forward){
   if(dimmed_lights){
@@ -118,39 +118,39 @@ uint16_t mode_stock_back(void)
  }
  }
   return FRAMETIME;
-}
-static const char _data_fx_mode_stock_back[] PROGMEM = "Stock back@!;;";
+ }
+ static const char _data_fx_mode_stock_back[] PROGMEM = "Stock back@!;;";
 
-/*
+ /*
  * blink forwards on accel Intensity sets duty cycle.
  */
-uint16_t mode_f_acceleration_blink(void) {
+ uint16_t mode_f_acceleration_blink(void) {
     int speed1;
     int filteredz1 = filteredz;
     if (filteredz1 < 0){filteredz1 = 0;}
     speed1 = (filteredz1  * (SEGMENT.speed / 10));
     if (speed1 > 255){speed1 = 255;}else if(speed1 < 100){speed1 = 0;}
     return blink(SEGCOLOR(0), SEGCOLOR(1), SEGMENT.intensity, true, speed1);
-}
-static const char _data_fx_f_acceleration_blink[] PROGMEM = "Forwards Accel blink@!,Base speed;!,!;!";
+ }
+ static const char _data_fx_f_acceleration_blink[] PROGMEM = "Forwards Accel blink@!,Base speed;!,!;!";
 
-/*
+ /*
  * blink backwards on accel Intensity sets duty cycle.
  */
-uint16_t mode_b_acceleration_blink(void) {
+ uint16_t mode_b_acceleration_blink(void) {
     int speed1;
     int filteredz1 = filteredz;
     if (filteredz1 > 0){filteredz1 = 0;}else{filteredz1 = 0 - filteredz1;}
     speed1 = (filteredz1 * (SEGMENT.speed / 10));
     if (speed1 > 255){speed1 = 255;}else if(speed1 < 100){speed1 = 0;}
   return blink(SEGCOLOR(0), SEGCOLOR(1), SEGMENT.intensity, true, speed1);
-}
-static const char _data_fx_b_acceleration_blink[] PROGMEM = "Backwards Accel blink@!,Base speed;!,!;!";
+ }
+ static const char _data_fx_b_acceleration_blink[] PROGMEM = "Backwards Accel blink@!,Base speed;!,!;!";
 
-/*
+ /*
  * blink backwards on accel Intensity sets duty cycle.
  */
-uint16_t mode_fb_acceleration_blink(void) {
+ uint16_t mode_fb_acceleration_blink(void) {
     int speed1;
     int intensity1;
 
@@ -160,15 +160,15 @@ uint16_t mode_fb_acceleration_blink(void) {
     if (speed1 > 255){speed1 = 255;}else if(speed1 < 100){speed1 = 0;}
     if (intensity1 > 255){intensity1 = 255;}else if(intensity1 < 100){intensity1 = 0;}
   return blink(SEGCOLOR(0), SEGCOLOR(1), intensity1, true, speed1);
-}
-static const char _data_fx_fb_acceleration_blink[] PROGMEM = "Both Accel blink@!,!,!;!";
+ }
+ static const char _data_fx_fb_acceleration_blink[] PROGMEM = "Both Accel blink@!,!,!;!";
 
 
-/*
+ /*
  * shut down count down display
  * Intesity values from 0-100 turn on the leds.
  */
-uint16_t mode_countdown(void) {
+ uint16_t mode_countdown(void) {
   uint8_t percent = shutdown_display;
   percent = constrain(percent, 0, 200);
   uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
@@ -208,14 +208,14 @@ uint16_t mode_countdown(void) {
     if (SEGENV.aux1 < active_leds) SEGENV.aux1 = active_leds;
   }
  	return FRAMETIME;
-}
-static const char _data_fx_mode_countdown[] = "Shutdown Count down@,% of fill,,,,One color;!,!;!";
+ }
+ static const char _data_fx_mode_countdown[] = "Shutdown Count down@,% of fill,,,,One color;!,!;!";
 
 
-/*
+ /*
  * trail ratings display Fade LEDs between two colors
  */
-uint16_t mode_countdown_fade(void) {
+ uint16_t mode_countdown_fade(void) {
   uint16_t counter = shutdown_display;
 
   for (int i = 0; i < SEGLEN; i++) {
@@ -223,17 +223,17 @@ uint16_t mode_countdown_fade(void) {
   }
 
   return FRAMETIME;
-}
-static const char _data_fx_mode_countdown_fade[] PROGMEM = "Shutdown Count Fade@!;!,!;!";
+ }
+ static const char _data_fx_mode_countdown_fade[] PROGMEM = "Shutdown Count Fade@!;!,!;!";
 
 
 
 
-/*
+ /*
  * trail ratings display
  * Intesity values from 0-100 turn on the leds.
  */
-uint16_t mode_rate_trail(void) {
+ uint16_t mode_rate_trail(void) {
   uint8_t percent = display_trail_ruffness;
   percent = constrain(percent, 0, 200);
   uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
@@ -273,14 +273,14 @@ uint16_t mode_rate_trail(void) {
     if (SEGENV.aux1 < active_leds) SEGENV.aux1 = active_leds;
   }
  	return FRAMETIME;
-}
-static const char _data_fx_mode_rate_trail[] = "Trail Rating Bar@,% of fill,,,,One color;!,!;!";
+ }
+ static const char _data_fx_mode_rate_trail[] = "Trail Rating Bar@,% of fill,,,,One color;!,!;!";
 
 
-/*
+ /*
  * trail ratings display Fade LEDs between two colors
  */
-uint16_t mode_rate_trail_fade(void) {
+ uint16_t mode_rate_trail_fade(void) {
   uint16_t counter = display_trail_ruffness;
 
   for (int i = 0; i < SEGLEN; i++) {
@@ -288,15 +288,15 @@ uint16_t mode_rate_trail_fade(void) {
   }
 
   return FRAMETIME;
-}
-static const char _data_fx_mode_rate_trail_fade[] PROGMEM = "Trail Rating Fade@!;!,!;!";
+ }
+ static const char _data_fx_mode_rate_trail_fade[] PROGMEM = "Trail Rating Fade@!;!,!;!";
 
 
-/*
+ /*
  * trail ratings display
  * Intesity values from 0-100 turn on the leds.
  */
-uint16_t mode_tire_pressure(void) {
+ uint16_t mode_tire_pressure(void) {
   uint8_t percent = display_tpmsp;
   percent = constrain(percent, 0, 200);
   uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
@@ -336,14 +336,14 @@ uint16_t mode_tire_pressure(void) {
     if (SEGENV.aux1 < active_leds) SEGENV.aux1 = active_leds;
   }
  	return FRAMETIME;
-}
-static const char _data_fx_mode_tire_pressure[] = "Tire Pressure@,% of fill,,,,One color;!,!;!";
+ }
+ static const char _data_fx_mode_tire_pressure[] = "Tire Pressure@,% of fill,,,,One color;!,!;!";
 
 
-/*
+ /*
  * trail ratings display Fade LEDs between two colors
  */
-uint16_t mode_tire_pressure_fade(void) {
+ uint16_t mode_tire_pressure_fade(void) {
   uint16_t counter = display_tpmsp;
 
   for (int i = 0; i < SEGLEN; i++) {
@@ -351,14 +351,14 @@ uint16_t mode_tire_pressure_fade(void) {
   }
 
   return FRAMETIME;
-}
-static const char _data_fx_mode_tire_pressure_fade[] PROGMEM = "Tire Pressure Fade@!;!,!;!";
+ }
+ static const char _data_fx_mode_tire_pressure_fade[] PROGMEM = "Tire Pressure Fade@!;!,!;!";
 
 
-/*
+ /*
  * Wheel Temp Fade LEDs between two colors
  */
-uint16_t mode_wheel_temp_fade(void) {
+ uint16_t mode_wheel_temp_fade(void) {
   uint16_t counter = display_tpmst;
 
   for (int i = 0; i < SEGLEN; i++) {
@@ -366,15 +366,15 @@ uint16_t mode_wheel_temp_fade(void) {
   }
 
   return FRAMETIME;
-}
-static const char _data_fx_mode_wheel_temp_fade[] PROGMEM = "Wheel Temp Fade@!;!,!;!";
+ }
+ static const char _data_fx_mode_wheel_temp_fade[] PROGMEM = "Wheel Temp Fade@!;!,!;!";
 
 
-/*
+ /*
  * wheel temp display
  * Intesity values from 0-100 turn on the leds.
  */
-uint16_t mode_wheel_temp(void) {
+ uint16_t mode_wheel_temp(void) {
   uint8_t percent = display_tpmst;
   percent = constrain(percent, 0, 200);
   uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
@@ -414,8 +414,8 @@ uint16_t mode_wheel_temp(void) {
     if (SEGENV.aux1 < active_leds) SEGENV.aux1 = active_leds;
   }
  	return FRAMETIME;
-}
-static const char _data_fx_mode_wheel_temp[] = "Wheel Temp@,% of fill,,,,One color;!,!;!";
+ }
+ static const char _data_fx_mode_wheel_temp[] = "Wheel Temp@,% of fill,,,,One color;!,!;!";
 
 class UsermodAndon : public Usermod
 {
@@ -517,10 +517,7 @@ unsigned long a_read_milisec;  // analog read limit
   bool imu_activity = true;
   bool imu_inactivity = true;
 
-  bool side_left = false;   //how is the board on the ground
-  bool side_right = false;
-  bool upside_down = false;
-  bool upright = true;
+  int orientation = 0; //how is the board on the ground
 
   int trick; // unused for trick detection module input
 
@@ -647,7 +644,7 @@ unsigned long a_read_milisec;  // analog read limit
     }
   #endif
 
-#ifdef PRO_VERSION
+ #ifdef PRO_VERSION
     void MIMIC_ERROR_CODES() //if the lightbar is blinking (condition 1) orange (condition 2), make the head/taillights do the same
     {
       if ((MOTOR_ENGAGEMENT) == false && (LIGHT_BAR_B) == false) //light bar blue being on means either foot pad engagement or white for charging
@@ -688,9 +685,9 @@ unsigned long a_read_milisec;  // analog read limit
 
       }
     }
-#endif
+ #endif
 
-#ifdef PRO_VERSION
+ #ifdef PRO_VERSION
   void GET_LIGHT_BAR()
   {
     // http://forum.arduino.cc/index.php?topic=37555.0
@@ -705,13 +702,13 @@ unsigned long a_read_milisec;  // analog read limit
     }
     // if status bar rgb blue is on (in the case of white charging or blue foot pad engadement) ignore
   }
-#endif
+ #endif
 
 
       //most of the time, this function should be performed when the baord is idle, because when the board is engaged, 
       //voltage will drop as more amperage is drawn. This can be programmed/accounted for, but will take time to develop for
       //a feature that is seldom used when riding
-#ifdef PRO_VERSION
+ #ifdef PRO_VERSION
   void GET_BATT_LEVEL() //determine the battery level based upon battery voltage input
   {                            // (analong read 0 - 4095) * (max v/max A read) * (resistor voltage divider) 
     battery_voltage_est = ((analogRead(BATTERY_VOLTAGE_PIN)) * (3.2/4095) * (1/24)); //resistor voltage divider used 1k and 24k
@@ -728,7 +725,7 @@ unsigned long a_read_milisec;  // analog read limit
     bmss = battery_percent;
 
   }
-#endif
+ #endif
 
 
       //the top speed of these boards is defined as their freespin speed, take a range of 0 to [freespin speed]
@@ -736,7 +733,7 @@ unsigned long a_read_milisec;  // analog read limit
       //visually stuttery as speed increases/decreases (roughly 8-10? make N dynamic/programmable if easy to do).
       //N is proportional to a scalar value, which is used to scale up/down the speed of the lighting animation
       //when the board speed is within one of the ranges, scale the animation speed accordingly 
-#ifdef PRO_VERSION
+ #ifdef PRO_VERSION
   void GET_DUTYCYCLE()
   {  //(9 analog read at disengaded) (380 analog read at free spin) (assume max 80% duty cycle)
     
@@ -753,9 +750,9 @@ unsigned long a_read_milisec;  // analog read limit
       motor_duty_display = motod;
     }
   }
-#endif
+ #endif
 
-#ifdef PRO_VERSION
+ #ifdef PRO_VERSION
   void set_motor_duty_preset()
   {  
     GET_DUTYCYCLE();
@@ -864,13 +861,20 @@ unsigned long a_read_milisec;  // analog read limit
     trail_ruffness = trail_ruffness + 1;
    }
 
+   //0 = upright (normal)
+   //1 = upside down
+   //2 = left side
+   //3 = right side
+   //4 = front pointing down
+   //5 = back pointing down
+
    if (dimmed_lights){  //only detect a left right or upside down orientaion if the lights are dim
-   if (filteredz < -10){upside_down = true; side_left = false; side_right = false; upright = false;}
-   if (filteredy < -20){side_right = true; side_left = false; upside_down = false; upright = false;}
-   if (filteredy > 20){side_left = true; side_right = false; upside_down = false; upright = false;}
+   if (filteredz < -10){orientation = 1;}
+   if (filteredy < -20){orientation = 3;}
+   if (filteredy > 20){orientation = 2;}
    }
 
-   if (filteredz > 10){upright = true;side_left = false; side_right = false; upside_down = false;}
+   if (filteredz > 10){orientation = 0;}
 
 } // end of get IMU data
 
@@ -945,11 +949,19 @@ void set_preset() { // pick which preset based on direction, speed, dim, alt mod
     applyPreset(stock_preset);
     return;}
 
-  if (upright == false) {
-    if (side_left == true) {applyPreset(dim_left_preset);}
-    if (side_right == true) {applyPreset(dim_right_preset);}
-    return;
-  }
+   //0 = upright (normal)
+   //1 = upside down
+   //2 = left side
+   //3 = right side
+   //4 = front pointing down
+   //5 = back pointing down
+
+  if (orientation != 0) {
+    if (orientation == 2) {applyPreset(dim_left_preset);}
+        if (orientation == 3) {applyPreset(dim_right_preset);}
+            return;
+              }
+
 
     if(forward){
       if (dimmed_lights == false) {
@@ -1081,11 +1093,11 @@ public:
    get_imu_data();
    get_imu_data();
    get_imu_data(); // get imu data twice to populate filtered ints
-   if (filteredy < -10){side_right = true;}
-   if (filteredy > 10){side_right = true;}
+   if (filteredy < -10){orientation = 2;}
+   if (filteredy > 10){orientation = 3;}
    ///////////////////////////////////////////////////////  wifi
    //#ifndef TEST_MODE
-   if (side_right == false){
+   if (orientation == 2 || orientation == 3){
    //       apBehavior = AP_BEHAVIOR_BUTTON_ONLY;
    //       apActive = false;
    //       WLED::instance().initAP(false);
@@ -1145,7 +1157,7 @@ get_imu_data();
 
   if(alt_mode_user){  //if alt mode user is set true enable alt mode detection
      if ((millis()) < (10 * 1000)){
-      if (side_left || side_right){alt_mode = false;}
+      if (orientation == 2 || orientation == 3){alt_mode = false;}
      }
      }
 
@@ -1270,6 +1282,7 @@ get_imu_data();
     lux6.add(blink_app_lights);
 
         JsonArray lux7 = hidden.createNestedArray(F("accel")); //left side thing
+    lux7.add(orientation);
     lux7.add(filteredx);
     lux7.add(filteredy);
     lux7.add(filteredz);
