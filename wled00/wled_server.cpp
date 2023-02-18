@@ -341,6 +341,7 @@ void initServer()
   });
   #endif
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    person_on_ui = true;
     if (captivePortal(request)) return;
     serveIndexOrWelcome(request);
   });

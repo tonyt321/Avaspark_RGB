@@ -297,7 +297,7 @@ int rcm = 0; //regen mah
  * Intesity values from 0-100 turn on the leds.
  */
  uint16_t mode_tire_pressure(void) {
-  uint8_t percent = display_tpmsp;
+  int percent = display_tpmsp;
   percent = constrain(percent, 0, 200);
   uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
                                          : SEGLEN * (200 - percent) / 100.0;
@@ -344,7 +344,7 @@ int rcm = 0; //regen mah
  * trail ratings display Fade LEDs between two colors
  */
  uint16_t mode_tire_pressure_fade(void) {
-  uint16_t counter = display_tpmsp;
+  int counter = display_tpmsp;
 
   for (int i = 0; i < SEGLEN; i++) {
     SEGMENT.setPixelColor(i, color_blend(SEGCOLOR(1), SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0), counter));
@@ -359,7 +359,7 @@ int rcm = 0; //regen mah
  * Wheel Temp Fade LEDs between two colors
  */
  uint16_t mode_wheel_temp_fade(void) {
-  uint16_t counter = display_tpmst;
+  int counter = display_tpmst;
 
   for (int i = 0; i < SEGLEN; i++) {
     SEGMENT.setPixelColor(i, color_blend(SEGCOLOR(1), SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0), counter));
@@ -367,7 +367,7 @@ int rcm = 0; //regen mah
 
   return FRAMETIME;
  }
- static const char _data_fx_mode_wheel_temp_fade[] PROGMEM = "Wheel Temp Fade@!;!,!;!";
+ static const char _data_fx_mode_wheel_temp_fade[] PROGMEM = "Tire Tempature Fade@!;!,!;!";
 
 
  /*
@@ -375,7 +375,7 @@ int rcm = 0; //regen mah
  * Intesity values from 0-100 turn on the leds.
  */
  uint16_t mode_wheel_temp(void) {
-  uint8_t percent = display_tpmst;
+  int percent = display_tpmst;
   percent = constrain(percent, 0, 200);
   uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
                                          : SEGLEN * (200 - percent) / 100.0;
@@ -415,7 +415,8 @@ int rcm = 0; //regen mah
   }
  	return FRAMETIME;
  }
- static const char _data_fx_mode_wheel_temp[] = "Wheel Temp@,% of fill,,,,One color;!,!;!";
+ static const char _data_fx_mode_wheel_temp[] = "Tire Tempature@,% of fill,,,,One color;!,!;!";
+
 
 class UsermodAndon : public Usermod
 {
@@ -503,11 +504,11 @@ unsigned long a_read_milisec;  // analog read limit
 //////////////////////////////tpsm vars
 
   int tpmsb = 0; //tpms batt
-  float tpmsp = 0; //tpms pressure
+  int tpmsp = 0; //tpms pressure
   int tpmst = 0; //tpms temp  shut off at 186 f
 
-  float pressure_range_low = 0;
-  float pressure_range_high = 30;
+  int pressure_range_low = 0;
+  int pressure_range_high = 30;
   bool fahrenheit = true; // f or c
   bool psi = true;     //psi or bar
 
@@ -780,9 +781,9 @@ unsigned long a_read_milisec;  // analog read limit
     }
 
     if (fahrenheit) {
-      display_tpmst = map(((tpmsp * 1.8) + 32), 100, 200, 0, 100); //100f to 200f range
+      display_tpmst = map(((tpmst * 1.8) + 32), 100, 200, 0, 100); //100f to 200f range
     } else {
-      display_tpmst = map(tpmsp, 100, 200, 38, 93); //100f to 200f range in c
+      display_tpmst = map(tpmst, 38, 93, 0, 100); //100f to 200f range in c
     }
   }
 
@@ -1098,25 +1099,20 @@ public:
    ///////////////////////////////////////////////////////  wifi
    //#ifndef TEST_MODE
    if (orientation == 2 || orientation == 3){
-   //       apBehavior = AP_BEHAVIOR_BUTTON_ONLY;
-   //       apActive = false;
-   //       WLED::instance().initAP(false);
-   //       //dnsServer.stop();
-   //       WiFi.softAPdisconnect(true);           // Disable Wifi
-   //       WLED::instance().handleConnection();
-    apHide = true; // hide wifi
+        ////////////////////////when wifi is on
+    apHide = false; // show wifi
+    applyPreset(free_fall_preset);//use free fall preset as wifi on boot animation
+   /////////////////////////when wifi is off
+   }else{
 
+    apHide = true; // hide wifi
 
     if (boot_preset_time != 0 && ((stock_preset != 0) == false)){ // skip if boot_preset_time set to 0
     applyPreset(boot_preset);// start up animation plays for 3 sec or so (still need to implement switching back)
     }else{
       set_preset();
     }//end of if not stock preset
-   /////////////////////////when wifi is off
-   }else{
-    ////////////////////////when wifi is on
-    apHide = false; // show wifi
-    applyPreset(free_fall_preset);//use free fall preset as wifi on boot animation
+
    }
    }// end of start up
 
@@ -1125,13 +1121,9 @@ public:
 
     if (strip.isUpdating()){return;}
 
-    wifi_sta_list_t stationList;  //skip looping code if user is on wifi so we dont change stuff while they are editing
-    esp_wifi_ap_get_sta_list(&stationList);
-    client_numb = stationList.num;
-   // if ((client_numb >= shop) || (free_fall_preset != 250)){
-    if (client_numb != 0){
+    if (free_fall_preset != 250){
       if (person_on_ui){return;}
-    }else{person_on_ui = false;}
+    }// end of free fall preset shop mode
 
 if ((a_read_milisec + 100) < millis()){    // limit loop to 10 times a sec
 a_read_milisec = millis();
@@ -1176,7 +1168,7 @@ get_imu_data();
       set_preset();
     }
 
-
+handle_tpms();
 
 
 /////////////////////////////////////// activity (used for trail detection) "interrupt"
@@ -1236,26 +1228,26 @@ get_imu_data();
       bmss = root["bmss"] | bmss; //bms state of charge
       ucm = root["ucm"] | ucm; //used charge mah                stuff for pint and XR owie
       rcm = root["rcm"] | rcm; //regen mah
-      cvt[0] = root["cvt"][0] | cvt[0]; //cell voltage table
-      cvt[1] = root["cvt"][1] | cvt[1]; //cell voltage table
-      cvt[2] = root["cvt"][2] | cvt[2]; //cell voltage table
-      cvt[3] = root["cvt"][3] | cvt[3]; //cell voltage table
-      cvt[4] = root["cvt"][4] | cvt[4]; //cell voltage table
+      tempt[0] = root["tempt"][0] | tempt[0]; //temp table
+      tempt[1] = root["tempt"][1] | tempt[1]; //temp table
+      tempt[2] = root["tempt"][2] | tempt[2]; //temp table
+      tempt[3] = root["tempt"][3] | tempt[3]; //temp table
+      tempt[4] = root["tempt"][4] | tempt[4]; //temp table
 
-      tempt[1] = root["tempt"][1] | tempt[1]; //temp voltage table
-      tempt[2] = root["tempt"][2] | tempt[2]; //temp voltage table  there is probably a better way to do this
-      tempt[3] = root["tempt"][3] | tempt[3]; //temp voltage table
-      tempt[4] = root["tempt"][4] | tempt[4]; //temp voltage table
-      tempt[5] = root["tempt"][5] | tempt[5]; //temp voltage table
-      tempt[6] = root["tempt"][6] | tempt[6]; //temp voltage table
-      tempt[7] = root["tempt"][7] | tempt[7]; //temp voltage table
-      tempt[8] = root["tempt"][8] | tempt[8]; //temp voltage table
-      tempt[9] = root["tempt"][9] | tempt[9]; //temp voltage table
-      tempt[10] = root["tempt"][10] | tempt[10]; //temp voltage table
-      tempt[11] = root["tempt"][11] | tempt[11]; //temp voltage table
-      tempt[12] = root["tempt"][12] | tempt[12]; //temp voltage table
-      tempt[13] = root["tempt"][13] | tempt[13]; //temp voltage table
-      tempt[14] = root["tempt"][14] | tempt[14]; //temp voltage table
+      cvt[1] = root["cvt"][1] | cvt[1]; // voltage table
+      cvt[2] = root["cvt"][2] | cvt[2]; //voltage table  there is probably a better way to do this
+      cvt[3] = root["cvt"][3] | cvt[3]; //voltage table
+      cvt[4] = root["cvt"][4] | cvt[4]; // voltage table
+      cvt[5] = root["cvt"][5] | cvt[5]; // voltage table
+      cvt[6] = root["cvt"][6] | cvt[6]; //voltage table
+      cvt[7] = root["cvt"][7] | cvt[7]; //voltage table
+      cvt[8] = root["cvt"][8] | cvt[8]; //voltage table
+      cvt[9] = root["cvt"][9] | cvt[9]; //voltage table
+      cvt[10] = root["cvt"][10] | cvt[10]; // voltage table
+      cvt[11] = root["cvt"][11] | cvt[11]; //voltage table
+      cvt[12] = root["cvt"][12] | cvt[12]; //voltage table
+      cvt[13] = root["cvt"][13] | cvt[13]; // voltage table
+      cvt[14] = root["cvt"][14] | cvt[14]; //voltage table
 
     }
 
