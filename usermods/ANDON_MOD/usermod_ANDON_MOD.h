@@ -13,8 +13,10 @@ int shop = 0;// shop mode
 int motod = 0;// input from msense
 int motor_duty_display;
 int shutdown_display;
-int display_tpmsp; //tpms pressure
-int display_tpmst; //tpms temp
+float display_tpmsp; //tpms pressure
+float display_tpmst; //tpms temp
+float percent_tpmst;
+float percent_tpmsp;
 int display_trail_ruffness;
 int filteredx , filteredy , filteredz;
 bool forward = true;
@@ -297,7 +299,7 @@ int rcm = 0; //regen mah
  * Intesity values from 0-100 turn on the leds.
  */
  uint16_t mode_tire_pressure(void) {
-  int percent = display_tpmsp;
+  int percent = percent_tpmsp;
   percent = constrain(percent, 0, 200);
   uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
                                          : SEGLEN * (200 - percent) / 100.0;
@@ -344,7 +346,7 @@ int rcm = 0; //regen mah
  * trail ratings display Fade LEDs between two colors
  */
  uint16_t mode_tire_pressure_fade(void) {
-  int counter = display_tpmsp;
+  int counter = percent_tpmsp;
 
   for (int i = 0; i < SEGLEN; i++) {
     SEGMENT.setPixelColor(i, color_blend(SEGCOLOR(1), SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0), counter));
@@ -359,7 +361,7 @@ int rcm = 0; //regen mah
  * Wheel Temp Fade LEDs between two colors
  */
  uint16_t mode_wheel_temp_fade(void) {
-  int counter = display_tpmst;
+  int counter = percent_tpmst;
 
   for (int i = 0; i < SEGLEN; i++) {
     SEGMENT.setPixelColor(i, color_blend(SEGCOLOR(1), SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0), counter));
@@ -375,7 +377,7 @@ int rcm = 0; //regen mah
  * Intesity values from 0-100 turn on the leds.
  */
  uint16_t mode_wheel_temp(void) {
-  int percent = display_tpmst;
+  int percent = percent_tpmst;
   percent = constrain(percent, 0, 200);
   uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
                                          : SEGLEN * (200 - percent) / 100.0;
@@ -504,8 +506,8 @@ unsigned long a_read_milisec;  // analog read limit
 //////////////////////////////tpsm vars
 
   int tpmsb = 0; //tpms batt
-  int tpmsp = 0; //tpms pressure
-  int tpmst = 0; //tpms temp  shut off at 186 f
+  float tpmsp = 0; //tpms pressure
+  float tpmst = 0; //tpms temp  shut off at 186 f
 
   int pressure_range_low = 0;
   int pressure_range_high = 30;
@@ -774,17 +776,23 @@ unsigned long a_read_milisec;  // analog read limit
 
   void handle_tpms() {
 
-    if (psi) {
-      display_tpmsp = map((14.5038 * tpmsp), pressure_range_low, pressure_range_high, 0, 100);
+        if (psi) {
+          display_tpmsp = (tpmsp * 0.001450377); //Kpa to PSI
     } else {
-      display_tpmsp = map(tpmsp, pressure_range_low, pressure_range_high, 0, 100);
+      display_tpmsp = (tpmsp * 0.0001); //Kpa to bar
     }
 
     if (fahrenheit) {
-      display_tpmst = map(((tpmst * 1.8) + 32), 100, 200, 0, 100); //100f to 200f range
+      display_tpmst = (((tpmst/100) * (9/5)) + 32);
     } else {
-      display_tpmst = map(tpmst, 38, 93, 0, 100); //100f to 200f range in c
+      display_tpmst = (tpmst/100);
     }
+
+
+      percent_tpmsp = map(display_tpmsp, pressure_range_low, pressure_range_high, 0, 100);
+
+      percent_tpmst = map((tpmst/100), 38, 93, 0, 100); //100f to 200f range in c
+
   }
 
 
@@ -871,8 +879,10 @@ unsigned long a_read_milisec;  // analog read limit
 
    if (dimmed_lights){  //only detect a left right or upside down orientaion if the lights are dim
    if (filteredz < -10){orientation = 1;}
-   if (filteredy < -20){orientation = 3;}
-   if (filteredy > 20){orientation = 2;}
+   if (filteredy < -17){orientation = 2;}
+   if (filteredy > 17){orientation = 3;}
+   if (filteredx < -17){orientation = 4;}
+   if (filteredx > 17){orientation = 5;}
    }
 
    if (filteredz > 10){orientation = 0;}
@@ -1148,8 +1158,8 @@ get_imu_data();
     return;}
 
   if(alt_mode_user){  //if alt mode user is set true enable alt mode detection
-     if ((millis()) < (10 * 1000)){
-      if (orientation == 2 || orientation == 3){alt_mode = false;}
+     if (millis() < (10 * 1000)){
+      if (orientation != 0){alt_mode = false;}
      }
      }
 
@@ -1261,9 +1271,9 @@ handle_tpms();
 
 
         JsonArray lux2 = hidden.createNestedArray(F("tpsm")); //left side thing
-    lux2.add(tpmsp);
+    lux2.add((tpmsp/100));
     lux2.add(psi);
-    lux2.add(tpmst);
+    lux2.add((tpmst/100));
     lux2.add(fahrenheit);
     lux2.add(tpmsb);
 
@@ -1272,6 +1282,8 @@ handle_tpms();
     lux6.add(forward);
     lux6.add(dimmed_lights);
     lux6.add(blink_app_lights);
+    lux6.add(alt_mode);
+    lux6.add(alt_mode_user);
 
         JsonArray lux7 = hidden.createNestedArray(F("accel")); //left side thing
     lux7.add(orientation);
@@ -1324,11 +1336,11 @@ handle_tpms();
 
           JsonArray battery9;
            if (psi) {battery9 = user.createNestedArray("Tire PSI");}else{battery9 = user.createNestedArray("Tire Bar");}  //left side thing
-      battery9.add((14.5038 * tpmsp));
+      battery9.add(display_tpmsp);
 
           JsonArray battery16;
          if (fahrenheit) {battery16 = user.createNestedArray("Tire Temp F");}else{battery16 = user.createNestedArray("Tire Temp C");}  //left side thing
-         battery16.add(((tpmst * 1.8) + 32));
+         battery16.add(display_tpmst);
 
                         JsonArray battery26 = user.createNestedArray("Tire sensor battery %");  //left side thing
       battery26.add(tpmsb);                               //right side variable

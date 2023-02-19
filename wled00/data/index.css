@@ -1496,11 +1496,10 @@ TD .checkmark, TD .radiomark {
 	}
 }
 
-@media all and (max-width: 798px) {
-	#buttonNodes {
-		display: none;
+
+#buttonNodes {
+		display: none !important;
 	}
-}
 
 @media all and (max-width: 1249px) {
 	#buttonPcm {

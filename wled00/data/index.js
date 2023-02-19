@@ -195,7 +195,7 @@ function loadSkinCSS(cId)
 		l.id   = cId;
 		l.rel  = 'stylesheet';
 		l.type = 'text/css';
-		l.href = (loc?`http://${locip}`:'.') + '/skin.css';
+		// l.href = (loc?`http://${locip}`:'.') + '/skin.css';
 		l.media = 'all';
 		h.appendChild(l);
 	}
@@ -207,7 +207,7 @@ function onLoad()
 		loc = true;
 		locip = localStorage.getItem('locIp');
 		if (!locip) {
-			locip = prompt("File Mode. Please enter WLED IP!");
+			locip = prompt("File Mode. Please enter Andonn IP!");
 			localStorage.setItem('locIp', locip);
 		}
 	}
@@ -1211,7 +1211,7 @@ function displayRover(i,s)
 {
 	gId('rover').style.transform = (i.live && s.lor == 0 && i.liveseg<0) ? "translateY(0px)":"translateY(100%)";
 	var sour = i.lip ? i.lip:""; if (sour.length > 2) sour = " from " + sour;
-	gId('lv').innerHTML = `WLED is receiving live ${i.lm} data${sour}`;
+	gId('lv').innerHTML = `Andonn is receiving live ${i.lm} data${sour}`;
 	gId('roverstar').style.display = (i.live && s.lor) ? "block":"none";
 }
 
@@ -2481,7 +2481,7 @@ setInterval(()=>{
 	gId('heart').style.color = `hsl(${hc}, 100%, 50%)`;
 }, 910);
 
-function openGH() { window.open("https://github.com/Aircoookie/WLED/wiki"); }
+function openGH() { window.open("https://andonrgb.com"); }
 
 var cnfr = false;
 function cnfReset()

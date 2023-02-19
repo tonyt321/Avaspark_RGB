@@ -5,8 +5,8 @@
 	<meta charset="utf-8">
 	<meta name="theme-color" content="#222222">
 	<meta content="yes" name="apple-mobile-web-app-capable">
-	<link rel="shortcut icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAEAGACGAAAAFgAAAIlQTkcNChoKAAAADUlIRFIAAAAQAAAAEAgGAAAAH/P/YQAAAE1JREFUOI1j/P//PwOxgNGeAUMxE9G6cQCKDWAhpADZ2f8PMjBS3QW08QK20KaZC2gfC9hCnqouoNgARgY7zMxAyNlUdQHlXiAlO2MDAD63EVqNHAe0AAAAAElFTkSuQmCC"/>
-	<title>ANDONN</title>
+	<link rel="shortcut icon" href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACAAQMAAAD58POIAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAGUExURUdwTP///5+UokMAAAABdFJOUwBA5thmAAAACXBIWXMAAC4iAAAuIgGq4t2SAAABZUlEQVRIx+3UwZWFIAwF0HBcsLQESqE0KI1SLMElCw9vFkkwROfPFPCz44rAA5ToW1wbcCywA81DXSB5yAB9hoLxBwCXh760g4cNOD9D9Nnif8K2D2F31ARQnp2AmgEqOnMEqGBQ0cUmgZlPGkEhAJfA0BhXAPqmEIG+QOLGGRUycG7AMaHw02NXADfaA5KsI4AbNQtsAKpAl2Vo2BsoY1CRjd+BIfkMcD7e+HSH5S1MwBGATptABmoAOkXZ+IzBJ6tQcDHscsuk92HgpAg0Shw2yMNG2UACKuUZtjHIwW3cG6QQuTd4dP0sCoYFPt0www6+1xZc2Itc2MuH7fyJarbCvWkJS3M6mpO9gA1LupUO7rB29Afo7CbbA8b8LJuZ/QVsWLKjP8CHvSH/GRYOAlzY3dxrLQ0763iFZECv8e8gYe+iVzDt4eHy0D2cHg4PzQM5GOQW1ufvfRnTxL9/o8sb31rrB9l8u7W5hoe4AAAAAElFTkSuQmCC"/>
+	<title>Andonn</title>
 	<script>
 	function feedback(){}
 	// instead of including [script src="iro.js"][/script] and [script src="rangetouch.js"][/script]
@@ -314,19 +314,6 @@
 		</div>
 	</div>
 
-	<div id="Segments" class="tabcontent">
-		<div id="segcont">
-			Loading...
-		</div>
-		<div id="segutil" class="staybot">
-		</div>
-		<div id="segutil2">
-			<button class="btn btn-s" id="rsbtn" onclick="rSegs()">Reset segments</button>
-		</div>
-		<p>Transition: <input id="tt" class="noslide" type="number" min="0" max="65.5" step="0.1" value="0.7">&nbsp;s</p>
-		<p id="ledmap" class="hide"></p>
-	</div>
-
 	<div id="Presets" class="tabcontent">
 		<div id="pql">
 		</div>
@@ -342,13 +329,29 @@
 		<div id="putil" class="staybot">
 		</div>
 	</div>
+	
+	<div  id="Segments" class="tabcontent">
+		<h1>The empty Space</h1>
+		<div style="visibility: hidden;">
+			<div id="segcont">
+				Loading...
+			</div>
+			<div id="segutil" class="staybot">
+			</div>
+			<div id="segutil2">
+				<button class="btn btn-s" id="rsbtn" onclick="rSegs()">Reset segments</button>
+			</div>
+			<p>Transition: <input id="tt" class="noslide" type="number" min="0" max="65.5" step="0.1" value="0.7">&nbsp;s</p>
+			<p id="ledmap" class="hide"></p>
+		</div>
+	</div>
 </div>
 
 <div class="tab bot" id="bot">
 	<button class="tablinks" onclick="openTab(0)"><i class="icons">&#xe2b3;</i><p class="tab-label">Colors</p></button>
-	<button class="tablinks" onclick="openTab(1)"><i class="icons">&#xe23d;</i><p class="tab-label">Effects</p></button>
-	<button  style="display: none !important;" class="tablinks" onclick="openTab(2)"><i class="icons">&#xe34b;</i><p class="tab-label">Segments</p></button>
-	<button class="tablinks" onclick="openTab(3)"><i class="icons">&#xe04c;</i><p class="tab-label">Presets</p></button>
+	<button class="tablinks" onclick="openTab(1)"><i class="icons">&#xe23d;</i><p class="tab-label">Animations</p></button>
+	<button class="tablinks" onclick="openTab(2)"><i class="icons">&#xe04c;</i><p class="tab-label">Presets</p></button>
+	<button class="tablinks" onclick="openTab(3)"><i class="icons">&#xe066;</i><p class="tab-label">Info</p></button>
 </div>
 
 <div id="connind"></div>
@@ -357,7 +360,7 @@
 <div id="info" class="modal">
 	<button class="btn btn-xs close" onclick="toggleInfo()"><i class="icons rot45">&#xe18a;</i></button>
 	<div id="imgw">
-		<img class="wi" alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB0AAAAFCAYAAAC5Fuf5AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABbSURBVChTlY9bDoAwDMNW7n9nwCipytQN4Z8tbrTHmDmF4oPzyldwRqp1SSdnV/NuZuzqerAByxXznBw3igkeFEfXyUuhK/yFM0CxJfyqXZEOc6/Sr9/bf7uIC5Nwd7orMvAPAAAAAElFTkSuQmCC" />
+		<img class="wi" alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQIAAAAhAQMAAAAIzjc/AAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAGUExURUdwTP///5+UokMAAAABdFJOUwBA5thmAAAACXBIWXMAAC4hAAAuIQEHW/z/AAABtklEQVQYGQXBwW0tNRQA0DP3jZRZfOm5ARSXQAcZOqES4lIoZaSfPRTAYogowH9nkOPLOQAAeOkAIAAAOACAAABABwABAEABAAIAADcACAAAKgAQsGXO11u+ZGab/rjfbvkctsxs4CVzvt3ymZmP+f7s7/e2nsMzcwk4mGfZErnPVkChsAQUBqHgkFUTq+5+ZQqoaCys8i9d2aExBJz8YJ8Vta9zwzxt6AIaHGAKPjmGgApke/2e49l5jPfHeP2e49lzPfJCYNPqBcs+ch/1g9LZnQhEOnd76QvtoGHDFwT2RcPG8WPp5zHU23ZMCBy0Y6ifk1vxzn7GAgTKlKbzosR0K52PqQwIGJvSwz7Uy9+/LLSWWodA7Va9tdad+0D9KxxDBYHrjmlx0FoX87y2hBuCzbU7ry3dWx4YUHo7QRCaAUUot137zYILgm8cWrPq9W3h6FBvQNBT6dKkz3r5eUvm6dIgHmk97y1xvhve87ql4ZJg35nF508M9BOx0LY3IA5GdS1N43f4QOdeIAp/nvZJR2toU9sSICpn07DxBXkMbkwQl68Hx3Dd/KPxH8RiAAAAAAD+B8ae309kw7qHAAAAAElFTkSuQmCC" />
 	</div>
 	<div id="kv">Loading...</div><br>
 	<div>
