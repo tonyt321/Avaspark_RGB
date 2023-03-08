@@ -102,6 +102,7 @@
 #define USERMOD_ID_PWM_OUTPUTS           38     //Usermod "usermod_pwm_outputs.h
 #define USERMOD_ID_SHT                   39     //Usermod "usermod_sht.h
 #define USERMOD_ID_ANDON_MOD             40     //Usermod "usermod_ANDON_MOD.h"
+#define USERMOD_ID_VESC             41     //Usermod "usermod_VESC.h"
 
 //Access point behavior
 #define AP_BEHAVIOR_BOOT_NO_CONN          0     //Open AP when no connection after boot

@@ -15,6 +15,10 @@
 #include "../usermods/ANDON_MOD/usermod_ANDON_MOD.h"
 #endif
 
+#ifdef USERMOD_VESC
+#include "../usermods/vesc/vesc.h"
+#endif
+
 #ifdef USERMOD_BATTERY_STATUS_BASIC
   #include "../usermods/battery_status_basic/usermod_v2_battery_status_basic.h"
 #endif
@@ -200,6 +204,10 @@ void registerUsermods()
 
   #ifdef USERMOD_ANDON_MOD
   usermods.add(new UsermodAndon());
+  #endif
+
+  #ifdef USERMOD_VESC
+  usermods.add(new Usermodvesc());
   #endif
 
   #ifdef USERMOD_BATTERY_STATUS_BASIC
