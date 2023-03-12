@@ -247,6 +247,8 @@ uint16_t getVescId();
  */
 float getMotorCurrent();
 
+customData appData;
+
 private:
   /** Variabel to hold the reference to the Serial object to use for UART */
   Stream *serialPort = NULL;
@@ -255,7 +257,7 @@ private:
    * Uses the class Stream instead of HarwareSerial */
   Stream *debugPort = NULL;
 
-  customData appData;
+  
   
   /**
    * @brief      Packs the payload and sends it over Serial
