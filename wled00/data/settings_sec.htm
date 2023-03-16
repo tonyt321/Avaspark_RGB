@@ -62,14 +62,14 @@
 			return false;
 		}
 		function setBckFilename(x) {
-			x.setAttribute("download","wled_" + x.getAttribute("download") + (sd=="WLED"?"":("_" +sd)));
+			x.setAttribute("download","andonn_" + x.getAttribute("download") + (sd=="ANDONN"?"":("_" +sd)));
 		}
 		function S() {
 			if (window.location.protocol == "file:") {
 				loc = true;
 				locip = localStorage.getItem('locIp');
 				if (!locip) {
-					locip = prompt("File Mode. Please enter WLED IP!");
+					locip = prompt("File Mode. Please enter ANDONN IP!");
 					localStorage.setItem('locIp', locip);
 				}
 			}
