@@ -539,7 +539,7 @@ WLED_GLOBAL bool stateChanged _INIT(false);
 WLED_GLOBAL bool udpConnected _INIT(false), udp2Connected _INIT(false), udpRgbConnected _INIT(false);
 
 // ui style
-WLED_GLOBAL bool showWelcomePage _INIT(false);
+WLED_GLOBAL bool showWelcomePage _INIT(true);
 
 // hue
 WLED_GLOBAL byte hueError _INIT(HUE_ERROR_INACTIVE);
