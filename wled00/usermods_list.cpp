@@ -192,6 +192,14 @@
 #include "../usermods/sht/usermod_sht.h"
 #endif
 
+#ifdef USERMOD_BLE_2_JSON
+  #include "../usermods/Ble2Json_v2/usermod_v2_ble2json.h"
+#endif
+
+#ifdef USERMOD_SHT
+#include "../usermods/sht/usermod_sht.h"
+#endif
+
 
 void registerUsermods()
 {
@@ -364,5 +372,9 @@ void registerUsermods()
 
   #ifdef USERMOD_SHT
   usermods.add(new ShtUsermod());
+  #endif
+
+    #ifdef USERMOD_BLE_2_JSON
+  usermods.add(new Ble2JsonUsermod());
   #endif
 }
