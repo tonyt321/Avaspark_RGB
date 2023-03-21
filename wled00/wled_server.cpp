@@ -613,7 +613,7 @@ void serveSettings(AsyncWebServerRequest* request, bool post)
     case 252: response = request->beginResponse_P(200, "text/html", PAGE_settings_pin,  PAGE_settings_pin_length);  break;
     case 253: response = request->beginResponse_P(200, "text/css",  PAGE_settingsCss,   PAGE_settingsCss_length);   break;
     case 254: serveSettingsJS(request); return;
-    case 255: response = request->beginResponse_P(200, "text/html", PAGE_index,       PAGE_index_L);       break;
+    case 255: response = request->beginResponse_P(200, "text/html", PAGE_welcome,       PAGE_welcome_length);       break;
     default:  response = request->beginResponse_P(200, "text/html", PAGE_settings,      PAGE_settings_length);      break;
   }
   response->addHeader(FPSTR(s_content_enc),"gzip");

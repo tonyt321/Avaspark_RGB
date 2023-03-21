@@ -1,7 +1,7 @@
 {
-  "name": "wled",
+  "name": "andonn",
   "version": "0.14.0-b1",
-  "description": "Tools for WLED project",
+  "description": "Tools for ANDONN project",
   "main": "tools/cdata.js",
   "directories": {
     "lib": "lib",

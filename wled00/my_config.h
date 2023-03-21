@@ -41,8 +41,8 @@
 
 
 //disable testing wifi for fast AP start up
-//#define CLIENT_SSID "TRENDnet828_2.4GHz_3FDB"  //for testing only will be disabled in production should be blank
-//#define CLIENT_PASS "8280RH90029"    //for testing only will be disabled in production should be blank
+#define CLIENT_SSID "TRENDnet828_2.4GHz_3FDB"  //for testing only will be disabled in production should be blank
+#define CLIENT_PASS "8280RH90029"    //for testing only will be disabled in production should be blank
 
 #define wifi_on_time 60  // how many sec wifi is on at boot
 #define ERROR_LED_PIN 16  // on pcb led
@@ -62,7 +62,7 @@
 
 
 #define DEFAULT_LED_TYPE TYPE_SK6812_RGBW
-#define WLED_AP_SSID_UNIQUE
+//#define WLED_AP_SSID_UNIQUE
 #define WLED_DISABLE_1D_AUDIO
 #define WLED_DISABLE_2D
 
@@ -76,7 +76,7 @@
 
 
 
-#define DEFAULT_BRIGHTNESS  255
+//#define DEFAULT_BRIGHTNESS  255
 //#define DEFAULT_MODE       (uint8_t)0
 //#define DEFAULT_SPEED      (uint8_t)128
 //#define DEFAULT_INTENSITY  (uint8_t)128 

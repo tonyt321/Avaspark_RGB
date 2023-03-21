@@ -462,8 +462,9 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
   int8_t backwards_preset = 1;  //preset played as a boot animation
   int8_t dim_backwards_preset = 1;  //preset played as a boot animation
   int8_t dim_forwards_preset = 1;  //preset played as a boot animation
-  int dim_left_preset = 0;   //unused yet
-  int dim_right_preset = 0;   //unused yet
+  int dim_left_preset = 0;   
+  int dim_right_preset = 0; 
+  int dim_standing_up_preset = 0;
 
   bool alt_mode_user = true;
   bool alt_mode = true;
@@ -553,6 +554,7 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _dim_forwards_preset[];
   static const char _dim_left_preset[];
   static const char _dim_right_preset[];
+  static const char _dim_standing_up_preset[];
 
   static const char _alt_mode_user[];
   static const char _alt_backwards_preset[];
@@ -970,6 +972,7 @@ void set_preset() { // pick which preset based on direction, speed, dim, alt mod
   if (orientation != 0) {
     if (orientation == 2) {applyPreset(dim_left_preset);}
         if (orientation == 3) {applyPreset(dim_right_preset);}
+           if (orientation == 5) {applyPreset(dim_standing_up_preset);}
             return;
               }
 
@@ -1115,7 +1118,7 @@ public:
    /////////////////////////when wifi is off
    }else{
 
-    apHide = true; // hide wifi
+    //apHide = true; // hide wifi
 
     if (boot_preset_time != 0 && ((stock_preset != 0) == false)){ // skip if boot_preset_time set to 0
     applyPreset(boot_preset);// start up animation plays for 3 sec or so (still need to implement switching back)
@@ -1382,6 +1385,7 @@ handle_tpms();
     top[FPSTR(_alt_backwards_preset)] = alt_backwards_preset;  //int input
     top[FPSTR(_dim_left_preset)] = dim_left_preset;  //int input
     top[FPSTR(_dim_right_preset)] = dim_right_preset;  //int input
+    top[FPSTR(_dim_standing_up_preset)] = dim_standing_up_preset;  //int input
 
     top[FPSTR(_boot_preset)] = boot_preset;  //int input
     top[FPSTR(_boot_preset_time)] = boot_preset_time;  //int input
@@ -1433,7 +1437,7 @@ handle_tpms();
 
     dim_left_preset   = top[FPSTR(_dim_left_preset)] | dim_left_preset;     //int input
     dim_right_preset   = top[FPSTR(_dim_right_preset)] | dim_right_preset;     //int input
-
+    dim_standing_up_preset   = top[FPSTR(_dim_standing_up_preset)] | dim_standing_up_preset;     //int input
     boot_preset   = top[FPSTR(_boot_preset)] | boot_preset;     //int input
     stock_preset   = top[FPSTR(_stock_preset)] | stock_preset;     //int input
     boot_preset_time   = top[FPSTR(_boot_preset_time)] | boot_preset_time;     //int input
@@ -1484,6 +1488,7 @@ const char UsermodAndon::_alt_backwards_preset[] PROGMEM = "Alt reverse travel l
 
 const char UsermodAndon::_dim_left_preset[] PROGMEM = "Inactive left tilt lighting preset";
 const char UsermodAndon::_dim_right_preset[] PROGMEM = "Inactive right tilt lighting preset";
+const char UsermodAndon::_dim_standing_up_preset[] PROGMEM = "Inactive standing up lighting preset";
 
 const char UsermodAndon::_boot_preset[] PROGMEM = "Boot animation lighting preset";
 const char UsermodAndon::_boot_preset_time[] PROGMEM = "Boot duration (sec)";

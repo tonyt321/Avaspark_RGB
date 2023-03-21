@@ -972,7 +972,7 @@ function btype(b)
 
 function bname(o)
 {
-	if (o.name=="WLED") return o.ip;
+	if (o.name=="ANDONN") return o.ip;
 	return o.name;
 }
 

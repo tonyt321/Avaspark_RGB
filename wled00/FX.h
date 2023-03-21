@@ -35,7 +35,7 @@
 #define USE_GET_MILLISECOND_TIMER
 #include "FastLED.h"
 
-#define DEFAULT_BRIGHTNESS (uint8_t)127
+#define DEFAULT_BRIGHTNESS (uint8_t)255
 #define DEFAULT_MODE       (uint8_t)0
 #define DEFAULT_SPEED      (uint8_t)128
 #define DEFAULT_INTENSITY  (uint8_t)128
