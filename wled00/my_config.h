@@ -35,7 +35,7 @@
 //#define TEST_MODE //comment out for normal mode
 // disables turning lights off when detected from what should be the OW controller as off
 //#define PRO_VERSION    // comment out for standard
-#define SERVERNAME "ANDONN"
+//#define SERVERNAME "ANDONN"
 #define SHOP_NAME "Andonn"    // Andon Origin shop who installed it just andon for customer installed versions
 #define WLED_VERSION "2.2.2"  //shows up in info on UI
 
