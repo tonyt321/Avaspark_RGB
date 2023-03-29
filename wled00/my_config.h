@@ -19,18 +19,11 @@
 /* Uncomment to use your WIFI settings as defaults
   //WARNING: this will hardcode these as the default even after a factory reset
 */
-#define DEFAULT_LED_COUNT 13 //11 for GT 13 for pint
-#define FRONT_LED_COUNT 13 
-#define BACK_LED_COUNT 13
-#define FRONT_AND_BACK_LED_COUNT 26
+#define DEFAULT_LED_COUNT 11 //11 for GT 13 for pint
 
 #define INTERFACE_UPDATE_COOLDOWN 2000 //time in ms to wait between websockets, alexa, and MQTT updates
 
-#define MODEL 0    // what model of onewheel is this for?  
-//0   1    2   3
-//GT Pint XR Vesc
-// should effect voltage curves motor speed estimates as voltages are diffrent
-// if vesc should bring up option to input number of cells
+
 
 //#define TEST_MODE //comment out for normal mode
 // disables turning lights off when detected from what should be the OW controller as off
@@ -41,8 +34,8 @@
 
 
 //disable testing wifi for fast AP start up
-#define CLIENT_SSID "TRENDnet828_2.4GHz_3FDB"  //for testing only will be disabled in production should be blank
-#define CLIENT_PASS "8280RH90029"    //for testing only will be disabled in production should be blank
+//#define CLIENT_SSID "TRENDnet828_2.4GHz_3FDB"  //for testing only will be disabled in production should be blank
+//#define CLIENT_PASS "8280RH90029"    //for testing only will be disabled in production should be blank
 
 #define wifi_on_time 60  // how many sec wifi is on at boot
 #define ERROR_LED_PIN 16  // on pcb led

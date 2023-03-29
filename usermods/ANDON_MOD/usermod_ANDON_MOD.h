@@ -1,12 +1,13 @@
 #pragma once
 
 #include "SparkFun_ADXL345.cpp"         // SparkFun ADXL345 Library
-#include "SparkFun_ADXL345.h"         // SparkFun ADXL345 Library
+#include "SparkFun_ADXL345.h"         // SparkFun ADXL345 Library 
+#include "SparkFun_Qwiic_Humidity_AHT20.cpp"         // SparkFun ADXL345 Library 
+#include "SparkFun_Qwiic_Humidity_AHT20.h"         // SparkFun ADXL345 Library 
 #include "wled.h"
 #include <Wire.h>
 
-
-
+AHT20 humiditySensor;
 //int display_battery;
 //int display_duty_cycle;
 int shop = 0;// shop mode
@@ -22,6 +23,8 @@ int filteredx , filteredy , filteredz;
 bool forward = true;
 bool dimmed_lights = false;
 float battery_voltage;
+int humidity = -100;
+int andonn_temp = -100;
 
 int cvt[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};  //cell voltage table
 int tempt[] = {0, 0, 0, 0, 0};  // battery tempature table
@@ -419,6 +422,53 @@ int rcm = 0; //regen mah
  }
  static const char _data_fx_mode_wheel_temp[] = "Tire Tempature@,% of fill,,,,One color;!,!;!";
 
+  /*
+ * humidity display
+ * Intesity values from 0-100 turn on the leds.
+ */
+ uint16_t mode_humidity(void) {
+  uint8_t percent = humidity;
+  percent = constrain(percent, 0, 200);
+  uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
+                                         : SEGLEN * (200 - percent) / 100.0;
+  uint8_t size = (1 + (SEGLEN >> 11));
+
+  if (percent <= 100) {
+    for (int i = 0; i < SEGLEN; i++) {
+    	if (i < SEGENV.aux1) {
+        if (SEGMENT.check1)
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(map(percent,0,100,0,255), false, false, 0));
+        else
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+    	}
+    	else {
+        SEGMENT.setPixelColor(i, SEGCOLOR(1));
+    	}
+    }
+  } else {
+    for (int i = 0; i < SEGLEN; i++) {
+    	if (i < (SEGLEN - SEGENV.aux1)) {
+        SEGMENT.setPixelColor(i, SEGCOLOR(1));
+    	}
+    	else {
+        if (SEGMENT.check1)
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(map(percent,100,200,255,0), false, false, 0));
+        else
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+    	}
+    }
+  }
+  if(active_leds > SEGENV.aux1) {  // smooth transition to the target value
+    SEGENV.aux1 += size;
+    if (SEGENV.aux1 > active_leds) SEGENV.aux1 = active_leds;
+  } else if (active_leds < SEGENV.aux1) {
+    if (SEGENV.aux1 > size) SEGENV.aux1 -= size; else SEGENV.aux1 = 0;
+    if (SEGENV.aux1 < active_leds) SEGENV.aux1 = active_leds;
+  }
+ 	return FRAMETIME;
+ }
+ static const char _data_fx_mode_humidity[] = "humidity % @,% of fill,,,,One color;!,!;!";
+
 
 class UsermodAndon : public Usermod
 {
@@ -502,7 +552,8 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
   int normx , normy , normz;
   int smoothedy;  // unused
 
-unsigned long a_read_milisec;  // analog read limit
+unsigned long a_read_milisec = -100;  // analog read limit
+unsigned long humidity_read_milisec = -10000;  // analog read limit
 
 //////////////////////////////tpsm vars
 
@@ -954,7 +1005,13 @@ unsigned long a_read_milisec;  // analog read limit
  }
 #endif
 
-
+void get_humidity(){
+  if (humiditySensor.available() == true)
+  {
+    humidity = humiditySensor.getTemperature();
+    andonn_temp = humiditySensor.getHumidity();
+  }
+}
 
 void set_preset() { // pick which preset based on direction, speed, dim, alt mode
 
@@ -1027,6 +1084,7 @@ public:
     strip.addEffect(FX_MODE_ACCEL_TEST, &mode_accel_test, _data_fx_mode_accel_test);
 
     strip.addEffect(FX_MODE_COUNTDOWN_FADE, &mode_countdown_fade, _data_fx_mode_countdown_fade);
+    strip.addEffect(FX_MODE_HUMIDITY, &mode_humidity, _data_fx_mode_humidity);
     strip.addEffect(FX_MODE_RATE_TRAIL_FADE, &mode_rate_trail_fade, _data_fx_mode_rate_trail_fade);
     strip.addEffect(FX_MODE_TIRE_PRESSURE_FADE, &mode_tire_pressure_fade, _data_fx_mode_tire_pressure_fade);
     strip.addEffect(FX_MODE_WHEEL_TEMP_FADE, &mode_wheel_temp_fade, _data_fx_mode_wheel_temp_fade);
@@ -1046,6 +1104,8 @@ public:
     pinMode(MOTOR_SPEED_PIN, INPUT);
     #endif
 
+   Wire.begin();// for humidity
+   humiditySensor.begin();
 
    adxl.powerOn();                     // Power on the ADXL345
 
@@ -1137,6 +1197,13 @@ public:
     if (free_fall_preset != 250){
       if (person_on_ui){return;}
     }// end of free fall preset shop mode
+
+
+if ((humidity_read_milisec + 10000) < millis()){    // limit humitiy read time to 10 sec
+humidity_read_milisec = millis();
+get_humidity();
+}
+
 
 if ((a_read_milisec + 100) < millis()){    // limit loop to 10 times a sec
 a_read_milisec = millis();
@@ -1323,14 +1390,14 @@ handle_tpms();
     if (user.isNull())
       user = root.createNestedObject(F("u"));
 
-#ifdef PRO_VERSION
-    JsonArray lux = user.createNestedArray(F("RED analog read")); //left side thing
-    lux.add(LIGHT_BAR_R_ANALOG);                       //right side variable
+
+    JsonArray lux = user.createNestedArray(F("Humidity")); //left side thing
+    lux.add(humidity);                       //right side variable
 
 
-      JsonArray battery = user.createNestedArray("blue level");  //left side thing
-      battery.add(LIGHT_BAR_B);                               //right side variable
-#endif
+      JsonArray battery = user.createNestedArray("Andonn Temp");  //left side thing
+      battery.add(andonn_temp);                               //right side variable
+
       JsonArray shop = user.createNestedArray("Andonn Origin");  //left side thing
       shop.add(SHOP_NAME);                               //right side variable
 
