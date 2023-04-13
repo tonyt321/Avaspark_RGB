@@ -19,7 +19,26 @@
 /* Uncomment to use your WIFI settings as defaults
   //WARNING: this will hardcode these as the default even after a factory reset
 */
-#define DEFAULT_LED_COUNT 11 //11 for GT 13 for pint
+#ifdef OW_PINT
+  #define USERMOD_ANDON_MOD
+  #define DEFAULT_LED_COUNT 13 //11 for GT 13 for pint
+  #define OW_TYPE "Pint"
+  #define WLED_VERSION "Pint 2.2.2"  //shows up in info on UI
+#endif
+
+#ifdef OW_GT
+  #define USERMOD_ANDON_MOD
+  #define DEFAULT_LED_COUNT 11 //11 for GT 13 for pint
+  #define OW_TYPE "GT"
+  #define WLED_VERSION "GT 2.2.2"  //shows up in info on UI
+#endif
+
+#ifdef OW_VESC
+  #define USERMOD_VESC
+  #define DEFAULT_LED_COUNT 20 //11 for GT 13 for pint
+  #define OW_TYPE "Vesc"
+  #define WLED_VERSION "Vesc 2.2.2"  //shows up in info on UI
+#endif
 
 #define INTERFACE_UPDATE_COOLDOWN 2000 //time in ms to wait between websockets, alexa, and MQTT updates
 
@@ -29,20 +48,16 @@
 // disables turning lights off when detected from what should be the OW controller as off
 //#define PRO_VERSION    // comment out for standard
 #define SERVERNAME "ANDONN"
-#define SHOP_NAME "Andonn"    // Andon Origin shop who installed it just andon for customer installed versions
-#define WLED_VERSION "2.2.2"  //shows up in info on UI
+
 
 
 //disable testing wifi for fast AP start up
 //#define CLIENT_SSID "TRENDnet828_2.4GHz_3FDB"  //for testing only will be disabled in production should be blank
 //#define CLIENT_PASS "8280RH90029"    //for testing only will be disabled in production should be blank
 
-#define wifi_on_time 60  // how many sec wifi is on at boot
+
 #define ERROR_LED_PIN 16  // on pcb led
 #define DATA_PINS 18 ,17  //front then back lights GPIO segment 0 then 1 ect
-#define LIGHT_BAR_R_PIN 36  //status bar red
-#define LIGHT_BAR_G_PIN 39   //status bar green
-#define LIGHT_BAR_B_PIN 18   //status bar blue
 
 #define MOTOR_SPEED_PIN 35   //motor phase pin
 #define BATTERY_VOLTAGE_PIN 34   //battery voltage pin
@@ -63,10 +78,6 @@
 #define ALPHA 0.15 // how much smoothing is used for accel readings
 
 //#define MAX_LEDS 1500       //Maximum total LEDs. More than 1500 might create a low memory situation on ESP8266.
-
-//#define USERMOD_POWER_AP 
-//#define USERMOD_ANDON_MOD
-
 
 
 //#define DEFAULT_BRIGHTNESS  255

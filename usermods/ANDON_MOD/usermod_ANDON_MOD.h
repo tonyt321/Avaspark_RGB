@@ -934,8 +934,14 @@ unsigned long humidity_read_milisec = -10000;  // analog read limit
    if (filteredz < -10){orientation = 1;}
    if (filteredy < -17){orientation = 2;}
    if (filteredy > 17){orientation = 3;}
-   if (filteredx < -17){orientation = 4;}
-   if (filteredx > 17){orientation = 5;}
+   #ifdef GT
+     if (filteredx < -17){orientation = 4;}
+     if (filteredx > 17){orientation = 5;}
+   #endif
+   #ifdef OW_PINT
+     if (filteredx < -17){orientation = 5;}
+     if (filteredx > 17){orientation = 4;}
+   #endif
    }
 
    if (filteredz > 10){orientation = 0;}
@@ -1067,7 +1073,7 @@ public:
   {
 
     briS = 255;
-    bootPreset = boot_preset;
+    bootPreset = boot_preset;  // used in wled boot preset
     // set pin modes
     strip.addEffect(FX_MODE_FB_ACCELERATION_BLINK, &mode_fb_acceleration_blink, _data_fx_fb_acceleration_blink);
     strip.addEffect(FX_MODE_F_ACCELERATION_BLINK, &mode_f_acceleration_blink, _data_fx_f_acceleration_blink);
@@ -1187,6 +1193,9 @@ public:
     }//end of if not stock preset
 
    }
+
+   get_humidity();
+   
    }// end of start up
 
   void loop()
@@ -1391,15 +1400,12 @@ handle_tpms();
       user = root.createNestedObject(F("u"));
 
 
-    JsonArray lux = user.createNestedArray(F("Humidity")); //left side thing
+    JsonArray lux = user.createNestedArray(F("Humidity %")); //left side thing
     lux.add(humidity);                       //right side variable
 
 
-      JsonArray battery = user.createNestedArray("Andonn Temp");  //left side thing
+      JsonArray battery = user.createNestedArray("Andonn Temp C");  //left side thing
       battery.add(andonn_temp);                               //right side variable
-
-      JsonArray shop = user.createNestedArray("Andonn Origin");  //left side thing
-      shop.add(SHOP_NAME);                               //right side variable
 
                   JsonArray battery6 = user.createNestedArray("activations per min");  //left side thing
       battery6.add(display_trail_ruffness);                               //right side variable

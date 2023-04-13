@@ -1306,8 +1306,7 @@ handle_tpms();
       JsonArray battery = user.createNestedArray("blue level");  //left side thing
       battery.add(LIGHT_BAR_B);                               //right side variable
 #endif
-      JsonArray shop = user.createNestedArray("Andonn Origin");  //left side thing
-      shop.add(SHOP_NAME);                               //right side variable
+
 
                   JsonArray battery6 = user.createNestedArray("activations per min");  //left side thing
       battery6.add(display_trail_ruffness);                               //right side variable
