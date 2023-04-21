@@ -326,8 +326,9 @@
 #define FX_MODE_TIRE_PRESSURE_FADE     199
 #define FX_MODE_WHEEL_TEMP_FADE        200
 #define FX_MODE_HUMIDITY               201
+#define FX_MODE_BATPERCENT             202
 
-#define MODE_COUNT                     202
+#define MODE_COUNT                     203
 
 typedef enum mapping1D2D {
   M12_Pixels = 0,

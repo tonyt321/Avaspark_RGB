@@ -3,7 +3,7 @@
 #include "SparkFun_ADXL345.cpp"         // SparkFun ADXL345 Library
 #include "SparkFun_ADXL345.h"         // SparkFun ADXL345 Library 
 #include "SparkFun_Qwiic_Humidity_AHT20.cpp"         // SparkFun ADXL345 Library 
-#include "SparkFun_Qwiic_Humidity_AHT20.h"         // SparkFun ADXL345 Library 
+#include "SparkFun_Qwiic_Humidity_AHT20.h"         // SparkFun ADXL345 Library
 #include "wled.h"
 #include <Wire.h>
 

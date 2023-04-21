@@ -19,12 +19,11 @@
 
 AHT20 humiditySensor;
 
-int type = 0;
+int BatteryCells = 15;
 //int display_battery;
 //int display_duty_cycle;
 int shop = 0;// shop mode
 int motod = 0;// input from msense
-int motor_duty_display;
 int shutdown_display;
 float display_tpmsp; //tpms pressure
 float display_tpmst; //tpms temp
@@ -39,6 +38,8 @@ int vesc_state = 0;
 int state_switch = 0;
 int humidity = -100;
 int andonn_temp = -100;
+float batpercentage;
+float dutycycle;
 
 float mosfettemp;
 float motortemp;
@@ -487,7 +488,56 @@ int rcm = 0; //regen mah
  	return FRAMETIME;
  }
  static const char _data_fx_mode_humidity[] = "humidity % @,% of fill,,,,One color;!,!;!";
- 
+
+
+  /*
+ * bat percentage display
+ * Intesity values from 0-100 turn on the leds.
+ */
+ uint16_t mode_batpercent(void) {
+  uint8_t percent = batpercentage;
+  percent = constrain(percent, 0, 200);
+  uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
+                                         : SEGLEN * (200 - percent) / 100.0;
+  uint8_t size = (1 + (SEGLEN >> 11));
+
+  if (percent <= 100) {
+    for (int i = 0; i < SEGLEN; i++) {
+    	if (i < SEGENV.aux1) {
+        if (SEGMENT.check1)
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(map(percent,0,100,0,255), false, false, 0));
+        else
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+    	}
+    	else {
+        SEGMENT.setPixelColor(i, SEGCOLOR(1));
+    	}
+    }
+  } else {
+    for (int i = 0; i < SEGLEN; i++) {
+    	if (i < (SEGLEN - SEGENV.aux1)) {
+        SEGMENT.setPixelColor(i, SEGCOLOR(1));
+    	}
+    	else {
+        if (SEGMENT.check1)
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(map(percent,100,200,255,0), false, false, 0));
+        else
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+    	}
+    }
+  }
+  if(active_leds > SEGENV.aux1) {  // smooth transition to the target value
+    SEGENV.aux1 += size;
+    if (SEGENV.aux1 > active_leds) SEGENV.aux1 = active_leds;
+  } else if (active_leds < SEGENV.aux1) {
+    if (SEGENV.aux1 > size) SEGENV.aux1 -= size; else SEGENV.aux1 = 0;
+    if (SEGENV.aux1 < active_leds) SEGENV.aux1 = active_leds;
+  }
+ 	return FRAMETIME;
+ }
+ static const char _data_fx_mode_batpercent[] = "Battery percent % @,% of fill,,,,One color;!,!;!";
+
+
 
 /** Initiate VescUart class */
 VescUart UART;
@@ -504,7 +554,6 @@ ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
 int Poles = 30;                  //Usually 46 for hub motor
 float WheelDia = 0.28;           //Wheel diameter in m
 float GearReduction = 1;         //reduction ratio. 1 for direct drive. Otherwise motor pulley diameter / Wheel pulley diameter.
-float BatteryCells = 15;         //Number of cells in Battery
 
 
 float smoothedrpm;
@@ -517,12 +566,10 @@ float tach;
 float distance;
 float velocity;
 float watthour;
-float batpercentage;
-float dutycycle;
 float mosfettemp;
 float motortemp;
 
-#ifdef PRO_VERSION
+
 
   int8_t low_bat_preset = 1;
   int8_t low_bat_percent = 10;
@@ -534,10 +581,7 @@ float motortemp;
   int8_t motor_duty_slow = 20;
   int8_t motor_duty_med = 40;
   int8_t motor_duty_fast = 70;
-  bool   MOTOR_ENGAGEMENT = false;
-  #else
-  int8_t forwards_preset = 1;
-  #endif
+
 
   int8_t backwards_preset = 1;  //preset played as a boot animation
   int8_t dim_backwards_preset = 1;  //preset played as a boot animation
@@ -617,7 +661,6 @@ unsigned long a_read_milisec;  // analog read limit
 
   // strings to reduce flash memory usage (used more than twice)
   static const char _name[];
-  #ifdef PRO_VERSION
   static const char _low_bat_percent[];
   static const char _low_bat_preset[];
   static const char _choosen_slow_preset[];
@@ -626,9 +669,6 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _motor_duty_slow[];
   static const char _motor_duty_med[];
   static const char _motor_duty_fast[];
-  #else
-  static const char _forwards_preset[];
-  #endif
   static const char _backwards_preset[];
   static const char _dim_backwards_preset[];
   static const char _dim_forwards_preset[];
@@ -651,103 +691,15 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _pressure_range_high[];
   static const char _fahrenheit[];
   static const char _psi[];
-  static const char _type[];
-
-  #ifdef PRO_VERSION
-    void MOTOR_ENGAGED() //determine if the motor is engaged (used as trigger for board-idle animations)
-    {
-    int ar = analogRead(MOTOR_SPEED_PIN); // ar analog read
-    if (ar > 15) // if analog read is less the 15 set dudty cycle to 0 (disengaded)
-    {
-      MOTOR_ENGAGEMENT = true;
-    } else {
-      MOTOR_ENGAGEMENT = false;
-    }
-    }
-  #endif
-
- #ifdef PRO_VERSION
-    void MIMIC_ERROR_CODES() //if the lightbar is blinking (condition 1) orange (condition 2), make the head/taillights do the same
-    {
-      if ((MOTOR_ENGAGEMENT) == false && (LIGHT_BAR_B) == false) //light bar blue being on means either foot pad engagement or white for charging
-      {
-        int error_red;
-        int error_green;
-        int error_blue;
-
-        if (LIGHT_BAR_R == true){
-          error_red = 255;
-          } else {
-            error_red = 0;
-            }
-        if (LIGHT_BAR_G == true){
-          error_green = 255;
-          } else {
-            error_green = 0;
-            }
-        if (LIGHT_BAR_B == true){
-          error_blue = 255;
-          } else {
-            error_blue = 0;
-            }
-
-         String redstring = "win&SB=255&FX=98&SM=1&SS=1&IX=0&R=" + error_red;   //combining multiple strings at once can result in unpredictable outcomes
-         String greenstring = "&G=" + error_green;
-         String bluestring = "&B=" + error_blue;
-         String together1 = redstring + greenstring;
-         String together2 = together1 + bluestring;
-         //handleSet(nullptr, together2 , false );
-
-         String redstring1 = "win&SB=255&FX=98&SM=0&SS=0&IX=0&R=" + error_red;  //combining multiple strings at once can result in unpredictable outcomes
-         String greenstring1 = "&G=" + error_green;
-         String bluestring1 = "&B=" + error_blue;
-         String together3 = redstring + greenstring;
-         String together4 = together1 + bluestring;
-         //handleSet(nullptr, together4 , false );
-
-      }
-    }
- #endif
-
- #ifdef PRO_VERSION
-  void GET_LIGHT_BAR()
-  {
-    // http://forum.arduino.cc/index.php?topic=37555.0
-    // https://forum.arduino.cc/index.php?topic=185158.0
-
-    LIGHT_BAR_B = digitalRead(LIGHT_BAR_B_PIN);
-
-    if ((LIGHT_BAR_B) == false){
-      LIGHT_BAR_R = digitalRead(LIGHT_BAR_R_PIN);
-      LIGHT_BAR_R_ANALOG = analogRead(LIGHT_BAR_R_PIN);
-      LIGHT_BAR_G = digitalRead(LIGHT_BAR_G_PIN);
-    }
-    // if status bar rgb blue is on (in the case of white charging or blue foot pad engadement) ignore
-  }
- #endif
+  static const char _BatteryCells[];
 
 
       //most of the time, this function should be performed when the baord is idle, because when the board is engaged, 
       //voltage will drop as more amperage is drawn. This can be programmed/accounted for, but will take time to develop for
       //a feature that is seldom used when riding
- #ifdef PRO_VERSION
-  void GET_BATT_LEVEL() //determine the battery level based upon battery voltage input
-  {                            // (analong read 0 - 4095) * (max v/max A read) * (resistor voltage divider) 
-    battery_voltage_est = ((analogRead(BATTERY_VOLTAGE_PIN)) * (3.2/4095) * (1/24)); //resistor voltage divider used 1k and 24k
-    //                map(value, fromLow, fromHigh, toLow, toHigh)            does not use voltage curves
-    battery_percent = map(battery_voltage_est, 59.4, 73.8, 0, 100);
 
 
-    if (tv2 == 0){
-      battery_voltage = battery_voltage_est;
-      }else{
-        battery_voltage = tv2;
-        }
 
-    bmss = battery_percent;
-
-  }
- #endif
 
 
       //the top speed of these boards is defined as their freespin speed, take a range of 0 to [freespin speed]
@@ -755,42 +707,24 @@ unsigned long a_read_milisec;  // analog read limit
       //visually stuttery as speed increases/decreases (roughly 8-10? make N dynamic/programmable if easy to do).
       //N is proportional to a scalar value, which is used to scale up/down the speed of the lighting animation
       //when the board speed is within one of the ranges, scale the animation speed accordingly 
- #ifdef PRO_VERSION
-  void GET_DUTYCYCLE()
-  {  //(9 analog read at disengaded) (380 analog read at free spin) (assume max 80% duty cycle)
-    
-    if (motod == 0){
-    int ar = analogRead(MOTOR_SPEED_PIN); // ar analog read
-    motor_duty_est = ((ar / 380) * 100); // outputs a 
 
-    if (ar < 15) // if analog read is less the 15 set dudty cycle to 0 (disengaded)
-    {
-      motor_duty_est = 0;
-    }
-    motor_duty_display = motor_duty_est;
-    }else{
-      motor_duty_display = motod;
-    }
-  }
- #endif
 
- #ifdef PRO_VERSION
   void set_motor_duty_preset()
   {  
-    GET_DUTYCYCLE();
-   if (motor_duty_display == 0)
+
+   if (dutycycle < 2 || dutycycle > -2)
    { return; }
 
-   if (motor_duty_slow < motor_duty_display)
+   if (motor_duty_slow < dutycycle)
    { applyPreset(choosen_slow_preset); return; }
 
-   if (motor_duty_med < motor_duty_display)
+   if (motor_duty_med < dutycycle)
    { applyPreset(choosen_med_preset); return; }
 
-   if (motor_duty_fast < motor_duty_display)
+   if (motor_duty_fast < dutycycle)
    { applyPreset(choosen_fast_preset); return; }
   }
-#endif
+
 
 
   void handle_tpms() {
@@ -969,11 +903,7 @@ void set_preset() { // pick which preset based on direction, speed, dim, alt mod
     if(forward){
       if (dimmed_lights == false) {
         if(alt_mode){
-          #ifdef PRO_VERSION
           set_motor_duty_preset();
-          #else
-          applyPreset(forwards_preset);
-          #endif
         } else {
           applyPreset(alt_forwards_preset);
         }
@@ -1028,22 +958,14 @@ public:
     strip.addEffect(FX_MODE_RATE_TRAIL_FADE, &mode_rate_trail_fade, _data_fx_mode_rate_trail_fade);
     strip.addEffect(FX_MODE_TIRE_PRESSURE_FADE, &mode_tire_pressure_fade, _data_fx_mode_tire_pressure_fade);
     strip.addEffect(FX_MODE_WHEEL_TEMP_FADE, &mode_wheel_temp_fade, _data_fx_mode_wheel_temp_fade);
+    strip.addEffect(FX_MODE_HUMIDITY, &mode_humidity, _data_fx_mode_humidity);
+    strip.addEffect(FX_MODE_BATPERCENT, &mode_batpercent, _data_fx_mode_batpercent);
 
     pinMode(FRONT_LIGHT_W_PIN, INPUT);
     pinMode(FRONT_LIGHT_R_PIN, INPUT);
 
     pinMode(ERROR_LED_PIN, OUTPUT);
     digitalWrite(ERROR_LED_PIN, LOW);
-
-    #ifdef PRO_VERSION
-    pinMode(LIGHT_BAR_R_PIN, INPUT);
-    pinMode(LIGHT_BAR_G_PIN, INPUT);
-    pinMode(LIGHT_BAR_B_PIN, INPUT);
-
-    pinMode(BATTERY_VOLTAGE_PIN, INPUT);
-    pinMode(MOTOR_SPEED_PIN, INPUT);
-    #endif
-
 
    adxl.powerOn();                     // Power on the ADXL345
 
@@ -1151,19 +1073,8 @@ public:
   state_switch = (UART.appData.switchState);
   vesc_state = (UART.appData.state);
 
-  /*
-  //Debug
-  Serial.print("RPM="); Serial.print(rpm);
-  Serial.print("|V="); Serial.print(voltage);
-  Serial.print("|I="); Serial.print(current);
-  Serial.print("|Ah="); Serial.print(amphour);
-  Serial.print("|Vel-"); Serial.print(velocity);
-  Serial.print("|Dist-"); Serial.print(distance);
-  Serial.print("|Duty-"); Serial.print(dutycycle);
-  Serial.print("|mos temp-"); Serial.print(mosfettemp);
-  Serial.print("|motor temp-"); Serial.print(motortemp);
-  Serial.println();
-  */
+
+  bmss = batpercentage;
       }
 
 
@@ -1203,11 +1114,6 @@ get_imu_data();
       return;  // returns loop if boot animation hasnt finished playing
      }
 
- //  if (blink_app_lights >= 3){ //if lights in Onewheel app are flashed on off 3 times
- //  }
-
-
-
 
 
     if (!imu_free_fall){
@@ -1236,19 +1142,16 @@ handle_tpms();
     return;  // returns loop if free fall animation hasnt finished playing
   }
 ///////////////////////////////////////////////////////////
-   #ifdef PRO_VERSION  //rest of loop is pro only features
-    GET_BATT_LEVEL();
 
 
-    if ((low_bat_percent < battery_percent) && (low_bat_percent != 0)){  //if user set low battery %   less than    actual battery %
+
+    if ((low_bat_percent < batpercentage) && (low_bat_percent != 0)){  //if user set low battery %   less than    actual battery %
     set_motor_duty_preset();
     } else {
      applyPreset(low_bat_preset);
     }
 
-     GET_LIGHT_BAR();
 
-   #endif
 
 
   } // end of main loop
@@ -1326,7 +1229,7 @@ handle_tpms();
     lux4.add(display_trail_ruffness);                       //right side variable
 
             JsonArray lux1 = hidden.createNestedArray(F("duty")); //left side thing
-    lux1.add(motor_duty_display);                       //right side variable
+    lux1.add(dutycycle);                       //right side variable
 
             JsonArray bat1 = hidden.createNestedArray(F("tv")); //totale volatage
     bat1.add(battery_voltage);
@@ -1390,7 +1293,6 @@ handle_tpms();
     JsonObject top = root.createNestedObject(FPSTR(_name)); // usermodname
     top[FPSTR(_stock_preset)] = stock_preset;  //int input
     top[FPSTR(_alt_mode_user)] = alt_mode_user;
-    #ifdef PRO_VERSION
     top[FPSTR(_low_bat_percent)] = low_bat_percent;  //int input
     top[FPSTR(_low_bat_preset)] = low_bat_preset;  //int input
     top[FPSTR(_choosen_slow_preset)] = choosen_slow_preset;  //int input
@@ -1399,9 +1301,6 @@ handle_tpms();
     top[FPSTR(_motor_duty_slow)] = motor_duty_slow;  //int input
     top[FPSTR(_motor_duty_med)] = motor_duty_med;  //int input
     top[FPSTR(_motor_duty_fast)] = motor_duty_fast;  //int input
-    #else
-    top[FPSTR(_forwards_preset)] = forwards_preset;  //int input
-    #endif
 
     top[FPSTR(_backwards_preset)] = backwards_preset;  //int input
     top[FPSTR(_dim_backwards_preset)] = dim_backwards_preset;  //int input
@@ -1422,7 +1321,7 @@ handle_tpms();
 
     top[FPSTR(_psi)] = !psi;
     top[FPSTR(_fahrenheit)] = !fahrenheit;
-    top[FPSTR(_type)] = type;
+    top[FPSTR(_BatteryCells)] = BatteryCells;
 
 
     DEBUG_PRINTLN(F("Andonn config saved."));
@@ -1440,7 +1339,6 @@ handle_tpms();
       DEBUG_PRINTLN(F(": No config found. (Using defaults.)"));
       return false;
     }
-    #ifdef PRO_VERSION
     low_bat_percent   = top[FPSTR(_low_bat_percent)] | low_bat_percent;  //int input
     low_bat_preset   = top[FPSTR(_low_bat_preset)] | low_bat_preset;  //int input
     choosen_slow_preset   = top[FPSTR(_choosen_slow_preset)] | choosen_slow_preset;  //int input
@@ -1449,9 +1347,6 @@ handle_tpms();
     motor_duty_slow   = top[FPSTR(_motor_duty_slow)] | motor_duty_slow;          //int input
     motor_duty_med   = top[FPSTR(_motor_duty_med)] | motor_duty_med;      //int input
     motor_duty_fast   = top[FPSTR(_motor_duty_fast)] | motor_duty_fast;     //int input
-    #else
-    forwards_preset   = top[FPSTR(_forwards_preset)] | forwards_preset;     //int input
-    #endif
     backwards_preset   = top[FPSTR(_backwards_preset)] | backwards_preset;     //int input
     dim_backwards_preset   = top[FPSTR(_dim_backwards_preset)] | dim_backwards_preset;     //int input
     dim_forwards_preset   = top[FPSTR(_dim_forwards_preset)] | dim_forwards_preset;     //int input
@@ -1471,11 +1366,10 @@ handle_tpms();
 
     pressure_range_low   = top[FPSTR(_pressure_range_low)] | pressure_range_low;     //int input
     pressure_range_high   = top[FPSTR(_pressure_range_high)] | pressure_range_high;     //int input
-    if(type == 1){
+
     fahrenheit            = !(top[FPSTR(_fahrenheit)] | !fahrenheit);       //bool
     psi            = !(top[FPSTR(_psi)] | !psi);       //bool
-    }
-    type            = (top[FPSTR(_type)] | type);       //bool
+    BatteryCells            = (top[FPSTR(_BatteryCells)] | BatteryCells);       //bool
 
     DEBUG_PRINT(FPSTR(_name));
     DEBUG_PRINTLN(F(" config (re)loaded."));
@@ -1489,7 +1383,7 @@ handle_tpms();
 //                           _veriable         "what it says on the webpage"
 const char Usermodvesc::_name[] PROGMEM = "Andonn user preset configuration";
 const char Usermodvesc::_stock_preset[] PROGMEM = "Stock lighting override preset";
-#ifdef PRO_VERSION
+
 const char Usermodvesc::_low_bat_percent[] PROGMEM = "Battery percent to change preset (0 to disable) overrides duty cycle preset";
 const char Usermodvesc::_low_bat_preset[] PROGMEM = "Low battery preset animation";
 
@@ -1499,9 +1393,6 @@ const char Usermodvesc::_choosen_fast_preset[] PROGMEM = "Fast preset animation"
 const char Usermodvesc::_motor_duty_slow[] PROGMEM = "Slow motor duty %";
 const char Usermodvesc::_motor_duty_med[] PROGMEM = "Med motor duty %";
 const char Usermodvesc::_motor_duty_fast[] PROGMEM = "fast motor duty %";
-#else
-const char Usermodvesc::_forwards_preset[] PROGMEM = "Forward travel lighting preset";
-#endif
 const char Usermodvesc::_dim_forwards_preset[] PROGMEM = "Forward creep lighting preset";
 
 const char Usermodvesc::_backwards_preset[] PROGMEM = "Reverse travel lighting preset";
@@ -1527,4 +1418,4 @@ const char Usermodvesc::_pressure_range_low[] PROGMEM = "PSI minimum trigger";
 const char Usermodvesc::_pressure_range_high[] PROGMEM = "PSI maximum trigger";
 const char Usermodvesc::_fahrenheit[] PROGMEM = "Temperature units (F/C)";
 const char Usermodvesc::_psi[] PROGMEM = "Pressure units (PSI/BAR)";
-const char Usermodvesc::_type[] PROGMEM = "0=vesc 1=pint/pint 2=XR";
+const char Usermodvesc::_BatteryCells[] PROGMEM = "Battery Cells series";
