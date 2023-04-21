@@ -12,9 +12,12 @@
 #include "wled.h"
 #include "SparkFun_ADXL345.cpp"         // SparkFun ADXL345 Library
 #include "SparkFun_ADXL345.h"         // SparkFun ADXL345 Library
+#include "SparkFun_Qwiic_Humidity_AHT20.cpp"         // SparkFun ADXL345 Library 
+#include "SparkFun_Qwiic_Humidity_AHT20.h"         // SparkFun ADXL345 Library
 #include <Wire.h>
 
 
+AHT20 humiditySensor;
 
 int type = 0;
 //int display_battery;
@@ -34,6 +37,8 @@ bool dimmed_lights = false;
 float battery_voltage;
 int vesc_state = 0;
 int state_switch = 0;
+int humidity = -100;
+int andonn_temp = -100;
 
 float mosfettemp;
 float motortemp;
@@ -435,6 +440,54 @@ int rcm = 0; //regen mah
  }
  static const char _data_fx_mode_wheel_temp[] = "Tire Tempature@,% of fill,,,,One color;!,!;!";
 
+
+  /*
+ * humidity display
+ * Intesity values from 0-100 turn on the leds.
+ */
+ uint16_t mode_humidity(void) {
+  uint8_t percent = humidity;
+  percent = constrain(percent, 0, 200);
+  uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
+                                         : SEGLEN * (200 - percent) / 100.0;
+  uint8_t size = (1 + (SEGLEN >> 11));
+
+  if (percent <= 100) {
+    for (int i = 0; i < SEGLEN; i++) {
+    	if (i < SEGENV.aux1) {
+        if (SEGMENT.check1)
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(map(percent,0,100,0,255), false, false, 0));
+        else
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+    	}
+    	else {
+        SEGMENT.setPixelColor(i, SEGCOLOR(1));
+    	}
+    }
+  } else {
+    for (int i = 0; i < SEGLEN; i++) {
+    	if (i < (SEGLEN - SEGENV.aux1)) {
+        SEGMENT.setPixelColor(i, SEGCOLOR(1));
+    	}
+    	else {
+        if (SEGMENT.check1)
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(map(percent,100,200,255,0), false, false, 0));
+        else
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+    	}
+    }
+  }
+  if(active_leds > SEGENV.aux1) {  // smooth transition to the target value
+    SEGENV.aux1 += size;
+    if (SEGENV.aux1 > active_leds) SEGENV.aux1 = active_leds;
+  } else if (active_leds < SEGENV.aux1) {
+    if (SEGENV.aux1 > size) SEGENV.aux1 -= size; else SEGENV.aux1 = 0;
+    if (SEGENV.aux1 < active_leds) SEGENV.aux1 = active_leds;
+  }
+ 	return FRAMETIME;
+ }
+ static const char _data_fx_mode_humidity[] = "humidity % @,% of fill,,,,One color;!,!;!";
+ 
 
 /** Initiate VescUart class */
 VescUart UART;
