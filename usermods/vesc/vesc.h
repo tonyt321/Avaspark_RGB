@@ -556,8 +556,8 @@ float WheelDia = 0.28;           //Wheel diameter in m
 float GearReduction = 1;         //reduction ratio. 1 for direct drive. Otherwise motor pulley diameter / Wheel pulley diameter.
 
 
-float smoothedrpm;
-float rpm;
+int smoothedrpm;
+int rpm;
 float voltage;
 float current;
 int power;
@@ -571,7 +571,7 @@ float motortemp;
 
 
 
-  int8_t low_bat_preset = 1;
+  //int8_t low_bat_preset = 1;
   int8_t low_bat_percent = 10;
 
   int8_t choosen_slow_preset = 1;
@@ -590,6 +590,7 @@ float motortemp;
   int dim_right_preset = 0; 
   int dim_standing_up_preset = 0;
 
+  bool vesc_light_on = true;
   bool alt_mode_user = true;
   bool alt_mode = true;
   int8_t alt_backwards_preset = 1;  //preset played as a boot animation
@@ -662,7 +663,7 @@ unsigned long a_read_milisec;  // analog read limit
   // strings to reduce flash memory usage (used more than twice)
   static const char _name[];
   static const char _low_bat_percent[];
-  static const char _low_bat_preset[];
+  //static const char _low_bat_preset[];
   static const char _choosen_slow_preset[];
   static const char _choosen_med_preset[];
   static const char _choosen_fast_preset[];
@@ -677,6 +678,7 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _dim_standing_up_preset[];
 
   static const char _alt_mode_user[];
+  static const char _vesc_light_on[];
   static const char _alt_backwards_preset[];
   static const char _alt_forwards_preset[];
 
@@ -846,23 +848,44 @@ unsigned long a_read_milisec;  // analog read limit
   void get_front_light()
    {
 
-    // rpm for direction
-    // current usage for if the board is engadged or not 
+////////// Read values //////////
+ if ( UART.getVescValues() ) {
+  voltage = (UART.data.inpVoltage);                                 //Battery Voltage
+  current = (UART.data.avgInputCurrent);                            //Current Draw
+  dutycycle = (UART.data.dutyCycleNow);                            //Current Draw
+  motortemp = (UART.data.tempMotor);
+  mosfettemp = (UART.data.tempMosfet);
+  power = voltage*current;
+//  amphour = (UART.data.ampHours);                                   //This doesn't seem to do anything!
+  watthour = amphour*voltage;                                       //Likewise
+  rpm = UART.data.rpm / (Poles / 2);                                // UART.data.rpm returns cRPM.  Divide by no of pole pairs in the motor for actual.
+  distance = rpm*3.142*(1.0/1609.0)*WheelDia*GearReduction;         // Motor RPM x Pi x (1 / meters in a mile or km) x Wheel diameter x (motor pulley / wheelpulley)
+  velocity = rpm*3.142*(60.0/1609.0)*WheelDia*GearReduction;        // Motor RPM x Pi x (seconds in a minute / meters in a mile) x Wheel diameter x (motor pulley / wheelpulley)
+  batpercentage = (voltage-(3.0*BatteryCells)/BatteryCells)*100;   // Based on a minimum of 3V per cell
+  //state_switch = (UART.appData.switchState);
+  //vesc_state = (UART.appData.state);
+   Serial.print("RPM="); Serial.print(rpm);
+   Serial.println("smoothedRPM="); Serial.print(smoothedrpm);
 
-    smoothedrpm = rpm * 0.5 + (smoothedrpm * (1.0 - 0.5)); // higly smoothed for left/right turn signal
+  bmss = batpercentage;
+      }
+
+    // rpm for direction
+    // current usage for if the board is engadged or not
+    smoothedrpm = ((rpm * 0.5) + (smoothedrpm * 0.5)); // higly smoothed
 
      if (smoothedrpm > 5){forward = true;}
      if (smoothedrpm < -5){forward = false;}
 
-     if (current < .2){
-       dimmed_lights = true;
-     }else{
+     if (smoothedrpm < -1 || smoothedrpm > 1){
       dimmed_lights = false;
-      }
+      }else{
+        dimmed_lights = true;
+        }
 
 
 
-   app_lights_on = true;
+   app_lights_on = vesc_light_on;
 
 
 
@@ -934,7 +957,7 @@ public:
 
   /** Setup UART port On TTGO Display, you have to assign the pins. 25(Tx) 26(Rx) in this case */
   //** Default VESC brate is 115200, you can change it to any other value. */
-  Serial2.begin(115200, SERIAL_8N1, 32, 33);
+  Serial2.begin(115200, SERIAL_8N1, VESC_RX, VESC_TX);
   /** Define which ports to use as UART */
   UART.setSerialPort(&Serial2);
       briS = 255;
@@ -961,8 +984,6 @@ public:
     strip.addEffect(FX_MODE_HUMIDITY, &mode_humidity, _data_fx_mode_humidity);
     strip.addEffect(FX_MODE_BATPERCENT, &mode_batpercent, _data_fx_mode_batpercent);
 
-    pinMode(FRONT_LIGHT_W_PIN, INPUT);
-    pinMode(FRONT_LIGHT_R_PIN, INPUT);
 
     pinMode(ERROR_LED_PIN, OUTPUT);
     digitalWrite(ERROR_LED_PIN, LOW);
@@ -1014,10 +1035,6 @@ public:
 
    shop = 1;// if display / other esp connected set to 1 to allow more devices connected with blocking main loop
 
-   #ifdef TEST_MODE
-   app_lights_on = true;  // set as if lights are detected as always on in test mode
-   #endif
-
    #ifndef TEST_MODE // test mode skip get front light becuase we dont have the hardware on test esp32
    get_front_light();  // handels truning on/off lights and forward/back detection
    #endif
@@ -1056,26 +1073,7 @@ public:
 
     if (strip.isUpdating()){return;}
 
-////////// Read values //////////
- if ( UART.getVescValues() ) {
-  rpm = UART.data.rpm / (Poles / 2);                                // UART.data.rpm returns cRPM.  Divide by no of pole pairs in the motor for actual.
-  voltage = (UART.data.inpVoltage);                                 //Battery Voltage
-  current = (UART.data.avgInputCurrent);                            //Current Draw
-  dutycycle = (UART.data.dutyCycleNow);                            //Current Draw
-  motortemp = (UART.data.tempMotor);
-  mosfettemp = (UART.data.tempMosfet);
-  power = voltage*current;
-  amphour = (UART.data.ampHours);                                   //This doesn't seem to do anything!
-  watthour = amphour*voltage;                                       //Likewise
-  distance = rpm*3.142*(1.0/1609.0)*WheelDia*GearReduction;         // Motor RPM x Pi x (1 / meters in a mile or km) x Wheel diameter x (motor pulley / wheelpulley)
-  velocity = rpm*3.142*(60.0/1609.0)*WheelDia*GearReduction;        // Motor RPM x Pi x (seconds in a minute / meters in a mile) x Wheel diameter x (motor pulley / wheelpulley)
-  batpercentage = (voltage-(3.0*BatteryCells)/BatteryCells)*100;   // Based on a minimum of 3V per cell
-  state_switch = (UART.appData.switchState);
-  vesc_state = (UART.appData.state);
 
-
-  bmss = batpercentage;
-      }
 
 
           if (free_fall_preset != 250){
@@ -1145,14 +1143,11 @@ handle_tpms();
 
 
 
-    if ((low_bat_percent < batpercentage) && (low_bat_percent != 0)){  //if user set low battery %   less than    actual battery %
-    set_motor_duty_preset();
-    } else {
-     applyPreset(low_bat_preset);
-    }
-
-
-
+  //  if ((low_bat_percent < batpercentage) && (low_bat_percent != 0)){  //if user set low battery %   less than    actual battery %
+  //  set_motor_duty_preset();
+  //  } else {
+  //   applyPreset(low_bat_preset);
+  //  }
 
   } // end of main loop
 
@@ -1168,30 +1163,10 @@ handle_tpms();
       shop  = root["shop"] | shop; //allows for display to be connected while user mod still runs loop
 
       tv2 = root["tv2"] | tv2; //totale volatage
-      ca2 = root["ca2"] | ca2; //current amps
       bmss = root["bmss"] | bmss; //bms state of charge
-      ucm = root["ucm"] | ucm; //used charge mah                stuff for pint and XR owie
-      rcm = root["rcm"] | rcm; //regen mah
-      tempt[0] = root["tempt"][0] | tempt[0]; //temp table
-      tempt[1] = root["tempt"][1] | tempt[1]; //temp table
-      tempt[2] = root["tempt"][2] | tempt[2]; //temp table
-      tempt[3] = root["tempt"][3] | tempt[3]; //temp table
-      tempt[4] = root["tempt"][4] | tempt[4]; //temp table
 
-      cvt[1] = root["cvt"][1] | cvt[1]; // voltage table
-      cvt[2] = root["cvt"][2] | cvt[2]; //voltage table  there is probably a better way to do this
-      cvt[3] = root["cvt"][3] | cvt[3]; //voltage table
-      cvt[4] = root["cvt"][4] | cvt[4]; // voltage table
-      cvt[5] = root["cvt"][5] | cvt[5]; // voltage table
-      cvt[6] = root["cvt"][6] | cvt[6]; //voltage table
-      cvt[7] = root["cvt"][7] | cvt[7]; //voltage table
-      cvt[8] = root["cvt"][8] | cvt[8]; //voltage table
-      cvt[9] = root["cvt"][9] | cvt[9]; //voltage table
-      cvt[10] = root["cvt"][10] | cvt[10]; // voltage table
-      cvt[11] = root["cvt"][11] | cvt[11]; //voltage table
-      cvt[12] = root["cvt"][12] | cvt[12]; //voltage table
-      cvt[13] = root["cvt"][13] | cvt[13]; // voltage table
-      cvt[14] = root["cvt"][14] | cvt[14]; //voltage table
+
+
 
     }
 
@@ -1233,44 +1208,38 @@ handle_tpms();
 
             JsonArray bat1 = hidden.createNestedArray(F("tv")); //totale volatage
     bat1.add(battery_voltage);
-                JsonArray bat2 = hidden.createNestedArray(F("ca")); //current amps
-    bat2.add(ca2);
                 JsonArray bat3 = hidden.createNestedArray(F("bmss")); //bms state of charge
     bat3.add(bmss);
-                JsonArray bat4 = hidden.createNestedArray(F("ucm")); //used charge mah
-    bat4.add(ucm);
-                JsonArray bat5 = hidden.createNestedArray(F("rcm")); //regen mah
-    bat5.add(rcm);
-                JsonArray bat6 = hidden.createNestedArray(F("cvt")); //batt cell voltage table
-    bat6.add(cvt[0]);bat6.add(cvt[1]);bat6.add(cvt[2]);bat6.add(cvt[3]);bat6.add(cvt[4]);bat6.add(cvt[5]);bat6.add(cvt[6]);bat6.add(cvt[7]);bat6.add(cvt[8]);bat6.add(cvt[9]);bat6.add(cvt[10]);bat6.add(cvt[11]);bat6.add(cvt[12]);bat6.add(cvt[13]);bat6.add(cvt[14]);
-
-                JsonArray bat7 = hidden.createNestedArray(F("tempt")); //batt temp table
-    bat7.add(tempt[0]);bat7.add(tempt[1]);bat7.add(tempt[2]);bat7.add(tempt[3]);bat7.add(tempt[4]);
-
-
 
 
     JsonObject user = root[F("u")];
     if (user.isNull())
       user = root.createNestedObject(F("u"));
 
-#ifdef PRO_VERSION
-    JsonArray lux = user.createNestedArray(F("RED analog read")); //left side thing
-    lux.add(LIGHT_BAR_R_ANALOG);                       //right side variable
+                        JsonArray vesc5 = user.createNestedArray("RPM");  //left side thing
+      vesc5.add(rpm);  
+                                   //right side variable
+                        JsonArray vesc0 = user.createNestedArray("smoothed RPM");  //left side thing
+      vesc0.add(smoothedrpm);                               //right side variable
 
+                              JsonArray vesc1 = user.createNestedArray("Distance");  //left side thing
+      vesc1.add(distance);                               //right side variable
 
-      JsonArray battery = user.createNestedArray("blue level");  //left side thing
-      battery.add(LIGHT_BAR_B);                               //right side variable
-#endif
+                              JsonArray vesc2 = user.createNestedArray("Mosfet Temp");  //left side thing
+      vesc2.add(mosfettemp);                               //right side variable
 
+                              JsonArray vesc3 = user.createNestedArray("Motor Temp");  //left side thing
+      vesc3.add(motortemp);                               //right side variable
 
-                  JsonArray battery6 = user.createNestedArray("activations per min");  //left side thing
+                              JsonArray vesc4 = user.createNestedArray("Batt Percentage");  //left side thing
+      vesc4.add(batpercentage);                               //right side variable
+
+                  JsonArray battery6 = user.createNestedArray("Bumpyness");  //left side thing
       battery6.add(display_trail_ruffness);                               //right side variable
 
           JsonArray battery9;
            if (psi) {battery9 = user.createNestedArray("Tire PSI");}else{battery9 = user.createNestedArray("Tire Bar");}  //left side thing
       battery9.add(display_tpmsp);
-
           JsonArray battery16;
          if (fahrenheit) {battery16 = user.createNestedArray("Tire Temp F");}else{battery16 = user.createNestedArray("Tire Temp C");}  //left side thing
          battery16.add(display_tpmst);
@@ -1284,17 +1253,18 @@ handle_tpms();
     return USERMOD_ID_VESC;
   }
 
-  /**
+     /*
      * addToConfig() (called from set.cpp) stores persistent properties to cfg.json
      */
   void addToConfig(JsonObject &root)
   {
     // we add JSON object.
     JsonObject top = root.createNestedObject(FPSTR(_name)); // usermodname
+    top[FPSTR(_vesc_light_on)] = vesc_light_on;
     top[FPSTR(_stock_preset)] = stock_preset;  //int input
     top[FPSTR(_alt_mode_user)] = alt_mode_user;
     top[FPSTR(_low_bat_percent)] = low_bat_percent;  //int input
-    top[FPSTR(_low_bat_preset)] = low_bat_preset;  //int input
+    //top[FPSTR(_low_bat_preset)] = low_bat_preset;  //int input
     top[FPSTR(_choosen_slow_preset)] = choosen_slow_preset;  //int input
     top[FPSTR(_choosen_med_preset)] = choosen_med_preset;  //int input
     top[FPSTR(_choosen_fast_preset)] = choosen_fast_preset;  //int input
@@ -1340,7 +1310,7 @@ handle_tpms();
       return false;
     }
     low_bat_percent   = top[FPSTR(_low_bat_percent)] | low_bat_percent;  //int input
-    low_bat_preset   = top[FPSTR(_low_bat_preset)] | low_bat_preset;  //int input
+   // low_bat_preset   = top[FPSTR(_low_bat_preset)] | low_bat_preset;  //int input
     choosen_slow_preset   = top[FPSTR(_choosen_slow_preset)] | choosen_slow_preset;  //int input
     choosen_med_preset   = top[FPSTR(_choosen_med_preset)] | choosen_med_preset;      //int input
     choosen_fast_preset   = top[FPSTR(_choosen_fast_preset)] | choosen_fast_preset;    //int input
@@ -1361,6 +1331,7 @@ handle_tpms();
     stock_preset   = top[FPSTR(_stock_preset)] | stock_preset;     //int input
     boot_preset_time   = top[FPSTR(_boot_preset_time)] | boot_preset_time;     //int input
     alt_mode_user            = (top[FPSTR(_alt_mode_user)] | alt_mode_user);       //bool
+    vesc_light_on            = (top[FPSTR(_vesc_light_on)] | vesc_light_on);       //bool
     free_fall_preset   = top[FPSTR(_free_fall_preset)] | free_fall_preset;     //int input
     trail_ruffness_max   = top[FPSTR(_trail_ruffness_max)] | trail_ruffness_max;     //int input
 
@@ -1385,7 +1356,7 @@ const char Usermodvesc::_name[] PROGMEM = "Andonn user preset configuration";
 const char Usermodvesc::_stock_preset[] PROGMEM = "Stock lighting override preset";
 
 const char Usermodvesc::_low_bat_percent[] PROGMEM = "Battery percent to change preset (0 to disable) overrides duty cycle preset";
-const char Usermodvesc::_low_bat_preset[] PROGMEM = "Low battery preset animation";
+//const char Usermodvesc::_low_bat_preset[] PROGMEM = "Low battery preset animation";
 
 const char Usermodvesc::_choosen_slow_preset[] PROGMEM = "Slow preset animation";
 const char Usermodvesc::_choosen_med_preset[] PROGMEM = "Med preset animation";
@@ -1399,6 +1370,7 @@ const char Usermodvesc::_backwards_preset[] PROGMEM = "Reverse travel lighting p
 const char Usermodvesc::_dim_backwards_preset[] PROGMEM = "Reverse creep lighting preset";
 
 const char Usermodvesc::_alt_mode_user[] PROGMEM = "Enable alternative presets";
+const char Usermodvesc::_vesc_light_on[] PROGMEM = "Lights ON/OFF";
 const char Usermodvesc::_alt_forwards_preset[] PROGMEM = "Alt forward travel lighting preset";
 const char Usermodvesc::_alt_backwards_preset[] PROGMEM = "Alt reverse travel lighting preset";
 

@@ -564,7 +564,7 @@ void serveSettings(AsyncWebServerRequest* request, bool post)
     char s2[45] = "";
 
     switch (subPage) {
-      case 1: strcpy_P(s, PSTR("WiFi")); strcpy_P(s2, PSTR("Please connect to the new IP (if changed)")); forceReconnect = true; break;
+      case 1: strcpy_P(s, PSTR("WiFi")); strcpy_P(s2, PSTR("Please Turn off then on board to continue")); forceReconnect = true; break;
       case 2: strcpy_P(s, PSTR("LED")); break;
       case 3: strcpy_P(s, PSTR("UI")); break;
       case 4: strcpy_P(s, PSTR("Sync")); break;

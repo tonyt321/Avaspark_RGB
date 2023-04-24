@@ -20,24 +20,33 @@
   //WARNING: this will hardcode these as the default even after a factory reset
 */
 #ifdef OW_PINT
+  #define DATA_PINS 18 ,17  //front then back lights GPIO segment 0 then 1 ect
   #define USERMOD_ANDON_MOD
   #define DEFAULT_LED_COUNT 13 //11 for GT 13 for pint
   #define OW_TYPE "Pint"
   #define WLED_VERSION "Pint 2.2.2"  //shows up in info on UI
+  #define FRONT_LIGHT_R_PIN 39   //front light red
+  #define FRONT_LIGHT_W_PIN 36   //front light white
 #endif
 
 #ifdef OW_GT
+  #define DATA_PINS 18 ,17  //front then back lights GPIO segment 0 then 1 ect
   #define USERMOD_ANDON_MOD
   #define DEFAULT_LED_COUNT 11 //11 for GT 13 for pint
   #define OW_TYPE "GT"
   #define WLED_VERSION "GT 2.2.2"  //shows up in info on UI
+  #define FRONT_LIGHT_R_PIN 39   //front light red
+  #define FRONT_LIGHT_W_PIN 36   //front light white
 #endif
 
 #ifdef OW_VESC
+  #define DATA_PINS 18 ,19  //front then back lights GPIO segment 0 then 1 ect
   #define USERMOD_VESC
-  #define DEFAULT_LED_COUNT 20 //11 for GT 13 for pint
+  #define DEFAULT_LED_COUNT 11 //11 for GT 13 for pint
   #define OW_TYPE "Vesc"
   #define WLED_VERSION "Vesc 2.2.2"  //shows up in info on UI
+  #define VESC_RX 32   //vesc rx
+  #define VESC_TX 33   //vesc tx
 #endif
 
 #define INTERFACE_UPDATE_COOLDOWN 2000 //time in ms to wait between websockets, alexa, and MQTT updates
@@ -57,13 +66,12 @@
 
 
 #define ERROR_LED_PIN 16  // on pcb led
-#define DATA_PINS 18 ,17  //front then back lights GPIO segment 0 then 1 ect
+
 
 #define MOTOR_SPEED_PIN 35   //motor phase pin
 #define BATTERY_VOLTAGE_PIN 34   //battery voltage pin
 
-#define FRONT_LIGHT_R_PIN 39   //front light red
-#define FRONT_LIGHT_W_PIN 36   //front light white
+
 
 #define DEFAULT_AP_PASS     "andonn123"
 #define DEFAULT_OTA_PASS    "andonn123"
