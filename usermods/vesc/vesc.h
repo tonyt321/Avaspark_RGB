@@ -29,7 +29,7 @@ float display_tpmsp; //tpms pressure
 float display_tpmst; //tpms temp
 float percent_tpmst;
 float percent_tpmsp;
-int display_trail_ruffness;
+
 int filteredx , filteredy , filteredz;
 bool forward = true;
 bool dimmed_lights = false;
@@ -40,6 +40,7 @@ int humidity = -100;
 int andonn_temp = -100;
 float batpercentage;
 float dutycycle;
+int display_trail_ruffness;
 
 float mosfettemp;
 float motortemp;
@@ -399,7 +400,7 @@ int rcm = 0; //regen mah
  * Intesity values from 0-100 turn on the leds.
  */
  uint16_t mode_wheel_temp(void) {
-  int percent = percent_tpmst;
+  int percent = map((motortemp), 50, 100, 0, 100); //100f to 200f range in c;
   percent = constrain(percent, 0, 200);
   uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
                                          : SEGLEN * (200 - percent) / 100.0;
@@ -439,7 +440,7 @@ int rcm = 0; //regen mah
   }
  	return FRAMETIME;
  }
- static const char _data_fx_mode_wheel_temp[] = "Tire Tempature@,% of fill,,,,One color;!,!;!";
+ static const char _data_fx_mode_wheel_temp[] = "Motor Temp 50-100c@, ,,,,One color;!,!;!";
 
 
   /*
@@ -574,6 +575,7 @@ float motortemp;
   //int8_t low_bat_preset = 1;
   int8_t low_bat_percent = 10;
 
+  #ifdef SIMPLE_CONFIG
   int8_t choosen_slow_preset = 1;
   int8_t choosen_med_preset = 1;
   int8_t choosen_fast_preset = 1;
@@ -581,7 +583,9 @@ float motortemp;
   int8_t motor_duty_slow = 20;
   int8_t motor_duty_med = 40;
   int8_t motor_duty_fast = 70;
-
+  #else
+  int8_t forwards_preset = 1;
+  #endif
 
   int8_t backwards_preset = 1;  //preset played as a boot animation
   int8_t dim_backwards_preset = 1;  //preset played as a boot animation
@@ -591,7 +595,7 @@ float motortemp;
   int dim_standing_up_preset = 0;
 
   bool vesc_light_on = true;
-  bool alt_mode_user = true;
+  bool alt_mode_user = false;
   bool alt_mode = true;
   int8_t alt_backwards_preset = 1;  //preset played as a boot animation
   int8_t alt_forwards_preset = 1;  //preset played as a boot animation
@@ -662,6 +666,25 @@ unsigned long a_read_milisec;  // analog read limit
 
   // strings to reduce flash memory usage (used more than twice)
   static const char _name[];
+  static const char _backwards_preset[];
+  static const char _dim_backwards_preset[];
+  static const char _dim_forwards_preset[];
+  static const char _dim_left_preset[];
+  static const char _dim_right_preset[];
+  static const char _dim_standing_up_preset[];
+  static const char _vesc_light_on[];
+  static const char _boot_preset[];
+  static const char _boot_preset_time[];
+  static const char _free_fall_preset_time[];
+  static const char _free_fall_preset[];
+  static const char _stock_preset[];
+  static const char _BatteryCells[];
+
+#ifdef SIMPLE_CONFIG
+  static const char _alt_mode_user[];
+  static const char _alt_backwards_preset[];
+  static const char _alt_forwards_preset[];
+  static const char _trail_ruffness_max[];
   static const char _low_bat_percent[];
   //static const char _low_bat_preset[];
   static const char _choosen_slow_preset[];
@@ -670,30 +693,14 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _motor_duty_slow[];
   static const char _motor_duty_med[];
   static const char _motor_duty_fast[];
-  static const char _backwards_preset[];
-  static const char _dim_backwards_preset[];
-  static const char _dim_forwards_preset[];
-  static const char _dim_left_preset[];
-  static const char _dim_right_preset[];
-  static const char _dim_standing_up_preset[];
-
-  static const char _alt_mode_user[];
-  static const char _vesc_light_on[];
-  static const char _alt_backwards_preset[];
-  static const char _alt_forwards_preset[];
-
-  static const char _boot_preset[];
-  static const char _boot_preset_time[];
-  static const char _trail_ruffness_max[];
-  static const char _free_fall_preset_time[];
-  static const char _free_fall_preset[];
-  static const char _stock_preset[];
-
   static const char _pressure_range_low[];
   static const char _pressure_range_high[];
   static const char _fahrenheit[];
   static const char _psi[];
-  static const char _BatteryCells[];
+  #else
+  static const char _forwards_preset[];
+  #endif
+
 
 
       //most of the time, this function should be performed when the baord is idle, because when the board is engaged, 
@@ -710,23 +717,23 @@ unsigned long a_read_milisec;  // analog read limit
       //N is proportional to a scalar value, which is used to scale up/down the speed of the lighting animation
       //when the board speed is within one of the ranges, scale the animation speed accordingly 
 
-
+#ifdef SIMPLE_CONFIG
   void set_motor_duty_preset()
   {  
 
-   if (dutycycle < 2 || dutycycle > -2)
-   { return; }
+   //if (dutycycle < .01 || dutycycle > -.01)
+   //{ return; }
 
-   if (motor_duty_slow < dutycycle)
+   if (motor_duty_slow < dutycycle / 100)
    { applyPreset(choosen_slow_preset); return; }
 
-   if (motor_duty_med < dutycycle)
+   if (motor_duty_med < dutycycle / 100)
    { applyPreset(choosen_med_preset); return; }
 
-   if (motor_duty_fast < dutycycle)
+   if (motor_duty_fast < dutycycle / 100)
    { applyPreset(choosen_fast_preset); return; }
   }
-
+#endif
 
 
   void handle_tpms() {
@@ -746,7 +753,7 @@ unsigned long a_read_milisec;  // analog read limit
 
       percent_tpmsp = map(display_tpmsp, pressure_range_low, pressure_range_high, 0, 100);
 
-      percent_tpmst = map((tpmst/100), 38, 93, 0, 100); //100f to 200f range in c
+
 
   }
 
@@ -861,23 +868,23 @@ unsigned long a_read_milisec;  // analog read limit
   rpm = UART.data.rpm / (Poles / 2);                                // UART.data.rpm returns cRPM.  Divide by no of pole pairs in the motor for actual.
   distance = rpm*3.142*(1.0/1609.0)*WheelDia*GearReduction;         // Motor RPM x Pi x (1 / meters in a mile or km) x Wheel diameter x (motor pulley / wheelpulley)
   velocity = rpm*3.142*(60.0/1609.0)*WheelDia*GearReduction;        // Motor RPM x Pi x (seconds in a minute / meters in a mile) x Wheel diameter x (motor pulley / wheelpulley)
-  batpercentage = (voltage-(3.0*BatteryCells)/BatteryCells)*100;   // Based on a minimum of 3V per cell
+  batpercentage = map(voltage, (3.0*BatteryCells), (4.2*BatteryCells), 0, 100);
   //state_switch = (UART.appData.switchState);
   //vesc_state = (UART.appData.state);
-   Serial.print("RPM="); Serial.print(rpm);
-   Serial.println("smoothedRPM="); Serial.print(smoothedrpm);
 
   bmss = batpercentage;
+  smoothedrpm = ((rpm * 0.2 ) + (smoothedrpm * 0.8)); // higly smoothed
       }
+
 
     // rpm for direction
     // current usage for if the board is engadged or not
-    smoothedrpm = ((rpm * 0.5) + (smoothedrpm * 0.5)); // higly smoothed
+
 
      if (smoothedrpm > 5){forward = true;}
      if (smoothedrpm < -5){forward = false;}
 
-     if (smoothedrpm < -1 || smoothedrpm > 1){
+     if ((smoothedrpm < -1 || smoothedrpm > 1) && (dutycycle < -.05 && dutycycle > .05)){
       dimmed_lights = false;
       }else{
         dimmed_lights = true;
@@ -926,7 +933,11 @@ void set_preset() { // pick which preset based on direction, speed, dim, alt mod
     if(forward){
       if (dimmed_lights == false) {
         if(alt_mode){
+          #ifdef SIMPLE_CONFIG
           set_motor_duty_preset();
+          #else
+          applyPreset(forwards_preset);
+          #endif
         } else {
           applyPreset(alt_forwards_preset);
         }
@@ -999,11 +1010,11 @@ public:
                                       // SPI pins on the ATMega328: 11, 12 and 13 as reference in SPI Library
 
    adxl.setActivityXYZ(1, 1, 1);       // Set to activate movement detection in the axes "adxl.setActivityXYZ(X, Y, Z);" (1 == ON, 0 == OFF)
-   adxl.setActivityThreshold(150);      // 62.5mg per increment   // Set activity   // Inactivity thresholds (0-255)
+   adxl.setActivityThreshold(100);      // 62.5mg per increment   // Set activity   // Inactivity thresholds (0-255)
 
    adxl.setInactivityXYZ(1, 1, 1);     // Set to detect inactivity in all the axes "adxl.setInactivityXYZ(X, Y, Z);" (1 == ON, 0 == OFF)
-   adxl.setInactivityThreshold(75);    // 62.5mg per increment   // Set inactivity // Inactivity thresholds (0-255)
-   adxl.setTimeInactivity(10);         // How many seconds of no activity is inactive?
+   adxl.setInactivityThreshold(50);    // 62.5mg per increment   // Set inactivity // Inactivity thresholds (0-255)
+   adxl.setTimeInactivity(5);         // How many seconds of no activity is inactive?
 
    adxl.setTapDetectionOnXYZ(1, 1, 1); // Detect taps in the directions turned ON "adxl.setTapDetectionOnX(X, Y, Z);" (1 == ON, 0 == OFF)
 
@@ -1014,7 +1025,7 @@ public:
    adxl.setDoubleTapWindow(200);       // 1.25 ms per increment
 
    // Set values for what is considered FREE FALL (0-255)
-   adxl.setFreeFallThreshold(10);       // (5 - 9) recommended - 62.5mg per increment
+   adxl.setFreeFallThreshold(7);       // (5 - 9) recommended - 62.5mg per increment
    //int fall_sec = ((sqrt((free_fall_inches * 50800)/ 981))*2);  // convert inches fallen to ms fallen devided by 5
    adxl.setFreeFallDuration(20);       // (20 - 70) recommended - 5ms per increment
 
@@ -1127,9 +1138,10 @@ handle_tpms();
     imu_activity = false;
   }
 /////////////////////////////////////////////////////inactivity "interrupt"
-  if (imu_inactivity)
-  {
+  if (imu_inactivity){
+      if (smoothedrpm > 1){
     imu_inactivity = false;
+    }
   }
 //////////////////////////////////////////////////////////////  free fall "interrupt"
     if (imu_free_fall){
@@ -1217,10 +1229,13 @@ handle_tpms();
       user = root.createNestedObject(F("u"));
 
                         JsonArray vesc5 = user.createNestedArray("RPM");  //left side thing
-      vesc5.add(rpm);  
+      vesc5.add(smoothedrpm);  
+
+                              JsonArray vesc6 = user.createNestedArray("Duty cycle");  //left side thing
+      vesc6.add(dutycycle);  
                                    //right side variable
-                        JsonArray vesc0 = user.createNestedArray("smoothed RPM");  //left side thing
-      vesc0.add(smoothedrpm);                               //right side variable
+                        JsonArray vesc0 = user.createNestedArray("Current");  //left side thing
+      vesc0.add(current);                               //right side variable
 
                               JsonArray vesc1 = user.createNestedArray("Distance");  //left side thing
       vesc1.add(distance);                               //right side variable
@@ -1262,6 +1277,7 @@ handle_tpms();
     JsonObject top = root.createNestedObject(FPSTR(_name)); // usermodname
     top[FPSTR(_vesc_light_on)] = vesc_light_on;
     top[FPSTR(_stock_preset)] = stock_preset;  //int input
+    #ifdef SIMPLE_CONFIG
     top[FPSTR(_alt_mode_user)] = alt_mode_user;
     top[FPSTR(_low_bat_percent)] = low_bat_percent;  //int input
     //top[FPSTR(_low_bat_preset)] = low_bat_preset;  //int input
@@ -1271,12 +1287,15 @@ handle_tpms();
     top[FPSTR(_motor_duty_slow)] = motor_duty_slow;  //int input
     top[FPSTR(_motor_duty_med)] = motor_duty_med;  //int input
     top[FPSTR(_motor_duty_fast)] = motor_duty_fast;  //int input
-
+    top[FPSTR(_alt_forwards_preset)] = alt_forwards_preset;  //int input
+    top[FPSTR(_alt_backwards_preset)] = alt_backwards_preset;  //int input
+    #else
+    top[FPSTR(_forwards_preset)] = forwards_preset;  //int input
+    #endif
     top[FPSTR(_backwards_preset)] = backwards_preset;  //int input
     top[FPSTR(_dim_backwards_preset)] = dim_backwards_preset;  //int input
     top[FPSTR(_dim_forwards_preset)] = dim_forwards_preset;  //int input
-    top[FPSTR(_alt_forwards_preset)] = alt_forwards_preset;  //int input
-    top[FPSTR(_alt_backwards_preset)] = alt_backwards_preset;  //int input
+
     top[FPSTR(_dim_left_preset)] = dim_left_preset;  //int input
     top[FPSTR(_dim_right_preset)] = dim_right_preset;  //int input
     top[FPSTR(_dim_standing_up_preset)] = dim_standing_up_preset;  //int input
@@ -1284,6 +1303,7 @@ handle_tpms();
     top[FPSTR(_boot_preset)] = boot_preset;  //int input
     top[FPSTR(_boot_preset_time)] = boot_preset_time;  //int input
     top[FPSTR(_free_fall_preset)] = free_fall_preset;  //int input
+    #ifdef SIMPLE_CONFIG
     top[FPSTR(_trail_ruffness_max)] = trail_ruffness_max;  //int input
 
     top[FPSTR(_pressure_range_low)] = pressure_range_low;  //int input
@@ -1291,6 +1311,7 @@ handle_tpms();
 
     top[FPSTR(_psi)] = !psi;
     top[FPSTR(_fahrenheit)] = !fahrenheit;
+    #endif
     top[FPSTR(_BatteryCells)] = BatteryCells;
 
 
@@ -1309,6 +1330,7 @@ handle_tpms();
       DEBUG_PRINTLN(F(": No config found. (Using defaults.)"));
       return false;
     }
+    #ifdef SIMPLE_CONFIG
     low_bat_percent   = top[FPSTR(_low_bat_percent)] | low_bat_percent;  //int input
    // low_bat_preset   = top[FPSTR(_low_bat_preset)] | low_bat_preset;  //int input
     choosen_slow_preset   = top[FPSTR(_choosen_slow_preset)] | choosen_slow_preset;  //int input
@@ -1317,12 +1339,17 @@ handle_tpms();
     motor_duty_slow   = top[FPSTR(_motor_duty_slow)] | motor_duty_slow;          //int input
     motor_duty_med   = top[FPSTR(_motor_duty_med)] | motor_duty_med;      //int input
     motor_duty_fast   = top[FPSTR(_motor_duty_fast)] | motor_duty_fast;     //int input
+    #else
+    forwards_preset   = top[FPSTR(_forwards_preset)] | forwards_preset;     //int input
+    #endif
     backwards_preset   = top[FPSTR(_backwards_preset)] | backwards_preset;     //int input
     dim_backwards_preset   = top[FPSTR(_dim_backwards_preset)] | dim_backwards_preset;     //int input
     dim_forwards_preset   = top[FPSTR(_dim_forwards_preset)] | dim_forwards_preset;     //int input
-
+    #ifdef SIMPLE_CONFIG
+    alt_mode_user            = (top[FPSTR(_alt_mode_user)] | alt_mode_user);       //bool
     alt_backwards_preset   = top[FPSTR(_alt_backwards_preset)] | alt_backwards_preset;     //int input
     alt_forwards_preset   = top[FPSTR(_alt_forwards_preset)] | alt_forwards_preset;     //int input
+    #endif
 
     dim_left_preset   = top[FPSTR(_dim_left_preset)] | dim_left_preset;     //int input
     dim_right_preset   = top[FPSTR(_dim_right_preset)] | dim_right_preset;     //int input
@@ -1330,9 +1357,11 @@ handle_tpms();
     boot_preset   = top[FPSTR(_boot_preset)] | boot_preset;     //int input
     stock_preset   = top[FPSTR(_stock_preset)] | stock_preset;     //int input
     boot_preset_time   = top[FPSTR(_boot_preset_time)] | boot_preset_time;     //int input
-    alt_mode_user            = (top[FPSTR(_alt_mode_user)] | alt_mode_user);       //bool
+   
     vesc_light_on            = (top[FPSTR(_vesc_light_on)] | vesc_light_on);       //bool
     free_fall_preset   = top[FPSTR(_free_fall_preset)] | free_fall_preset;     //int input
+
+    #ifdef SIMPLE_CONFIG
     trail_ruffness_max   = top[FPSTR(_trail_ruffness_max)] | trail_ruffness_max;     //int input
 
     pressure_range_low   = top[FPSTR(_pressure_range_low)] | pressure_range_low;     //int input
@@ -1340,6 +1369,7 @@ handle_tpms();
 
     fahrenheit            = !(top[FPSTR(_fahrenheit)] | !fahrenheit);       //bool
     psi            = !(top[FPSTR(_psi)] | !psi);       //bool
+    #endif
     BatteryCells            = (top[FPSTR(_BatteryCells)] | BatteryCells);       //bool
 
     DEBUG_PRINT(FPSTR(_name));
@@ -1355,24 +1385,14 @@ handle_tpms();
 const char Usermodvesc::_name[] PROGMEM = "Andonn user preset configuration";
 const char Usermodvesc::_stock_preset[] PROGMEM = "Stock lighting override preset";
 
-const char Usermodvesc::_low_bat_percent[] PROGMEM = "Battery percent to change preset (0 to disable) overrides duty cycle preset";
-//const char Usermodvesc::_low_bat_preset[] PROGMEM = "Low battery preset animation";
 
-const char Usermodvesc::_choosen_slow_preset[] PROGMEM = "Slow preset animation";
-const char Usermodvesc::_choosen_med_preset[] PROGMEM = "Med preset animation";
-const char Usermodvesc::_choosen_fast_preset[] PROGMEM = "Fast preset animation";
-const char Usermodvesc::_motor_duty_slow[] PROGMEM = "Slow motor duty %";
-const char Usermodvesc::_motor_duty_med[] PROGMEM = "Med motor duty %";
-const char Usermodvesc::_motor_duty_fast[] PROGMEM = "fast motor duty %";
+
 const char Usermodvesc::_dim_forwards_preset[] PROGMEM = "Forward creep lighting preset";
 
 const char Usermodvesc::_backwards_preset[] PROGMEM = "Reverse travel lighting preset";
 const char Usermodvesc::_dim_backwards_preset[] PROGMEM = "Reverse creep lighting preset";
 
-const char Usermodvesc::_alt_mode_user[] PROGMEM = "Enable alternative presets";
 const char Usermodvesc::_vesc_light_on[] PROGMEM = "Lights ON/OFF";
-const char Usermodvesc::_alt_forwards_preset[] PROGMEM = "Alt forward travel lighting preset";
-const char Usermodvesc::_alt_backwards_preset[] PROGMEM = "Alt reverse travel lighting preset";
 
 const char Usermodvesc::_dim_left_preset[] PROGMEM = "Inactive left tilt lighting preset";
 const char Usermodvesc::_dim_right_preset[] PROGMEM = "Inactive right tilt lighting preset";
@@ -1384,10 +1404,26 @@ const char Usermodvesc::_boot_preset_time[] PROGMEM = "Boot duration (sec)";
 const char Usermodvesc::_free_fall_preset[] PROGMEM = "Freefall lighting preset";
 const char Usermodvesc::_free_fall_preset_time[] PROGMEM = "Freefall duration trigger (sec)";
 
-const char Usermodvesc::_trail_ruffness_max[] PROGMEM = "trail variability maximum (DEV ONLY)";
 
+#ifdef SIMPLE_CONFIG
+const char Usermodvesc::_choosen_slow_preset[] PROGMEM = "Slow preset animation";
+const char Usermodvesc::_choosen_med_preset[] PROGMEM = "Med preset animation";
+const char Usermodvesc::_choosen_fast_preset[] PROGMEM = "Fast preset animation";
+const char Usermodvesc::_motor_duty_slow[] PROGMEM = "Slow motor duty %";
+const char Usermodvesc::_motor_duty_med[] PROGMEM = "Med motor duty %";
+const char Usermodvesc::_motor_duty_fast[] PROGMEM = "fast motor duty %";
+const char Usermodvesc::_low_bat_percent[] PROGMEM = "Battery percent to change preset (0 to disable) overrides duty cycle preset";
+const char Usermodvesc::_low_bat_preset[] PROGMEM = "Low battery preset animation";
+
+//const char Usermodvesc::_trail_ruffness_max[] PROGMEM = "trail variability maximum (DEV ONLY)";
+const char Usermodvesc::_alt_mode_user[] PROGMEM = "Enable alternative presets";
+const char Usermodvesc::_alt_forwards_preset[] PROGMEM = "Alt forward travel lighting preset";
+const char Usermodvesc::_alt_backwards_preset[] PROGMEM = "Alt reverse travel lighting preset";
 const char Usermodvesc::_pressure_range_low[] PROGMEM = "PSI minimum trigger";
 const char Usermodvesc::_pressure_range_high[] PROGMEM = "PSI maximum trigger";
 const char Usermodvesc::_fahrenheit[] PROGMEM = "Temperature units (F/C)";
 const char Usermodvesc::_psi[] PROGMEM = "Pressure units (PSI/BAR)";
+#else
+const char Usermodvesc::_forwards_preset[] PROGMEM = "Forward travel lighting preset";
+#endif
 const char Usermodvesc::_BatteryCells[] PROGMEM = "Battery Cells series";
