@@ -442,6 +442,53 @@ int rcm = 0; //regen mah
  }
  static const char _data_fx_mode_wheel_temp[] = "Motor Temp 50-100c@, ,,,,One color;!,!;!";
 
+  /*
+ * mosfet temp display
+ * Intesity values from 0-100 turn on the leds.
+ */
+ uint16_t mode_mosfet_temp(void) {
+  int percent = map((mosfettemp), 50, 100, 0, 100); //100f to 200f range in c;
+  percent = constrain(percent, 0, 200);
+  uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
+                                         : SEGLEN * (200 - percent) / 100.0;
+  uint8_t size = (1 + (SEGLEN >> 11));
+
+  if (percent <= 100) {
+    for (int i = 0; i < SEGLEN; i++) {
+    	if (i < SEGENV.aux1) {
+        if (SEGMENT.check1)
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(map(percent,0,100,0,255), false, false, 0));
+        else
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+    	}
+    	else {
+        SEGMENT.setPixelColor(i, SEGCOLOR(1));
+    	}
+    }
+  } else {
+    for (int i = 0; i < SEGLEN; i++) {
+    	if (i < (SEGLEN - SEGENV.aux1)) {
+        SEGMENT.setPixelColor(i, SEGCOLOR(1));
+    	}
+    	else {
+        if (SEGMENT.check1)
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(map(percent,100,200,255,0), false, false, 0));
+        else
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+    	}
+    }
+  }
+  if(active_leds > SEGENV.aux1) {  // smooth transition to the target value
+    SEGENV.aux1 += size;
+    if (SEGENV.aux1 > active_leds) SEGENV.aux1 = active_leds;
+  } else if (active_leds < SEGENV.aux1) {
+    if (SEGENV.aux1 > size) SEGENV.aux1 -= size; else SEGENV.aux1 = 0;
+    if (SEGENV.aux1 < active_leds) SEGENV.aux1 = active_leds;
+  }
+ 	return FRAMETIME;
+ }
+ static const char _data_fx_mode_mosfet_temp[] = "Mosfet Temp 50-100c@, ,,,,One color;!,!;!";
+
 
   /*
  * humidity display
@@ -684,8 +731,8 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _alt_mode_user[];
   static const char _alt_backwards_preset[];
   static const char _alt_forwards_preset[];
-  static const char _trail_ruffness_max[];
-  static const char _low_bat_percent[];
+  //static const char _trail_ruffness_max[];
+  //static const char _low_bat_percent[];
   //static const char _low_bat_preset[];
   static const char _choosen_slow_preset[];
   static const char _choosen_med_preset[];
@@ -693,10 +740,10 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _motor_duty_slow[];
   static const char _motor_duty_med[];
   static const char _motor_duty_fast[];
-  static const char _pressure_range_low[];
-  static const char _pressure_range_high[];
-  static const char _fahrenheit[];
-  static const char _psi[];
+  //static const char _pressure_range_low[];
+  //static const char _pressure_range_high[];
+  //static const char _fahrenheit[];
+  //static const char _psi[];
   #else
   static const char _forwards_preset[];
   #endif
@@ -981,6 +1028,7 @@ public:
     strip.addEffect(FX_MODE_COUNTDOWN, &mode_countdown, _data_fx_mode_countdown);
     strip.addEffect(FX_MODE_TRAILRATE, &mode_rate_trail, _data_fx_mode_rate_trail);
     strip.addEffect(FX_MODE_WHEELTEMP, &mode_wheel_temp, _data_fx_mode_wheel_temp);
+    strip.addEffect(FX_MODE_MOSFETTEMP, &mode_mosfet_temp, _data_fx_mode_mosfet_temp);
     strip.addEffect(FX_MODE_TIREPRESSURE, &mode_tire_pressure, _data_fx_mode_tire_pressure);
 
     strip.addEffect(FX_MODE_STOCK_FRONT, &mode_stock_front, _data_fx_mode_stock_front);
@@ -1279,7 +1327,7 @@ handle_tpms();
     top[FPSTR(_stock_preset)] = stock_preset;  //int input
     #ifdef SIMPLE_CONFIG
     top[FPSTR(_alt_mode_user)] = alt_mode_user;
-    top[FPSTR(_low_bat_percent)] = low_bat_percent;  //int input
+    //top[FPSTR(_low_bat_percent)] = low_bat_percent;  //int input
     //top[FPSTR(_low_bat_preset)] = low_bat_preset;  //int input
     top[FPSTR(_choosen_slow_preset)] = choosen_slow_preset;  //int input
     top[FPSTR(_choosen_med_preset)] = choosen_med_preset;  //int input
@@ -1304,13 +1352,13 @@ handle_tpms();
     top[FPSTR(_boot_preset_time)] = boot_preset_time;  //int input
     top[FPSTR(_free_fall_preset)] = free_fall_preset;  //int input
     #ifdef SIMPLE_CONFIG
-    top[FPSTR(_trail_ruffness_max)] = trail_ruffness_max;  //int input
+    //top[FPSTR(_trail_ruffness_max)] = trail_ruffness_max;  //int input
 
-    top[FPSTR(_pressure_range_low)] = pressure_range_low;  //int input
-    top[FPSTR(_pressure_range_high)] = pressure_range_high;  //int input
+    //top[FPSTR(_pressure_range_low)] = pressure_range_low;  //int input
+    //top[FPSTR(_pressure_range_high)] = pressure_range_high;  //int input
 
-    top[FPSTR(_psi)] = !psi;
-    top[FPSTR(_fahrenheit)] = !fahrenheit;
+    //top[FPSTR(_psi)] = !psi;
+    //top[FPSTR(_fahrenheit)] = !fahrenheit;
     #endif
     top[FPSTR(_BatteryCells)] = BatteryCells;
 
@@ -1331,7 +1379,7 @@ handle_tpms();
       return false;
     }
     #ifdef SIMPLE_CONFIG
-    low_bat_percent   = top[FPSTR(_low_bat_percent)] | low_bat_percent;  //int input
+    //low_bat_percent   = top[FPSTR(_low_bat_percent)] | low_bat_percent;  //int input
    // low_bat_preset   = top[FPSTR(_low_bat_preset)] | low_bat_preset;  //int input
     choosen_slow_preset   = top[FPSTR(_choosen_slow_preset)] | choosen_slow_preset;  //int input
     choosen_med_preset   = top[FPSTR(_choosen_med_preset)] | choosen_med_preset;      //int input
@@ -1362,13 +1410,13 @@ handle_tpms();
     free_fall_preset   = top[FPSTR(_free_fall_preset)] | free_fall_preset;     //int input
 
     #ifdef SIMPLE_CONFIG
-    trail_ruffness_max   = top[FPSTR(_trail_ruffness_max)] | trail_ruffness_max;     //int input
+    //trail_ruffness_max   = top[FPSTR(_trail_ruffness_max)] | trail_ruffness_max;     //int input
 
-    pressure_range_low   = top[FPSTR(_pressure_range_low)] | pressure_range_low;     //int input
-    pressure_range_high   = top[FPSTR(_pressure_range_high)] | pressure_range_high;     //int input
+    //pressure_range_low   = top[FPSTR(_pressure_range_low)] | pressure_range_low;     //int input
+    //pressure_range_high   = top[FPSTR(_pressure_range_high)] | pressure_range_high;     //int input
 
-    fahrenheit            = !(top[FPSTR(_fahrenheit)] | !fahrenheit);       //bool
-    psi            = !(top[FPSTR(_psi)] | !psi);       //bool
+    //fahrenheit            = !(top[FPSTR(_fahrenheit)] | !fahrenheit);       //bool
+    //psi            = !(top[FPSTR(_psi)] | !psi);       //bool
     #endif
     BatteryCells            = (top[FPSTR(_BatteryCells)] | BatteryCells);       //bool
 
@@ -1412,17 +1460,16 @@ const char Usermodvesc::_choosen_fast_preset[] PROGMEM = "Fast preset animation"
 const char Usermodvesc::_motor_duty_slow[] PROGMEM = "Slow motor duty %";
 const char Usermodvesc::_motor_duty_med[] PROGMEM = "Med motor duty %";
 const char Usermodvesc::_motor_duty_fast[] PROGMEM = "fast motor duty %";
-const char Usermodvesc::_low_bat_percent[] PROGMEM = "Battery percent to change preset (0 to disable) overrides duty cycle preset";
-const char Usermodvesc::_low_bat_preset[] PROGMEM = "Low battery preset animation";
+//const char Usermodvesc::_low_bat_percent[] PROGMEM = "Battery percent to change preset (0 to disable) overrides duty cycle preset";
 
 //const char Usermodvesc::_trail_ruffness_max[] PROGMEM = "trail variability maximum (DEV ONLY)";
 const char Usermodvesc::_alt_mode_user[] PROGMEM = "Enable alternative presets";
 const char Usermodvesc::_alt_forwards_preset[] PROGMEM = "Alt forward travel lighting preset";
 const char Usermodvesc::_alt_backwards_preset[] PROGMEM = "Alt reverse travel lighting preset";
-const char Usermodvesc::_pressure_range_low[] PROGMEM = "PSI minimum trigger";
-const char Usermodvesc::_pressure_range_high[] PROGMEM = "PSI maximum trigger";
-const char Usermodvesc::_fahrenheit[] PROGMEM = "Temperature units (F/C)";
-const char Usermodvesc::_psi[] PROGMEM = "Pressure units (PSI/BAR)";
+//const char Usermodvesc::_pressure_range_low[] PROGMEM = "PSI minimum trigger";
+//const char Usermodvesc::_pressure_range_high[] PROGMEM = "PSI maximum trigger";
+//const char Usermodvesc::_fahrenheit[] PROGMEM = "Temperature units (F/C)";
+//const char Usermodvesc::_psi[] PROGMEM = "Pressure units (PSI/BAR)";
 #else
 const char Usermodvesc::_forwards_preset[] PROGMEM = "Forward travel lighting preset";
 #endif
