@@ -931,20 +931,26 @@ unsigned long humidity_read_milisec = -10000;  // analog read limit
    //5 = back pointing down
 
    if (dimmed_lights){  //only detect a left right or upside down orientaion if the lights are dim
-   if (filteredz < -10){orientation = 1;}
-   if (filteredy < -17){orientation = 2;}
-   if (filteredy > 17){orientation = 3;}
+
    #ifdef GT
-     if (filteredx < -17){orientation = 4;}
-     if (filteredx > 17){orientation = 5;}
+     if (filteredz < -10){orientation = 1;} //upside down
+     if (filteredy < -17){orientation = 2;} //left
+     if (filteredy > 17){orientation = 3;} //right
+     if (filteredx < -17){orientation = 4;} //front pointing down
+     if (filteredx > 17){orientation = 5;} //back pointing down
+     if (filteredz > 10){orientation = 0;} //upright (normal)
    #endif
-   #ifdef OW_PINT
-     if (filteredx < -17){orientation = 5;}
-     if (filteredx > 17){orientation = 4;}
+   #ifdef OW_PINT                           //                    needs to be
+     if (filteredz < -10){orientation = 0;} //upside down         0
+     if (filteredy < -17){orientation = 2;} //left                2
+     if (filteredy > 17){orientation = 3;} //right                3
+     if (filteredx < -17){orientation = 5;} //back pointing down  5
+     if (filteredx > 17){orientation = 4;} //front pointing down  4
+     if (filteredz > 10){orientation = 1;} //upright (normal)     1
    #endif
    }
 
-   if (filteredz > 10){orientation = 0;}
+
 
 } // end of get IMU data
 
