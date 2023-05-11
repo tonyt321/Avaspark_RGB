@@ -613,7 +613,7 @@ unsigned long humidity_read_milisec = -10000;  // analog read limit
 
   static const char _boot_preset[];
   static const char _boot_preset_time[];
-  static const char _trail_ruffness_max[];
+  //static const char _trail_ruffness_max[];
   static const char _free_fall_preset_time[];
   static const char _free_fall_preset[];
   static const char _stock_preset[];
@@ -699,67 +699,6 @@ unsigned long humidity_read_milisec = -10000;  // analog read limit
     }
     }
   #endif
-
- #ifdef PRO_VERSION
-    void MIMIC_ERROR_CODES() //if the lightbar is blinking (condition 1) orange (condition 2), make the head/taillights do the same
-    {
-      if ((MOTOR_ENGAGEMENT) == false && (LIGHT_BAR_B) == false) //light bar blue being on means either foot pad engagement or white for charging
-      {
-        int error_red;
-        int error_green;
-        int error_blue;
-
-        if (LIGHT_BAR_R == true){
-          error_red = 255;
-          } else {
-            error_red = 0;
-            }
-        if (LIGHT_BAR_G == true){
-          error_green = 255;
-          } else {
-            error_green = 0;
-            }
-        if (LIGHT_BAR_B == true){
-          error_blue = 255;
-          } else {
-            error_blue = 0;
-            }
-
-         String redstring = "win&SB=255&FX=98&SM=1&SS=1&IX=0&R=" + error_red;   //combining multiple strings at once can result in unpredictable outcomes
-         String greenstring = "&G=" + error_green;
-         String bluestring = "&B=" + error_blue;
-         String together1 = redstring + greenstring;
-         String together2 = together1 + bluestring;
-         //handleSet(nullptr, together2 , false );
-
-         String redstring1 = "win&SB=255&FX=98&SM=0&SS=0&IX=0&R=" + error_red;  //combining multiple strings at once can result in unpredictable outcomes
-         String greenstring1 = "&G=" + error_green;
-         String bluestring1 = "&B=" + error_blue;
-         String together3 = redstring + greenstring;
-         String together4 = together1 + bluestring;
-         //handleSet(nullptr, together4 , false );
-
-      }
-    }
- #endif
-
- #ifdef PRO_VERSION
-  void GET_LIGHT_BAR()
-  {
-    // http://forum.arduino.cc/index.php?topic=37555.0
-    // https://forum.arduino.cc/index.php?topic=185158.0
-
-    LIGHT_BAR_B = digitalRead(LIGHT_BAR_B_PIN);
-
-    if ((LIGHT_BAR_B) == false){
-      LIGHT_BAR_R = digitalRead(LIGHT_BAR_R_PIN);
-      LIGHT_BAR_R_ANALOG = analogRead(LIGHT_BAR_R_PIN);
-      LIGHT_BAR_G = digitalRead(LIGHT_BAR_G_PIN);
-    }
-    // if status bar rgb blue is on (in the case of white charging or blue foot pad engadement) ignore
-  }
- #endif
-
 
       //most of the time, this function should be performed when the baord is idle, because when the board is engaged, 
       //voltage will drop as more amperage is drawn. This can be programmed/accounted for, but will take time to develop for
@@ -931,20 +870,27 @@ unsigned long humidity_read_milisec = -10000;  // analog read limit
    //5 = back pointing down
 
    if (dimmed_lights){  //only detect a left right or upside down orientaion if the lights are dim
-   if (filteredz < -10){orientation = 1;}
-   if (filteredy < -17){orientation = 2;}
-   if (filteredy > 17){orientation = 3;}
+
    #ifdef GT
+     if (filteredz < -10){orientation = 1;}
+     if (filteredy < -17){orientation = 2;}
+     if (filteredy > 17){orientation = 3;}
      if (filteredx < -17){orientation = 4;}
      if (filteredx > 17){orientation = 5;}
+     if (filteredz > 10){orientation = 0;}
    #endif
-   #ifdef OW_PINT
-     if (filteredx < -17){orientation = 5;}
-     if (filteredx > 17){orientation = 4;}
+   #ifdef OW_PINT                           //                    needs to be
+     
+     if (filteredz > 10){orientation = 1;} //upside down          1
+     if (filteredy < -17){orientation = 2;} //left                2
+     if (filteredy > 17){orientation = 3;} //right                3
+     if (filteredx < -17){orientation = 5;} //back pointing down  5
+     if (filteredx > 17){orientation = 4;} //front pointing down  4
+     if (filteredz < -10){orientation = 0;} //upright (normal)    0
    #endif
    }
 
-   if (filteredz > 10){orientation = 0;}
+   
 
 } // end of get IMU data
 
@@ -1463,7 +1409,7 @@ handle_tpms();
     top[FPSTR(_boot_preset)] = boot_preset;  //int input
     top[FPSTR(_boot_preset_time)] = boot_preset_time;  //int input
     top[FPSTR(_free_fall_preset)] = free_fall_preset;  //int input
-    top[FPSTR(_trail_ruffness_max)] = trail_ruffness_max;  //int input
+    //top[FPSTR(_trail_ruffness_max)] = trail_ruffness_max;  //int input
 
     top[FPSTR(_pressure_range_low)] = pressure_range_low;  //int input
     top[FPSTR(_pressure_range_high)] = pressure_range_high;  //int input
@@ -1516,7 +1462,7 @@ handle_tpms();
     boot_preset_time   = top[FPSTR(_boot_preset_time)] | boot_preset_time;     //int input
     alt_mode_user            = (top[FPSTR(_alt_mode_user)] | alt_mode_user);       //bool
     free_fall_preset   = top[FPSTR(_free_fall_preset)] | free_fall_preset;     //int input
-    trail_ruffness_max   = top[FPSTR(_trail_ruffness_max)] | trail_ruffness_max;     //int input
+    //trail_ruffness_max   = top[FPSTR(_trail_ruffness_max)] | trail_ruffness_max;     //int input
 
     pressure_range_low   = top[FPSTR(_pressure_range_low)] | pressure_range_low;     //int input
     pressure_range_high   = top[FPSTR(_pressure_range_high)] | pressure_range_high;     //int input
@@ -1569,7 +1515,7 @@ const char UsermodAndon::_boot_preset_time[] PROGMEM = "Boot duration (sec)";
 const char UsermodAndon::_free_fall_preset[] PROGMEM = "Freefall lighting preset";
 const char UsermodAndon::_free_fall_preset_time[] PROGMEM = "Freefall duration trigger (sec)";
 
-const char UsermodAndon::_trail_ruffness_max[] PROGMEM = "trail variability maximum (DEV ONLY)";
+//const char UsermodAndon::_trail_ruffness_max[] PROGMEM = "trail variability maximum (DEV ONLY)";
 
 const char UsermodAndon::_pressure_range_low[] PROGMEM = "PSI minimum trigger";
 const char UsermodAndon::_pressure_range_high[] PROGMEM = "PSI maximum trigger";
