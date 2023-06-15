@@ -612,11 +612,11 @@ int power;
 float amphour;
 float tach;
 float distance;
-float velocity;
 float watthour;
 float mosfettemp;
 float motortemp;
-
+  float speed_filter = 0;
+  float speed = 0;
 
 
   //int8_t low_bat_preset = 1;
@@ -655,15 +655,18 @@ float motortemp;
   int boot_preset_time = 3; // boot animation length in sec
 
 
-  bool FRONT_LIGHT_R = false;
-  int FRONT_LIGHT_R_ANALOG;
-  bool FRONT_LIGHT_W = false;
-  int FRONT_LIGHT_W_ANALOG;
 
   // flag set at startup
   int client_numb;
   //bool forward = true; //moved to global
   bool app_lights_on;  // are the lights on in the app?
+
+  bool FRONT_LIGHT_R = false;
+  int FRONT_LIGHT_R_ANALOG;
+  bool FRONT_LIGHT_W = false;
+  int FRONT_LIGHT_W_ANALOG;
+
+
 
   bool app_lights_on_last; // last check value of lights on
   int blink_app_lights = 0;
@@ -907,6 +910,73 @@ unsigned long a_read_milisec;  // analog read limit
   void get_front_light()
    {
 
+  if (is_vesc_main){
+       if (is_uart_true){
+   get_front_light_vesc_uart();
+   }else{
+   //get_front_light_vesc_can();
+   }
+  }else{
+   get_front_light_secondary_mode();
+  }
+   }
+
+
+  void get_front_light_secondary_mode()
+   {
+
+    //0      on
+    //1659   dim (when you get off the board and it dims the lights)
+    //4095   off
+
+
+    FRONT_LIGHT_W_ANALOG = analogRead(FRONT_LIGHT_W_PIN);
+
+    if (FRONT_LIGHT_W_ANALOG > 2000){
+      forward = false;
+      }else{
+        forward = true;
+        }
+
+    FRONT_LIGHT_R_ANALOG = analogRead(FRONT_LIGHT_R_PIN);
+    if (FRONT_LIGHT_R_ANALOG > 2000){
+      FRONT_LIGHT_R = false; app_lights_on = false; dimmed_lights = false;
+      }else{
+        FRONT_LIGHT_R = true; app_lights_on = true;
+        }
+
+
+   if ((FRONT_LIGHT_R_ANALOG > 1000) && (FRONT_LIGHT_R_ANALOG < 2000)){
+    dimmed_lights = true;
+   } else {
+    dimmed_lights = false;
+   }
+
+        if (app_lights_on_last != app_lights_on){
+          if ((millis() - blink_app_lights_timing) < BLINK_APP_LIGHTS_DELAY){ //if time seince last toggle less then 1 sec
+            blink_app_lights = blink_app_lights + 1;
+          }else{
+          blink_app_lights = 0;
+          }
+    blink_app_lights_timing = millis();
+    }
+
+  if(app_lights_on_last != app_lights_on){
+   if (app_lights_on == false){ //turns lights off if in app lights are off
+    bri = 0;stateUpdated(1);
+   }else{
+    bri = 255;stateUpdated(1);
+   }
+  }
+
+    app_lights_on_last = app_lights_on;
+  }
+
+
+
+  void get_front_light_vesc_uart()
+   {
+
 ////////// Read values //////////
  if ( UART.getVescValues() ) {
   voltage = (UART.data.inpVoltage);                                 //Battery Voltage
@@ -917,9 +987,10 @@ unsigned long a_read_milisec;  // analog read limit
   power = voltage*current;
 //  amphour = (UART.data.ampHours);                                   //This doesn't seem to do anything!
   watthour = amphour*voltage;                                       //Likewise
+  speed = rpm*3.142*(60.0/1609.0)*WheelDia*GearReduction;        // Motor RPM x Pi x (seconds in a minute / meters in a mile) x Wheel diameter x (motor pulley / wheelpulley)
+  speed_filter = speed * .1 + (speed_filter * (1.0 - .1)); // filter moving average using .5 of newest number
   rpm = UART.data.rpm / (Poles / 2);                                // UART.data.rpm returns cRPM.  Divide by no of pole pairs in the motor for actual.
   distance = rpm*3.142*(1.0/1609.0)*WheelDia*GearReduction;         // Motor RPM x Pi x (1 / meters in a mile or km) x Wheel diameter x (motor pulley / wheelpulley)
-  velocity = rpm*3.142*(60.0/1609.0)*WheelDia*GearReduction;        // Motor RPM x Pi x (seconds in a minute / meters in a mile) x Wheel diameter x (motor pulley / wheelpulley)
   batpercentage = map(voltage, (3.0*BatteryCells), (4.2*BatteryCells), 0, 100);
   //state_switch = (UART.appData.switchState);
   //vesc_state = (UART.appData.state);
@@ -933,10 +1004,10 @@ unsigned long a_read_milisec;  // analog read limit
     // current usage for if the board is engadged or not
 
 
-     if (smoothedrpm > 5){forward = true;}
-     if (smoothedrpm < -5){forward = false;}
+     if (speed_filter > 5){forward = true;}
+     if (speed_filter < -5){forward = false;}
 
-     if ((smoothedrpm < -1 || smoothedrpm > 1) && (dutycycle < -.05 && dutycycle > .05)){
+     if ((speed_filter < -1 || speed_filter > 1) && (dutycycle < -.05 && dutycycle > .05)){
       dimmed_lights = false;
       }else{
         dimmed_lights = true;
