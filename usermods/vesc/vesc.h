@@ -26,7 +26,7 @@ int shop = 0;// shop mode
 int motod = 0;// input from msense
 int shutdown_display;
 float display_tpmsp; //tpms pressure
-float display_tpmst; //tpms temp
+float display_tpmst; //tpms temp  
 float percent_tpmst;
 float percent_tpmsp;
 
