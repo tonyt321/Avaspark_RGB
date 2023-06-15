@@ -12,7 +12,7 @@
 #include "wled.h"
 #include "SparkFun_ADXL345.cpp"         // SparkFun ADXL345 Library
 #include "SparkFun_ADXL345.h"         // SparkFun ADXL345 Library
-#include "SparkFun_Qwiic_Humidity_AHT20.cpp"         // SparkFun ADXL345 Library 
+#include "SparkFun_Qwiic_Humidity_AHT20.cpp"         // SparkFun ADXL345 Library
 #include "SparkFun_Qwiic_Humidity_AHT20.h"         // SparkFun ADXL345 Library
 #include <Wire.h>
 
@@ -642,6 +642,9 @@ float motortemp;
   int dim_standing_up_preset = 0;
 
   bool vesc_light_on = true;
+  bool is_uart_true = true;
+  bool is_vesc_main = true;
+
   bool alt_mode_user = false;
   bool alt_mode = true;
   int8_t alt_backwards_preset = 1;  //preset played as a boot animation
@@ -720,6 +723,8 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _dim_right_preset[];
   static const char _dim_standing_up_preset[];
   static const char _vesc_light_on[];
+  static const char _is_uart_true[];
+  static const char _is_vesc_main[];
   static const char _boot_preset[];
   static const char _boot_preset_time[];
   static const char _free_fall_preset_time[];
@@ -1360,6 +1365,10 @@ handle_tpms();
     //top[FPSTR(_psi)] = !psi;
     //top[FPSTR(_fahrenheit)] = !fahrenheit;
     #endif
+
+    top[FPSTR(_is_vesc_main)] = is_vesc_main;
+    top[FPSTR(_is_uart_true)] = is_uart_true;
+
     top[FPSTR(_BatteryCells)] = BatteryCells;
 
 
@@ -1381,6 +1390,8 @@ handle_tpms();
     #ifdef SIMPLE_CONFIG
     //low_bat_percent   = top[FPSTR(_low_bat_percent)] | low_bat_percent;  //int input
    // low_bat_preset   = top[FPSTR(_low_bat_preset)] | low_bat_preset;  //int input
+    is_vesc_main            = (top[FPSTR(_is_vesc_main)] | is_vesc_main);       //bool
+    is_uart_true            = (top[FPSTR(_is_uart_true)] | is_uart_true);       //bool
     choosen_slow_preset   = top[FPSTR(_choosen_slow_preset)] | choosen_slow_preset;  //int input
     choosen_med_preset   = top[FPSTR(_choosen_med_preset)] | choosen_med_preset;      //int input
     choosen_fast_preset   = top[FPSTR(_choosen_fast_preset)] | choosen_fast_preset;    //int input
@@ -1405,7 +1416,7 @@ handle_tpms();
     boot_preset   = top[FPSTR(_boot_preset)] | boot_preset;     //int input
     stock_preset   = top[FPSTR(_stock_preset)] | stock_preset;     //int input
     boot_preset_time   = top[FPSTR(_boot_preset_time)] | boot_preset_time;     //int input
-   
+    
     vesc_light_on            = (top[FPSTR(_vesc_light_on)] | vesc_light_on);       //bool
     free_fall_preset   = top[FPSTR(_free_fall_preset)] | free_fall_preset;     //int input
 
@@ -1441,6 +1452,8 @@ const char Usermodvesc::_backwards_preset[] PROGMEM = "Reverse travel lighting p
 const char Usermodvesc::_dim_backwards_preset[] PROGMEM = "Reverse creep lighting preset";
 
 const char Usermodvesc::_vesc_light_on[] PROGMEM = "Lights ON/OFF";
+const char Usermodvesc::_is_vesc_main[] PROGMEM = "Main or rgb input mode";
+const char Usermodvesc::_is_uart_true[] PROGMEM = "UART or CAN bus mode";
 
 const char Usermodvesc::_dim_left_preset[] PROGMEM = "Inactive left tilt lighting preset";
 const char Usermodvesc::_dim_right_preset[] PROGMEM = "Inactive right tilt lighting preset";
