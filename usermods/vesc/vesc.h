@@ -26,7 +26,7 @@ int shop = 0;// shop mode
 int motod = 0;// input from msense
 int shutdown_display;
 float display_tpmsp; //tpms pressure
-float display_tpmst; //tpms temp  
+float display_tpmst; //tpms temp
 float percent_tpmst;
 float percent_tpmsp;
 
@@ -637,8 +637,8 @@ float motortemp;
   int8_t backwards_preset = 1;  //preset played as a boot animation
   int8_t dim_backwards_preset = 1;  //preset played as a boot animation
   int8_t dim_forwards_preset = 1;  //preset played as a boot animation
-  int dim_left_preset = 0;   
-  int dim_right_preset = 0; 
+  int dim_left_preset = 0;
+  int dim_right_preset = 0;
   int dim_standing_up_preset = 0;
 
   bool vesc_light_on = true;
@@ -774,7 +774,7 @@ unsigned long a_read_milisec;  // analog read limit
 
 #ifdef SIMPLE_CONFIG
   void set_motor_duty_preset()
-  {  
+  {
 
    //if (dutycycle < .01 || dutycycle > -.01)
    //{ return; }
