@@ -1523,8 +1523,8 @@ const char Usermodvesc::_backwards_preset[] PROGMEM = "Reverse travel lighting p
 const char Usermodvesc::_dim_backwards_preset[] PROGMEM = "Reverse creep lighting preset";
 
 const char Usermodvesc::_vesc_light_on[] PROGMEM = "Lights ON/OFF";
-const char Usermodvesc::_is_vesc_main[] PROGMEM = "Main or rgb input mode";
-const char Usermodvesc::_is_uart_true[] PROGMEM = "UART or CAN bus mode";
+const char Usermodvesc::_is_vesc_main[] PROGMEM = "on vesc | off rgb input mode";
+const char Usermodvesc::_is_uart_true[] PROGMEM = "on UART | off CAN bus mode";
 
 const char Usermodvesc::_dim_left_preset[] PROGMEM = "Inactive left tilt lighting preset";
 const char Usermodvesc::_dim_right_preset[] PROGMEM = "Inactive right tilt lighting preset";
