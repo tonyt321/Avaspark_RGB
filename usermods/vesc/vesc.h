@@ -660,6 +660,8 @@ float motortemp;
   int client_numb;
   //bool forward = true; //moved to global
   bool app_lights_on;  // are the lights on in the app?
+  bool toggle_lights_on;  // are the lights on in the app?
+  bool toggle_lights_tilt;  // are the lights on in the app?
 
   bool FRONT_LIGHT_R = false;
   int FRONT_LIGHT_R_ANALOG;
@@ -704,6 +706,7 @@ unsigned long a_read_milisec;  // analog read limit
   bool imu_inactivity = true;
 
   int orientation = 0; //how is the board on the ground
+  int orientation_last = 0;
 
   int trick; // unused for trick detection module input
 
@@ -726,6 +729,7 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _dim_right_preset[];
   static const char _dim_standing_up_preset[];
   static const char _vesc_light_on[];
+  static const char _toggle_lights_tilt[];
   static const char _is_uart_true[];
   static const char _is_vesc_main[];
   static const char _boot_preset[];
@@ -893,6 +897,13 @@ unsigned long a_read_milisec;  // analog read limit
    //3 = right side
    //4 = front pointing down
    //5 = back pointing down
+   if (toggle_lights_tilt){
+    if(orientation_last == 0 && (orientation == 3 || orientation == 2)){
+    if(vesc_light_on == true){vesc_light_on = false;}
+    if(vesc_light_on == false){vesc_light_on = true;}
+   }}
+
+   orientation_last = orientation;
 
    if (dimmed_lights){  //only detect a left right or upside down orientaion if the lights are dim
    if (filteredz < -10){orientation = 1;}
@@ -903,6 +914,8 @@ unsigned long a_read_milisec;  // analog read limit
    }
 
    if (filteredz > 10){orientation = 0;}
+
+
 
 } // end of get IMU data
 
@@ -919,6 +932,7 @@ unsigned long a_read_milisec;  // analog read limit
   }else{
    get_front_light_secondary_mode();
   }
+
    }
 
 
@@ -1014,12 +1028,11 @@ unsigned long a_read_milisec;  // analog read limit
         }
 
 
-
+   if (toggle_lights_tilt == false){
    app_lights_on = vesc_light_on;
-
-
-
-
+   }else{
+   app_lights_on = toggle_lights_on;
+   }
 
    if (app_lights_on == false){ //turns lights off if in app lights are off
     bri = 0;stateUpdated(1);
@@ -1096,6 +1109,7 @@ public:
   UART.setSerialPort(&Serial2);
       briS = 255;
     bootPreset = boot_preset;
+    toggle_lights_on = vesc_light_on;
     // set pin modes
     strip.addEffect(FX_MODE_FB_ACCELERATION_BLINK, &mode_fb_acceleration_blink, _data_fx_fb_acceleration_blink);
     strip.addEffect(FX_MODE_F_ACCELERATION_BLINK, &mode_f_acceleration_blink, _data_fx_f_acceleration_blink);
@@ -1436,7 +1450,7 @@ handle_tpms();
     //top[FPSTR(_psi)] = !psi;
     //top[FPSTR(_fahrenheit)] = !fahrenheit;
     #endif
-
+    top[FPSTR(_toggle_lights_tilt)] = toggle_lights_tilt;
     top[FPSTR(_is_vesc_main)] = is_vesc_main;
     top[FPSTR(_is_uart_true)] = is_uart_true;
 
@@ -1463,33 +1477,34 @@ handle_tpms();
    // low_bat_preset   = top[FPSTR(_low_bat_preset)] | low_bat_preset;  //int input
     is_vesc_main            = (top[FPSTR(_is_vesc_main)] | is_vesc_main);       //bool
     is_uart_true            = (top[FPSTR(_is_uart_true)] | is_uart_true);       //bool
-    choosen_slow_preset   = top[FPSTR(_choosen_slow_preset)] | choosen_slow_preset;  //int input
-    choosen_med_preset   = top[FPSTR(_choosen_med_preset)] | choosen_med_preset;      //int input
-    choosen_fast_preset   = top[FPSTR(_choosen_fast_preset)] | choosen_fast_preset;    //int input
-    motor_duty_slow   = top[FPSTR(_motor_duty_slow)] | motor_duty_slow;          //int input
-    motor_duty_med   = top[FPSTR(_motor_duty_med)] | motor_duty_med;      //int input
-    motor_duty_fast   = top[FPSTR(_motor_duty_fast)] | motor_duty_fast;     //int input
+    toggle_lights_tilt      = (top[FPSTR(_toggle_lights_tilt)] | toggle_lights_tilt);       //bool
+    choosen_slow_preset     = top[FPSTR(_choosen_slow_preset)] | choosen_slow_preset;  //int input
+    choosen_med_preset      = top[FPSTR(_choosen_med_preset)] | choosen_med_preset;      //int input
+    choosen_fast_preset     = top[FPSTR(_choosen_fast_preset)] | choosen_fast_preset;    //int input
+    motor_duty_slow         = top[FPSTR(_motor_duty_slow)] | motor_duty_slow;          //int input
+    motor_duty_med          = top[FPSTR(_motor_duty_med)] | motor_duty_med;      //int input
+    motor_duty_fast         = top[FPSTR(_motor_duty_fast)] | motor_duty_fast;     //int input
     #else
-    forwards_preset   = top[FPSTR(_forwards_preset)] | forwards_preset;     //int input
+    forwards_preset         = top[FPSTR(_forwards_preset)] | forwards_preset;     //int input
     #endif
-    backwards_preset   = top[FPSTR(_backwards_preset)] | backwards_preset;     //int input
-    dim_backwards_preset   = top[FPSTR(_dim_backwards_preset)] | dim_backwards_preset;     //int input
-    dim_forwards_preset   = top[FPSTR(_dim_forwards_preset)] | dim_forwards_preset;     //int input
+    backwards_preset        = top[FPSTR(_backwards_preset)] | backwards_preset;     //int input
+    dim_backwards_preset    = top[FPSTR(_dim_backwards_preset)] | dim_backwards_preset;     //int input
+    dim_forwards_preset     = top[FPSTR(_dim_forwards_preset)] | dim_forwards_preset;     //int input
     #ifdef SIMPLE_CONFIG
     alt_mode_user            = (top[FPSTR(_alt_mode_user)] | alt_mode_user);       //bool
-    alt_backwards_preset   = top[FPSTR(_alt_backwards_preset)] | alt_backwards_preset;     //int input
-    alt_forwards_preset   = top[FPSTR(_alt_forwards_preset)] | alt_forwards_preset;     //int input
+    alt_backwards_preset     = top[FPSTR(_alt_backwards_preset)] | alt_backwards_preset;     //int input
+    alt_forwards_preset      = top[FPSTR(_alt_forwards_preset)] | alt_forwards_preset;     //int input
     #endif
 
-    dim_left_preset   = top[FPSTR(_dim_left_preset)] | dim_left_preset;     //int input
-    dim_right_preset   = top[FPSTR(_dim_right_preset)] | dim_right_preset;     //int input
+    dim_left_preset          = top[FPSTR(_dim_left_preset)] | dim_left_preset;     //int input
+    dim_right_preset         = top[FPSTR(_dim_right_preset)] | dim_right_preset;     //int input
     dim_standing_up_preset   = top[FPSTR(_dim_standing_up_preset)] | dim_standing_up_preset;     //int input
-    boot_preset   = top[FPSTR(_boot_preset)] | boot_preset;     //int input
-    stock_preset   = top[FPSTR(_stock_preset)] | stock_preset;     //int input
-    boot_preset_time   = top[FPSTR(_boot_preset_time)] | boot_preset_time;     //int input
+    boot_preset              = top[FPSTR(_boot_preset)] | boot_preset;     //int input
+    stock_preset             = top[FPSTR(_stock_preset)] | stock_preset;     //int input
+    boot_preset_time         = top[FPSTR(_boot_preset_time)] | boot_preset_time;     //int input
     
     vesc_light_on            = (top[FPSTR(_vesc_light_on)] | vesc_light_on);       //bool
-    free_fall_preset   = top[FPSTR(_free_fall_preset)] | free_fall_preset;     //int input
+    free_fall_preset         = top[FPSTR(_free_fall_preset)] | free_fall_preset;     //int input
 
     #ifdef SIMPLE_CONFIG
     //trail_ruffness_max   = top[FPSTR(_trail_ruffness_max)] | trail_ruffness_max;     //int input
@@ -1525,7 +1540,7 @@ const char Usermodvesc::_dim_backwards_preset[] PROGMEM = "Reverse creep lightin
 const char Usermodvesc::_vesc_light_on[] PROGMEM = "Lights ON/OFF";
 const char Usermodvesc::_is_vesc_main[] PROGMEM = "on vesc | off rgb input mode";
 const char Usermodvesc::_is_uart_true[] PROGMEM = "on UART | off CAN bus mode";
-
+const char Usermodvesc::_toggle_lights_tilt[] PROGMEM = "Enable tilt to toggle Lights";
 const char Usermodvesc::_dim_left_preset[] PROGMEM = "Inactive left tilt lighting preset";
 const char Usermodvesc::_dim_right_preset[] PROGMEM = "Inactive right tilt lighting preset";
 const char Usermodvesc::_dim_standing_up_preset[] PROGMEM = "Inactive standing up lighting preset";
