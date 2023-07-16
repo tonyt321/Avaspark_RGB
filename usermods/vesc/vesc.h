@@ -595,6 +595,9 @@ class Usermodvesc : public Usermod
 {
 public:
 
+
+
+
 ADXL345 adxl = ADXL345();  // USE FOR I2C COMMUNICATION
 
 
@@ -603,6 +606,8 @@ int Poles = 30;                  //Usually 46 for hub motor
 float WheelDia = 0.28;           //Wheel diameter in m
 float GearReduction = 1;         //reduction ratio. 1 for direct drive. Otherwise motor pulley diameter / Wheel pulley diameter.
 
+float vesc_pitch = 0;
+float vesc_roll = 0;
 
 int smoothedrpm;
 int rpm;
@@ -762,6 +767,9 @@ unsigned long a_read_milisec;  // analog read limit
 
 
 
+
+
+
       //most of the time, this function should be performed when the baord is idle, because when the board is engaged, 
       //voltage will drop as more amperage is drawn. This can be programmed/accounted for, but will take time to develop for
       //a feature that is seldom used when riding
@@ -775,6 +783,123 @@ unsigned long a_read_milisec;  // analog read limit
       //visually stuttery as speed increases/decreases (roughly 8-10? make N dynamic/programmable if easy to do).
       //N is proportional to a scalar value, which is used to scale up/down the speed of the lighting animation
       //when the board speed is within one of the ranges, scale the animation speed accordingly 
+
+  int volt_to_percent(int volts) {
+  int cellvtable = ((round((volts* 100) / BatteryCells) / 5.0) * 5.0)*10;
+  int cellvoltage = cellvtable;
+  for (int i = 0; i < 329; i++) {
+    if (volt_percent_Table[i][0] == cellvtable) {
+      return volt_percent_Table[i][1];
+    }
+  }
+
+  if (cellvtable > 4185){
+    return 99;
+    }
+  if (cellvtable < 2700){
+    return -1;
+    }
+    return 0;
+}
+
+const int volt_percent_Table[341][2] = { 
+  {2700, 0}, {2705, 0}, {2710, 0}, {2715, 0}, {2720, 0}, 
+  {2725, 0}, {2730, 0}, {2735, 0}, {2740, 0}, {2745, 0},
+  {2750, 0}, {2755, 0}, {2760, 0}, {2765, 0}, {2770, 0},
+  {2775, 0}, {2780, 0}, {2785, 0}, {2790, 0}, {2795, 0},
+  {2800, 0}, {2805, 0}, {2810, 0}, {2815, 0}, {2820, 0},
+  {2825, 0}, {2830, 0}, {2835, 0}, {2840, 0}, {2845, 0},
+  {2850, 0}, {2855, 0}, {2860, 0}, {2865, 0}, {2870, 0},
+  {2875, 0}, {2880, 0}, {2885, 0}, {2890, 0}, {2895, 0},
+  {2900, 1}, {2905, 1}, {2910, 1}, {2915, 1}, {2920, 1},
+  {2925, 1}, {2930, 1}, {2935, 1}, {2940, 1}, {2945, 1},
+  {2950, 2}, {2955, 2}, {2960, 2}, {2965, 2}, {2970, 2},
+  {2975, 2}, {2980, 2}, {2985, 2}, {2990, 2}, {2995, 2},
+  {3000, 3}, {3005, 3}, {3010, 3}, {3015, 3}, {3020, 3},
+  {3025, 3}, {3030, 3}, {3035, 3}, {3040, 3}, {3045, 3},
+  {3050, 4}, {3055, 4}, {3060, 4}, {3065, 4}, {3070, 4},
+  {3075, 4}, {3080, 4}, {3085, 4}, {3090, 4}, {3095, 4},
+  {3100, 5}, {3105, 5}, {3110, 5}, {3115, 5}, {3120, 5},
+  {3125, 6}, {3130, 6}, {3135, 6}, {3140, 6}, {3145, 6},
+  {3150, 7}, {3155, 7}, {3160, 7}, {3165, 7}, {3170, 7},
+  {3175, 7}, {3180, 7}, {3185, 7}, {3190, 7}, {3195, 7},
+  {3200, 8}, {3205, 8}, {3210, 8}, {3215, 8}, {3220, 9},
+  {3225, 9}, {3230, 9}, {3235, 10}, {3240, 10}, {3245, 10},
+  {3250, 11}, {3255, 11}, {3260, 11}, {3265, 11}, {3270, 12},
+  {3275, 12}, {3280, 12}, {3285, 13}, {3290, 13}, {3295, 13},
+  {3300, 14}, {3305, 14}, {3310, 14}, {3315, 14}, {3320, 14},
+  {3325, 15}, {3330, 15}, {3335, 15}, {3340, 15}, {3345, 15},
+  {3350, 16}, {3355, 16}, {3360, 16}, {3365, 16}, {3370, 16},
+  {3375, 17}, {3380, 17}, {3385, 17}, {3390, 17}, {3395, 17},
+  {3400, 18}, {3405, 18}, {3410, 18}, {3415, 18}, {3420, 18},
+  {3425, 18}, {3430, 18}, {3435, 18}, {3440, 18}, {3445, 18},
+  {3450, 19}, {3455, 19}, {3460, 20}, {3465, 20}, {3470, 21},
+  {3475, 22}, {3480, 22}, {3485, 23}, {3490, 23}, {3495, 24},
+  {3500, 25}, {3505, 25}, {3510, 26}, {3515, 26}, {3520, 27},
+  {3525, 27}, {3530, 28}, {3535, 28}, {3540, 29}, {3545, 29},
+  {3550, 30}, {3555, 30}, {3560, 30}, {3565, 30}, {3570, 31},
+  {3575, 31}, {3580, 31}, {3585, 32}, {3590, 32}, {3595, 32},
+  {3600, 33}, {3605, 33}, {3610, 33}, {3615, 34}, {3620, 34},
+  {3625, 35}, {3630, 35}, {3635, 35}, {3640, 36}, {3645, 36},
+  {3650, 37}, {3655, 37}, {3660, 38}, {3665, 38}, {3670, 39},
+  {3675, 40}, {3680, 40}, {3685, 41}, {3690, 41}, {3695, 42},
+  {3700, 43}, {3705, 43}, {3710, 44}, {3715, 44}, {3720, 45},
+  {3725, 45}, {3730, 46}, {3735, 46}, {3740, 47}, {3745, 47},
+  {3750, 48}, {3755, 48}, {3760, 49}, {3765, 49}, {3770, 50},
+  {3775, 50}, {3780, 51}, {3785, 51}, {3790, 52}, {3795, 52},
+  {3800, 53}, {3805, 53}, {3810, 54}, {3815, 55}, {3820, 55},
+  {3825, 56}, {3830, 57}, {3835, 57}, {3840, 58}, {3845, 59},
+  {3850, 60}, {3855, 60}, {3860, 61}, {3865, 62}, {3870, 62},
+  {3875, 63}, {3880, 64}, {3885, 64}, {3890, 65}, {3895, 66},
+  {3900, 67}, {3905, 67}, {3910, 67}, {3915, 68}, {3920, 68},
+  {3925, 69}, {3930, 69}, {3935, 69}, {3940, 70}, {3945, 70},
+  {3950, 71}, {3955, 71}, {3960, 72}, {3965, 72}, {3970, 73},
+  {3975, 73}, {3980, 74}, {3985, 74}, {3990, 75}, {3995, 75},
+  {4000, 76}, {4005, 76}, {4010, 77}, {4015, 77}, {4020, 78},
+  {4025, 79}, {4030, 79}, {4035, 80}, {4040, 80}, {4045, 81},
+  {4050, 82}, {4055, 83}, {4060, 84}, {4065, 85}, {4070, 86},
+  {4075, 87}, {4080, 88}, {4085, 89}, {4090, 90}, {4095, 91},
+  {4100, 92}, {4105, 92}, {4110, 93}, {4115, 93}, {4120, 94},
+  {4125, 94}, {4130, 95}, {4135, 95}, {4140, 96}, {4145, 96},
+  {4150, 97}, {4155, 97}, {4160, 97}, {4165, 97}, {4170, 98},
+  {4175, 98}, {4180, 98}, {4185, 99}
+};
+
+
+
+
+
+  void get_batt_percent() // we have volatge info from uart,canbus,serial,analoge or none
+   {
+   float v = 0;
+
+  if (is_vesc_main){            //vesc get info from can bus and uart and 
+       if (is_uart_true){
+
+
+   }else{
+
+   //canbus method of getting voltage
+
+   }
+  }else{
+
+   get_front_light_analog(); // this is the FM way of getting info
+
+  }
+
+ batpercentage = volt_to_percent(voltage);
+
+   }
+
+
+
+
+
+
+
+
+
 
 #ifdef SIMPLE_CONFIG
   void set_motor_duty_preset()
@@ -920,23 +1045,34 @@ unsigned long a_read_milisec;  // analog read limit
 } // end of get IMU data
 
 
-  void get_front_light()
+  void get_info()
    {
 
   if (is_vesc_main){
        if (is_uart_true){
-   get_front_light_vesc_uart();
+   get_vesc_uart(); // also sets front / back and dim / inactivity
    }else{
-   //get_front_light_vesc_can();
+   //get_vesc_can();
    }
   }else{
-   get_front_light_secondary_mode();
+   get_front_light_analog();// also sets front / back and dim / inactivity
+   get_analog_info(); //gets dutycycle and voltage from analog input
   }
 
+   batpercentage = volt_to_percent(voltage);
    }
 
+  void get_analog_info(){
 
-  void get_front_light_secondary_mode()
+   float BATTERY_ANALOG = analogRead(BATTERY_PIN);
+   float MOTOR_PHASE_ANALOG = analogRead(MOTOR_PHASE_PIN);
+
+   voltage = ((1/27) * BATTERY_ANALOG);
+   dutycycle = ((24/620) * voltage) / 100;
+
+  }
+
+  void get_front_light_analog()
    {
 
     //0      on
@@ -988,7 +1124,7 @@ unsigned long a_read_milisec;  // analog read limit
 
 
 
-  void get_front_light_vesc_uart()
+  void get_vesc_uart()
    {
 
 ////////// Read values //////////
@@ -998,6 +1134,9 @@ unsigned long a_read_milisec;  // analog read limit
   dutycycle = (UART.data.dutyCycleNow);                            //Current Draw
   motortemp = (UART.data.tempMotor);
   mosfettemp = (UART.data.tempMosfet);
+  vesc_roll = (UART.appData.roll);
+  vesc_pitch = (UART.appData.pitch);
+  //switchState = (UART.appData.switchState);
   power = voltage*current;
 //  amphour = (UART.data.ampHours);                                   //This doesn't seem to do anything!
   watthour = amphour*voltage;                                       //Likewise
@@ -1005,13 +1144,15 @@ unsigned long a_read_milisec;  // analog read limit
   speed_filter = speed * .1 + (speed_filter * (1.0 - .1)); // filter moving average using .5 of newest number
   rpm = UART.data.rpm / (Poles / 2);                                // UART.data.rpm returns cRPM.  Divide by no of pole pairs in the motor for actual.
   distance = rpm*3.142*(1.0/1609.0)*WheelDia*GearReduction;         // Motor RPM x Pi x (1 / meters in a mile or km) x Wheel diameter x (motor pulley / wheelpulley)
-  batpercentage = map(voltage, (3.0*BatteryCells), (4.2*BatteryCells), 0, 100);
+  
+
+
   //state_switch = (UART.appData.switchState);
   //vesc_state = (UART.appData.state);
+  }
 
   bmss = batpercentage;
   smoothedrpm = ((rpm * 0.2 ) + (smoothedrpm * 0.8)); // higly smoothed
-      }
 
 
     // rpm for direction
@@ -1185,7 +1326,7 @@ public:
    shop = 1;// if display / other esp connected set to 1 to allow more devices connected with blocking main loop
 
    #ifndef TEST_MODE // test mode skip get front light becuase we dont have the hardware on test esp32
-   get_front_light();  // handels truning on/off lights and forward/back detection
+   get_info();  // handels truning on/off lights and forward/back detection
    #endif
 
    get_imu_data();
@@ -1232,7 +1373,8 @@ public:
 if ((a_read_milisec + 100) < millis()){    // limit loop to 10 times a sec
 a_read_milisec = millis();
 
-get_front_light();  // handels truning on/off lights and forward/back detection
+  // handels truning on/off lights and forward/back detection
+get_info();
 
 }else{
   return; // skip rest of loop
@@ -1369,7 +1511,11 @@ handle_tpms();
                         JsonArray vesc5 = user.createNestedArray("RPM");  //left side thing
       vesc5.add(smoothedrpm);  
 
-                              JsonArray vesc6 = user.createNestedArray("Duty cycle");  //left side thing
+                              JsonArray vesc61 = user.createNestedArray("vesc_pitch");  //left side thing
+      vesc61.add(vesc_pitch);  
+                                    JsonArray vesc62 = user.createNestedArray("vesc_roll");  //left side thing
+      vesc62.add(vesc_roll);  
+                                    JsonArray vesc6 = user.createNestedArray("Duty cycle");  //left side thing
       vesc6.add(dutycycle);  
                                    //right side variable
                         JsonArray vesc0 = user.createNestedArray("Current");  //left side thing

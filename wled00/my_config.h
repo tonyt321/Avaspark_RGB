@@ -49,6 +49,8 @@
   #define VESC_TX 33   //vesc tx
   #define FRONT_LIGHT_R_PIN 39   //front light red
   #define FRONT_LIGHT_W_PIN 36   //front light white
+  #define MOTOR_PHASE_PIN 35   //front light white
+  #define BATTERY_PIN 34   //front light white
 #endif
 
 #define INTERFACE_UPDATE_COOLDOWN 2000 //time in ms to wait between websockets, alexa, and MQTT updates
