@@ -869,28 +869,6 @@ const int volt_percent_Table[341][2] = {
 
 
 
-  void get_batt_percent() // we have volatge info from uart,canbus,serial,analoge or none
-   {
-   float v = 0;
-
-  if (is_vesc_main){            //vesc get info from can bus and uart and 
-       if (is_uart_true){
-
-
-   }else{
-
-   //canbus method of getting voltage
-
-   }
-  }else{
-
-   get_front_light_analog(); // this is the FM way of getting info
-
-  }
-
- batpercentage = volt_to_percent(voltage);
-
-   }
 
 
 
@@ -920,26 +898,13 @@ const int volt_percent_Table[341][2] = {
 #endif
 
 
-  void handle_tpms() {
+void handle_tpms() { // converts temp input to C or F and outputs it to a percentage range
+    display_tpmsp = psi ? (tpmsp * 0.001450377) : (tpmsp * 0.0001); // Convert Kpa to PSI or bar based on 'psi'
 
-        if (psi) {
-          display_tpmsp = (tpmsp * 0.001450377); //Kpa to PSI
-    } else {
-      display_tpmsp = (tpmsp * 0.0001); //Kpa to bar
-    }
+    display_tpmst = fahrenheit ? (((tpmst / 100.0) * 1.8) + 32) : (tpmst / 100.0); // Convert to Fahrenheit or Celsius based on 'fahrenheit'
 
-    if (fahrenheit) {
-      display_tpmst = (((tpmst/100) * (9/5)) + 32);
-    } else {
-      display_tpmst = (tpmst/100);
-    }
-
-
-      percent_tpmsp = map(display_tpmsp, pressure_range_low, pressure_range_high, 0, 100);
-
-
-
-  }
+    percent_tpmsp = map(display_tpmsp, pressure_range_low, pressure_range_high, 0, 100);
+}
 
 
     //use IMU data input to quantify the following:
@@ -1048,13 +1013,13 @@ const int volt_percent_Table[341][2] = {
   void get_info()
    {
 
-  if (is_vesc_main){
+  if (is_vesc_main){//Vesc mode
        if (is_uart_true){
    get_vesc_uart(); // also sets front / back and dim / inactivity
    }else{
    //get_vesc_can();
    }
-  }else{
+  }else{// FM mode
    get_front_light_analog();// also sets front / back and dim / inactivity
    get_analog_info(); //gets dutycycle and voltage from analog input
   }
@@ -1072,55 +1037,36 @@ const int volt_percent_Table[341][2] = {
 
   }
 
-  void get_front_light_analog()
-   {
-
+void get_front_light_analog() {
     //0      on
     //1659   dim (when you get off the board and it dims the lights)
     //4095   off
 
-
     FRONT_LIGHT_W_ANALOG = analogRead(FRONT_LIGHT_W_PIN);
-
-    if (FRONT_LIGHT_W_ANALOG > 2000){
-      forward = false;
-      }else{
-        forward = true;
-        }
+    forward = (FRONT_LIGHT_W_ANALOG > 2000) ? false : true;
 
     FRONT_LIGHT_R_ANALOG = analogRead(FRONT_LIGHT_R_PIN);
-    if (FRONT_LIGHT_R_ANALOG > 2000){
-      FRONT_LIGHT_R = false; app_lights_on = false; dimmed_lights = false;
-      }else{
-        FRONT_LIGHT_R = true; app_lights_on = true;
-        }
-
-
-   if ((FRONT_LIGHT_R_ANALOG > 1000) && (FRONT_LIGHT_R_ANALOG < 2000)){
-    dimmed_lights = true;
-   } else {
-    dimmed_lights = false;
-   }
-
-        if (app_lights_on_last != app_lights_on){
-          if ((millis() - blink_app_lights_timing) < BLINK_APP_LIGHTS_DELAY){ //if time seince last toggle less then 1 sec
-            blink_app_lights = blink_app_lights + 1;
-          }else{
-          blink_app_lights = 0;
-          }
-    blink_app_lights_timing = millis();
+    if (FRONT_LIGHT_R_ANALOG > 2000) {
+        FRONT_LIGHT_R = false;
+        app_lights_on = false;
+        dimmed_lights = false;
+    } else {
+        FRONT_LIGHT_R = true;
+        app_lights_on = true;
+        dimmed_lights = (FRONT_LIGHT_R_ANALOG > 1000 && FRONT_LIGHT_R_ANALOG < 2000) ? true : false;
     }
 
-  if(app_lights_on_last != app_lights_on){
-   if (app_lights_on == false){ //turns lights off if in app lights are off
-    bri = 0;stateUpdated(1);
-   }else{
-    bri = 255;stateUpdated(1);
-   }
-  }
+    if (app_lights_on_last != app_lights_on) {
+        blink_app_lights = ((millis() - blink_app_lights_timing) < BLINK_APP_LIGHTS_DELAY) ? blink_app_lights + 1 : 0;
+        blink_app_lights_timing = millis();
+        
+        bri = app_lights_on ? 255 : 0;
+        stateUpdated(1);
+    }
 
     app_lights_on_last = app_lights_on;
-  }
+}
+
 
 
 
@@ -1155,31 +1101,17 @@ const int volt_percent_Table[341][2] = {
   smoothedrpm = ((rpm * 0.2 ) + (smoothedrpm * 0.8)); // higly smoothed
 
 
-    // rpm for direction
-    // current usage for if the board is engadged or not
+// rpm for direction
+// current usage for if the board is engadged or not
 
+forward = (speed_filter > 5) ? true : (speed_filter < -5) ? false : forward;
 
-     if (speed_filter > 5){forward = true;}
-     if (speed_filter < -5){forward = false;}
+dimmed_lights = ((speed_filter < -1 || speed_filter > 1) && (dutycycle < -0.05 && dutycycle > 0.05)) ? false : true;
 
-     if ((speed_filter < -1 || speed_filter > 1) && (dutycycle < -.05 && dutycycle > .05)){
-      dimmed_lights = false;
-      }else{
-        dimmed_lights = true;
-        }
+app_lights_on = (toggle_lights_tilt == false) ? vesc_light_on : toggle_lights_on;
 
-
-   if (toggle_lights_tilt == false){
-   app_lights_on = vesc_light_on;
-   }else{
-   app_lights_on = toggle_lights_on;
-   }
-
-   if (app_lights_on == false){ //turns lights off if in app lights are off
-    bri = 0;stateUpdated(1);
-   }else{
-    bri = 255;stateUpdated(1);
-  }
+bri = (app_lights_on == false) ? 0 : 255;
+stateUpdated(1);
 
   }
 
@@ -1245,9 +1177,11 @@ public:
 
   /** Setup UART port On TTGO Display, you have to assign the pins. 25(Tx) 26(Rx) in this case */
   //** Default VESC brate is 115200, you can change it to any other value. */
+  if (is_uart_true){
   Serial2.begin(115200, SERIAL_8N1, VESC_RX, VESC_TX);
   /** Define which ports to use as UART */
   UART.setSerialPort(&Serial2);
+  }
       briS = 255;
     bootPreset = boot_preset;
     toggle_lights_on = vesc_light_on;
@@ -1685,7 +1619,7 @@ const char Usermodvesc::_dim_backwards_preset[] PROGMEM = "Reverse creep lightin
 
 const char Usermodvesc::_vesc_light_on[] PROGMEM = "Lights ON/OFF";
 const char Usermodvesc::_is_vesc_main[] PROGMEM = "on vesc | off rgb input mode";
-const char Usermodvesc::_is_uart_true[] PROGMEM = "on UART | off CAN bus mode";
+const char Usermodvesc::_is_uart_true[] PROGMEM = "on UART | off aux serial mode";
 const char Usermodvesc::_toggle_lights_tilt[] PROGMEM = "Enable tilt to toggle Lights";
 const char Usermodvesc::_dim_left_preset[] PROGMEM = "Inactive left tilt lighting preset";
 const char Usermodvesc::_dim_right_preset[] PROGMEM = "Inactive right tilt lighting preset";
