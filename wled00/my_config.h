@@ -47,6 +47,8 @@
   #define WLED_VERSION "Vesc 2.2.2"  //shows up in info on UI
   #define VESC_RX 32   //vesc rx
   #define VESC_TX 33   //vesc tx
+  #define FRONT_LIGHT_R_PIN 39   //front light red
+  #define FRONT_LIGHT_W_PIN 36   //front light white
 #endif
 
 #define INTERFACE_UPDATE_COOLDOWN 2000 //time in ms to wait between websockets, alexa, and MQTT updates

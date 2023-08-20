@@ -39,7 +39,7 @@ int state_switch = 0;
 int humidity = -100;
 int andonn_temp = -100;
 float batpercentage;
-float dutycycle;
+float dutycycle = 1;
 int display_trail_ruffness;
 
 float mosfettemp;
@@ -627,7 +627,7 @@ float motortemp;
   int8_t choosen_med_preset = 1;
   int8_t choosen_fast_preset = 1;
 
-  int8_t motor_duty_slow = 20;
+  int8_t motor_duty_slow = -10;
   int8_t motor_duty_med = 40;
   int8_t motor_duty_fast = 70;
   #else
@@ -640,7 +640,7 @@ float motortemp;
   int dim_standing_up_preset = 0;
 
   bool vesc_light_on = true;
-  bool is_uart_true = true;
+  bool no_input = false;
   bool is_vesc_main = true;
 
   bool alt_mode_user = false;
@@ -697,8 +697,10 @@ unsigned long a_read_milisec;  // analog read limit
 
   bool imu_activity = true;
   bool imu_inactivity = true;
+  int  imu_inactivity_count = 0;
 
   int orientation = 0; //how is the board on the ground
+  int last_orientation = 0; //how is the board on the ground
 
   int trick; // unused for trick detection module input
 
@@ -719,7 +721,7 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _dim_forwards_preset[];
   static const char _dim_standing_up_preset[];
   static const char _vesc_light_on[];
-  static const char _is_uart_true[];
+  static const char _no_input[];
   static const char _is_vesc_main[];
   static const char _boot_preset[];
   static const char _boot_preset_time[];
@@ -897,10 +899,103 @@ unsigned long a_read_milisec;  // analog read limit
 
    if (filteredz > 10){orientation = 0;}
 
+   if (last_orientation == 0 && orientation == 3){
+   if (alt_mode_user == false){alt_mode_user == true;}
+   if (alt_mode_user == true){alt_mode_user == false;}
+   last_orientation = orientation;
+   }
+   
+      if (last_orientation == 0 && orientation == 2){
+   if (vesc_light_on == false){vesc_light_on == true;}
+   if (vesc_light_on == true){vesc_light_on == false;}
+   last_orientation = orientation;
+   }
+
 } // end of get IMU data
 
+void get_front_light() {
+    if (no_input) {
+        get_front_light_accel(); // use accel data to get dim light
+    } else if (is_vesc_main) {
+        get_front_light_vesc(); // use duty cycle and power consumption to get dim light
+    } else {
+        get_front_light_stock(); // use analog input to get dim light
+    }
+}
 
-  void get_front_light()
+void get_front_light_accel(){
+
+forward = true;
+
+   app_lights_on = vesc_light_on;
+
+
+     if (imu_inactivity_count > 1){
+      dimmed_lights = true;
+      }else{
+        dimmed_lights = false;
+        }
+
+   if (app_lights_on == false){ //turns lights off if in app lights are off
+    bri = 0;stateUpdated(1);
+   }else{
+    bri = 255;stateUpdated(1);
+  }
+}
+
+
+  void get_front_light_stock()
+   {
+
+    //0      on
+    //1659   dim (when you get off the board and it dims the lights)
+    //4095   off
+
+
+    FRONT_LIGHT_W_ANALOG = analogRead(FRONT_LIGHT_W_PIN);
+
+    if (FRONT_LIGHT_W_ANALOG > 2000){
+      forward = false;
+      }else{
+        forward = true;
+        }
+
+    FRONT_LIGHT_R_ANALOG = analogRead(FRONT_LIGHT_R_PIN);
+    if (FRONT_LIGHT_R_ANALOG > 2000){
+      FRONT_LIGHT_R = false; app_lights_on = false; dimmed_lights = false;
+      }else{
+        FRONT_LIGHT_R = true; app_lights_on = true;
+        }
+
+
+     if ((FRONT_LIGHT_R_ANALOG > 1000) && (FRONT_LIGHT_R_ANALOG < 2000)){
+    dimmed_lights = true;
+     } else {
+      dimmed_lights = false;
+     }
+
+        if (app_lights_on_last != app_lights_on){
+          if ((millis() - blink_app_lights_timing) < BLINK_APP_LIGHTS_DELAY){ //if time seince last toggle less then 1 sec
+            blink_app_lights = blink_app_lights + 1;
+          }else{
+          blink_app_lights = 0;
+          }
+        blink_app_lights_timing = millis();
+      }
+
+     if(app_lights_on_last != app_lights_on){
+      if (app_lights_on == false){ //turns lights off if in app lights are off
+       bri = 0;stateUpdated(1);
+      }else{
+       bri = 255;stateUpdated(1);
+      }
+     }
+
+    app_lights_on_last = app_lights_on;
+  }
+
+
+  void get_front_light_vesc()
    {
 
 ////////// Read values //////////
@@ -980,6 +1075,7 @@ void set_preset() { // pick which preset based on direction, speed, dim, alt mod
       if (dimmed_lights == false) {
         if(alt_mode){
           #ifdef SIMPLE_CONFIG
+          
           set_motor_duty_preset();
           #else
           applyPreset(forwards_preset);
@@ -1043,6 +1139,10 @@ public:
     strip.addEffect(FX_MODE_BATPERCENT, &mode_batpercent, _data_fx_mode_batpercent);
 
 
+    pinMode(FRONT_LIGHT_W_PIN, INPUT);
+    pinMode(FRONT_LIGHT_R_PIN, INPUT);
+
+
     pinMode(ERROR_LED_PIN, OUTPUT);
     digitalWrite(ERROR_LED_PIN, LOW);
 
@@ -1061,7 +1161,7 @@ public:
 
    adxl.setInactivityXYZ(1, 1, 1);     // Set to detect inactivity in all the axes "adxl.setInactivityXYZ(X, Y, Z);" (1 == ON, 0 == OFF)
    adxl.setInactivityThreshold(50);    // 62.5mg per increment   // Set inactivity // Inactivity thresholds (0-255)
-   adxl.setTimeInactivity(5);         // How many seconds of no activity is inactive?
+   adxl.setTimeInactivity(3);         // How many seconds of no activity is inactive?
 
    adxl.setTapDetectionOnXYZ(1, 1, 1); // Detect taps in the directions turned ON "adxl.setTapDetectionOnX(X, Y, Z);" (1 == ON, 0 == OFF)
 
@@ -1160,11 +1260,7 @@ get_imu_data();
     applyPreset(stock_preset);
     return;}
 
-  if(alt_mode_user){  //if alt mode user is set true enable alt mode detection
-     if (millis() < (10 * 1000)){
-      if (orientation != 0){alt_mode = false;}
-     }
-     }
+
 
      if ((millis()) < (boot_preset_time * 1000)){
       return;  // returns loop if boot animation hasnt finished playing
@@ -1183,9 +1279,11 @@ handle_tpms();
   if (imu_activity)
   {
     imu_activity = false;
+    imu_inactivity_count = 0;
   }
 /////////////////////////////////////////////////////inactivity "interrupt"
   if (imu_inactivity){
+    imu_inactivity_count = imu_inactivity_count + 1;
       if (smoothedrpm > 1){
     imu_inactivity = false;
     }
@@ -1359,7 +1457,7 @@ handle_tpms();
     #endif
 
     top[FPSTR(_is_vesc_main)] = is_vesc_main;
-    top[FPSTR(_is_uart_true)] = is_uart_true;
+    top[FPSTR(_no_input)] = no_input;
 
     top[FPSTR(_BatteryCells)] = BatteryCells;
 
@@ -1383,7 +1481,7 @@ handle_tpms();
     //low_bat_percent   = top[FPSTR(_low_bat_percent)] | low_bat_percent;  //int input
    // low_bat_preset   = top[FPSTR(_low_bat_preset)] | low_bat_preset;  //int input
     is_vesc_main            = (top[FPSTR(_is_vesc_main)] | is_vesc_main);       //bool
-    is_uart_true            = (top[FPSTR(_is_uart_true)] | is_uart_true);       //bool
+    no_input            = (top[FPSTR(_no_input)] | no_input);       //bool
     choosen_slow_preset   = top[FPSTR(_choosen_slow_preset)] | choosen_slow_preset;  //int input
     choosen_med_preset   = top[FPSTR(_choosen_med_preset)] | choosen_med_preset;      //int input
     choosen_fast_preset   = top[FPSTR(_choosen_fast_preset)] | choosen_fast_preset;    //int input
@@ -1435,15 +1533,14 @@ const char Usermodvesc::_name[] PROGMEM = "AvaSpark-RGB user preset configuratio
 const char Usermodvesc::_stock_preset[] PROGMEM = "Stock lighting override preset";
 
 
-
 const char Usermodvesc::_dim_forwards_preset[] PROGMEM = "Forward creep lighting preset";
 
 const char Usermodvesc::_backwards_preset[] PROGMEM = "Reverse travel lighting preset";
 const char Usermodvesc::_dim_backwards_preset[] PROGMEM = "Reverse creep lighting preset";
 
-const char Usermodvesc::_vesc_light_on[] PROGMEM = "Lights ON/OFF";
+const char Usermodvesc::_vesc_light_on[] PROGMEM = "Lights ON/OFF default";
 const char Usermodvesc::_is_vesc_main[] PROGMEM = "Main or rgb input mode";
-const char Usermodvesc::_is_uart_true[] PROGMEM = "UART or CAN bus mode";
+const char Usermodvesc::_no_input[] PROGMEM = "no UART or RGB input";
 
 const char Usermodvesc::_dim_standing_up_preset[] PROGMEM = "Inactive standing up lighting preset";
 
@@ -1464,7 +1561,7 @@ const char Usermodvesc::_motor_duty_fast[] PROGMEM = "fast motor duty %";
 //const char Usermodvesc::_low_bat_percent[] PROGMEM = "Battery percent to change preset (0 to disable) overrides duty cycle preset";
 
 //const char Usermodvesc::_trail_ruffness_max[] PROGMEM = "trail variability maximum (DEV ONLY)";
-const char Usermodvesc::_alt_mode_user[] PROGMEM = "Enable alternative presets";
+const char Usermodvesc::_alt_mode_user[] PROGMEM = "toggle alt presets by laying on right side";
 const char Usermodvesc::_alt_forwards_preset[] PROGMEM = "Alt forward travel lighting preset";
 const char Usermodvesc::_alt_backwards_preset[] PROGMEM = "Alt reverse travel lighting preset";
 //const char Usermodvesc::_pressure_range_low[] PROGMEM = "PSI minimum trigger";
