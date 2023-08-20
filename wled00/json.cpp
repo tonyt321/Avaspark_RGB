@@ -717,8 +717,8 @@ void serializeInfo(JsonObject root)
   #endif
   root[F("opt")] = os;
 
-  root[F("brand")] = "ANDONN";
-  root[F("product")] = F("ANDONN");
+  root[F("brand")] = "AvaSpark-RGB";
+  root[F("product")] = F("AvaSpark-RGB");
   root["mac"] = escapedMac;
   char s[16] = "";
   if (Network.isConnected())

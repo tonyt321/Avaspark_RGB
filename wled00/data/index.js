@@ -660,7 +660,7 @@ function populateInfo(i)
 //	if (i.ver.includes("-bl")) vcn = "Supāku";
 	if (i.cn) vcn = i.cn;
 
-	cn += `v${i.ver} "${vcn}"<br><br><table>
+	cn += `${i.ver}<br><br><table>
 ${urows}
 ${urows===""?'':'<tr><td colspan=2><hr style="height:1px;border-width:0;color:gray;background-color:gray"></td></tr>'}
 ${i.opt&0x100?inforow("Debug","<button class=\"btn btn-xs\" onclick=\"requestJson({'debug':"+(i.opt&0x0080?"false":"true")+"});\"><i class=\"icons "+(i.opt&0x0080?"on":"off")+"\">&#xe08f;</i></button>"):''}
@@ -972,7 +972,7 @@ function btype(b)
 
 function bname(o)
 {
-	if (o.name=="ANDONN") return o.ip;
+	if (o.name=="WLED") return o.ip;
 	return o.name;
 }
 

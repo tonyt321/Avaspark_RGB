@@ -417,9 +417,9 @@ void WLED::setup()
   #endif
 
   // fill in unique mdns default
-  if (strcmp(cmDNS, "x") == 0) sprintf_P(cmDNS, PSTR("andonn-%*s"), 8, escapedMac.c_str() + 6);
-  if (mqttDeviceTopic[0] == 0) sprintf_P(mqttDeviceTopic, PSTR("andonn/%*s"), 8, escapedMac.c_str() + 6);
-  if (mqttClientID[0] == 0)    sprintf_P(mqttClientID, PSTR("ANDONN-%*s"), 8, escapedMac.c_str() + 6);
+  if (strcmp(cmDNS, "x") == 0) sprintf_P(cmDNS, PSTR("avasparkrgb-%*s"), 8, escapedMac.c_str() + 6);
+  if (mqttDeviceTopic[0] == 0) sprintf_P(mqttDeviceTopic, PSTR("avasparkrgb/%*s"), 8, escapedMac.c_str() + 6);
+  if (mqttClientID[0] == 0)    sprintf_P(mqttClientID, PSTR("avasparkrgb-%*s"), 8, escapedMac.c_str() + 6);
 
 #ifdef WLED_ENABLE_ADALIGHT
   if (Serial.available() > 0 && Serial.peek() == 'I') handleImprovPacket();
@@ -698,8 +698,8 @@ void WLED::initInterfaces()
 
     DEBUG_PRINTLN(F("mDNS started"));
     MDNS.addService("http", "tcp", 80);
-    MDNS.addService("andonn", "tcp", 80);
-    MDNS.addServiceTxt("andonn", "tcp", "mac", escapedMac.c_str());
+    MDNS.addService("avasparkrgb", "tcp", 80);
+    MDNS.addServiceTxt("avasparkrgb", "tcp", "mac", escapedMac.c_str());
   }
   server.begin();
 

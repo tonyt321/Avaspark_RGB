@@ -580,7 +580,7 @@ function btype(b)
 
 function bname(o)
 {
-	if (o.name=="ANDONN") return o.ip;
+	if (o.name=="AvaSpark-RGB") return o.ip;
 	return o.name;
 }
 

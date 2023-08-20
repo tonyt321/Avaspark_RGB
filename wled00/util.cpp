@@ -158,7 +158,7 @@ bool oappend(const char* txt)
 
 void prepareHostname(char* hostname)
 {
-  sprintf_P(hostname, "andonn-%*s", 6, escapedMac.c_str() + 6);
+  sprintf_P(hostname, "avasparkrgb-%*s", 6, escapedMac.c_str() + 6);
   const char *pC = serverDescription;
   uint8_t pos = 7;          // keep "wled-"
   while (*pC && pos < 24) { // while !null and not over length
@@ -175,7 +175,7 @@ void prepareHostname(char* hostname)
   //last character must not be hyphen
   if (pos > 5) {
     while (pos > 4 && hostname[pos -1] == '-') pos--;
-    hostname[pos] = '\0'; // terminate string (leave at least "andonn")
+    hostname[pos] = '\0'; // terminate string (leave at least "AvaSpark-RGB")
   }
 }
 

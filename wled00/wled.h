@@ -240,7 +240,7 @@ using PSRAMDynamicJsonDocument = BasicJsonDocument<PSRAM_Allocator>;
 
 // Global Variable definitions
 WLED_GLOBAL char versionString[] _INIT(TOSTRING(WLED_VERSION));
-#define WLED_CODENAME "ANDONN"
+#define WLED_CODENAME "AvaSpark-RGB"
 
 // AP and OTA default passwords (for maximum security change them!)
 WLED_GLOBAL char apPass[65]  _INIT(WLED_AP_PASS);
@@ -336,7 +336,7 @@ WLED_GLOBAL byte briMultiplier _INIT(100);          // % of brightness to set (t
 
 // User Interface CONFIG
 #ifndef SERVERNAME
-WLED_GLOBAL char serverDescription[33] _INIT("ANDONN");  // Name of module - use default
+WLED_GLOBAL char serverDescription[33] _INIT("AvaSpark-RGB");  // Name of module - use default
 #else
 WLED_GLOBAL char serverDescription[33] _INIT(SERVERNAME);  // use predefined name
 #endif

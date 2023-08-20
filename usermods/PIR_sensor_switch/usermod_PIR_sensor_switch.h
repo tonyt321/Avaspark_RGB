@@ -188,8 +188,8 @@ private:
 
       JsonObject device = doc.createNestedObject(F("device")); // attach the sensor to the same device
       device[F("name")] = serverDescription;
-      device[F("ids")]  = String(F("andonn-sensor-")) + mqttClientID;
-      device[F("mf")]   = "ANDONN";
+      device[F("ids")]  = String(F("avasparkrgb-")) + mqttClientID;
+      device[F("mf")]   = "avasparkrgb";
       device[F("mdl")]  = F("FOSS");
       device[F("sw")]   = versionString;
       

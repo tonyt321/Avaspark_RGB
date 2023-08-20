@@ -1,7 +1,7 @@
 {
-  "name": "andonn",
+  "name": "avasparkrgb",
   "version": "0.14.0-b1",
-  "description": "Tools for ANDONN project",
+  "description": "Tools for avasparkrgb project",
   "main": "tools/cdata.js",
   "directories": {
     "lib": "lib",

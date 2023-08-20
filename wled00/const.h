@@ -9,9 +9,9 @@
 
 //Defaults
 #define DEFAULT_CLIENT_SSID "Your_Network"
-#define DEFAULT_AP_SSID     "ANDONN"
-#define DEFAULT_AP_PASS     "andonn123"
-#define DEFAULT_OTA_PASS    "andonn123"
+#define DEFAULT_AP_SSID     "AvaSpark-RGB"
+#define DEFAULT_AP_PASS     "avasparkrgb"
+#define DEFAULT_OTA_PASS    "avasparkrgb"
 
 //increase if you need more
 #ifndef WLED_MAX_USERMODS

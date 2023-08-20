@@ -56,7 +56,7 @@
 //#define TEST_MODE //comment out for normal mode
 // disables turning lights off when detected from what should be the OW controller as off
 //#define PRO_VERSION    // comment out for standard
-#define SERVERNAME "ANDONN"
+#define SERVERNAME "AvaSpark-RGB"
 
 
 
@@ -73,8 +73,8 @@
 
 
 
-#define DEFAULT_AP_PASS     "andonn123"
-#define DEFAULT_OTA_PASS    "andonn123"
+#define DEFAULT_AP_PASS     "avasparkrgb"
+#define DEFAULT_OTA_PASS    "avasparkrgb"
 
 
 #define DEFAULT_LED_TYPE TYPE_SK6812_RGBW

@@ -186,7 +186,7 @@ void sendImprovInfoResponse() {
   //out[8] = 2; //Length (set below)
   out[9] = ImprovRPCType::Request_Info;
   //out[10] = 0; //Data len (set below)
-  out[11] = 6; //Firmware len ("ANDONN")
+  out[11] = 6; //Firmware len ("AvaSpark-RGB")
   out[12] = 'A'; out[13] = 'N'; out[14] = 'D'; out[15] = 'O'; out[16] = 'N'; out[17] = 'N';
   uint8_t lengthSum = 17;
   uint8_t vlen = sprintf_P(out+lengthSum,PSTR("0.14.0-b1/%i"),VERSION);
@@ -200,8 +200,8 @@ void sendImprovInfoResponse() {
   #endif
   out[lengthSum] = hlen;
   lengthSum += hlen + 1;
-  //Use serverDescription if it has been changed from the default "ANDONN", else mDNS name
-  bool useMdnsName = (strcmp(serverDescription, "ANDONN") == 0 && strlen(cmDNS) > 0);
+  //Use serverDescription if it has been changed from the default "AvaSpark-RGB", else mDNS name
+  bool useMdnsName = (strcmp(serverDescription, "AvaSpark-RGB") == 0 && strlen(cmDNS) > 0);
   strcpy(out+lengthSum+1,useMdnsName ? cmDNS : serverDescription);
   uint8_t nlen = strlen(useMdnsName ? cmDNS : serverDescription);
   out[lengthSum] = nlen;

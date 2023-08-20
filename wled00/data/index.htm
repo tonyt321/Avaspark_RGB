@@ -6,7 +6,7 @@
 	<meta name="theme-color" content="#222222">
 	<meta content="yes" name="apple-mobile-web-app-capable">
 	<link rel="shortcut icon" href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACAAQMAAAD58POIAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAGUExURUdwTP///5+UokMAAAABdFJOUwBA5thmAAAACXBIWXMAAC4iAAAuIgGq4t2SAAABZUlEQVRIx+3UwZWFIAwF0HBcsLQESqE0KI1SLMElCw9vFkkwROfPFPCz44rAA5ToW1wbcCywA81DXSB5yAB9hoLxBwCXh760g4cNOD9D9Nnif8K2D2F31ARQnp2AmgEqOnMEqGBQ0cUmgZlPGkEhAJfA0BhXAPqmEIG+QOLGGRUycG7AMaHw02NXADfaA5KsI4AbNQtsAKpAl2Vo2BsoY1CRjd+BIfkMcD7e+HSH5S1MwBGATptABmoAOkXZ+IzBJ6tQcDHscsuk92HgpAg0Shw2yMNG2UACKuUZtjHIwW3cG6QQuTd4dP0sCoYFPt0www6+1xZc2Itc2MuH7fyJarbCvWkJS3M6mpO9gA1LupUO7rB29Afo7CbbA8b8LJuZ/QVsWLKjP8CHvSH/GRYOAlzY3dxrLQ0763iFZECv8e8gYe+iVzDt4eHy0D2cHg4PzQM5GOQW1ufvfRnTxL9/o8sb31rrB9l8u7W5hoe4AAAAAElFTkSuQmCC"/>
-	<title>Andonn</title>
+	<title></title>
 	<script>
 	function feedback(){}
 	// instead of including [script src="iro.js"][/script] and [script src="rangetouch.js"][/script]
@@ -54,22 +54,22 @@
 </head>
 <body>
 
-<div id="cv" class="overlay">Loading ANDONN UI...</div>
-<noscript><div class="overlay" style="opacity:1;">Sorry, ANDONN UI needs JavaScript!</div></noscript>
+<div id="cv" class="overlay">Loading UI...</div>
+<noscript><div class="overlay" style="opacity:1;">Sorry, UI needs JavaScript!</div></noscript>
 <div id="bg"></div>
 
 <div class="wrapper" id="top">
 	<div class="tab top">
 		<div class="btnwrap">
-			<button id="buttonPower" onclick="togglePower()" class="tgl"><i class="icons">&#xe08f;</i><p class="tab-label">Power</p></button>
+			<button  style="display: none !important;"id="buttonPower" onclick="togglePower()" class="tgl"><i class="icons">&#xe08f;</i><p class="tab-label">Power</p></button>
 			<button  style="display: none !important;"  id="buttonNl" onclick="toggleNl()"><i class="icons">&#xe2a2;</i><p class="tab-label">Timer</p></button>
 			<button  style="display: none !important;" id="buttonSync" onclick="toggleSync()"><i class="icons">&#xe116;</i><p class="tab-label">Sync</p></button>
-			<button id="buttonSr" onclick="toggleLiveview()"><i class="icons">&#xe410;</i><p class="tab-label">Peek</p></button>
+			<button id="buttonSr" onclick="toggleLiveview()" class="active"><i class="icons">&#xe410;</i><p class="tab-label">View</p></button>
 			<button  style="display: none !important;" id="buttonI" onclick="toggleInfo()"><i class="icons">&#xe066;</i><p class="tab-label">Info</p></button>
 			<button  style="display: none !important;" id="buttonNodes" onclick="toggleNodes()"><i class="icons">&#xe22d;</i><p class="tab-label">Nodes</p></button>
-			<button  style="display: none !important;" onclick="window.location.href='/settings';"><i class="icons">&#xe0a2;</i><p class="tab-label">Config</p></button>
-			<button style="display: none !important;"  id="buttonPcm" onclick="togglePcMode(true)"><i class="icons">&#xe23d;</i><p class="tab-label">PC Mode</p></button>
-			<button onclick="window.location.href = '/settings/um';"><i class="icons">&#xe0a2;</i><p class="tab-label">Config</p></button>
+			<button  onclick="window.location.href='/settings';"><i class="icons">&#xe0a2;</i><p class="tab-label">Settings</p></button>
+			<button  id="buttonPcm" onclick="togglePcMode(true)"><i class="icons">&#xe23d;</i><p class="tab-label">Tablet Mode</p></button>
+			<button onclick="window.location.href = '/settings/um';"><i class="icons">&#xe0a2;</i><p class="tab-label">LED Config</p></button>
 		</div>
 		<div style="display: none !important;" id="briwrap">
 			<p class="hd">Brightness</p>
@@ -331,7 +331,7 @@
 	</div>
 	
 	<div  id="Segments" class="tabcontent">
-		<h1>The empty Space</h1>
+		<h1>For addons and info <a href="https://avaspark.com/avaspark-rgb-help-guide/</a></h1>
 		<div style="visibility: hidden;">
 			<div id="segcont">
 				Loading...
@@ -360,14 +360,14 @@
 <div id="info" class="modal">
 	<button class="btn btn-xs close" onclick="toggleInfo()"><i class="icons rot45">&#xe18a;</i></button>
 	<div id="imgw">
-		<img class="wi" alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQIAAAAhAQMAAAAIzjc/AAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAGUExURUdwTP///5+UokMAAAABdFJOUwBA5thmAAAACXBIWXMAAC4hAAAuIQEHW/z/AAABtklEQVQYGQXBwW0tNRQA0DP3jZRZfOm5ARSXQAcZOqES4lIoZaSfPRTAYogowH9nkOPLOQAAeOkAIAAAOACAAABABwABAEABAAIAADcACAAAKgAQsGXO11u+ZGab/rjfbvkctsxs4CVzvt3ymZmP+f7s7/e2nsMzcwk4mGfZErnPVkChsAQUBqHgkFUTq+5+ZQqoaCys8i9d2aExBJz8YJ8Vta9zwzxt6AIaHGAKPjmGgApke/2e49l5jPfHeP2e49lzPfJCYNPqBcs+ch/1g9LZnQhEOnd76QvtoGHDFwT2RcPG8WPp5zHU23ZMCBy0Y6ifk1vxzn7GAgTKlKbzosR0K52PqQwIGJvSwz7Uy9+/LLSWWodA7Va9tdad+0D9KxxDBYHrjmlx0FoX87y2hBuCzbU7ry3dWx4YUHo7QRCaAUUot137zYILgm8cWrPq9W3h6FBvQNBT6dKkz3r5eUvm6dIgHmk97y1xvhve87ql4ZJg35nF508M9BOx0LY3IA5GdS1N43f4QOdeIAp/nvZJR2toU9sSICpn07DxBXkMbkwQl68Hx3Dd/KPxH8RiAAAAAAD+B8ae309kw7qHAAAAAElFTkSuQmCC" />
+		<img class="wi" alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAAAgAQMAAADg7OJmAAAABlBMVEUAAAD///+l2Z/dAAAAAXRSTlMAQObYZgAAAPxJREFUKM9dkjFOBDEMRX+yYcfFCFJugbS+Ah1lRM1hOIILSg61R+EIlBRow/fXgLTzR8q3nr4cyxlQh/nF8zzPc85rgobO06urpowfMNpQTXVZWKimPIMFT1Cd4RNBxYtqZPi5Zrd38JZAhl8JrFghADL8UYBeO7HUyj2BN28bsHpEYNiwDfS2EET/BB4F3A6IAn8Dssu80c8eXLHTsgf1bwO9Nyzp/xtw4+JmmGDSIbtk3AUirSihDdzJDoqHusuOGS/g9r9p1Jq5mvREeyDPXEu6Qm+jnCVdab4N2ou6dV2jMaqAZ3B7QQ0wdI3GMIHIoProVygTy6QuwC86F1B93/0xjwAAAABJRU5ErkJggg==" />
 	</div>
 	<div id="kv">Loading...</div><br>
 	<div>
 		<button class="btn infobtn" onclick="requestJson()">Refresh</button>
 		<button class="btn infobtn" onclick="toggleNodes()">Instance List</button>
 		<button class="btn infobtn" onclick="window.open('/settings/wifi','_self');">Wifi Settings</button>
-		<button class="btn infobtn" id="resetbtn" onclick="cnfReset()">Reboot ANDONN</button>
+		<button class="btn infobtn" id="resetbtn" onclick="cnfReset()">Reboot</button>
 	</div>
 	<br>
 </div>
@@ -396,5 +396,6 @@
 </div>
 <i id="roverstar" class="icons huge" onclick="setLor(0)">&#xe410;</i><br>
 <script src="index.js"></script>
+<script>window.addEventListener('load', toggleLiveview());</script>
 </body>
 </html>

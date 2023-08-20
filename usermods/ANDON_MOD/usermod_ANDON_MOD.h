@@ -1350,7 +1350,7 @@ handle_tpms();
     lux.add(humidity);                       //right side variable
 
 
-      JsonArray battery = user.createNestedArray("Andonn Temp C");  //left side thing
+      JsonArray battery = user.createNestedArray("AvaSpark-RGB Temp C");  //left side thing
       battery.add(andonn_temp);                               //right side variable
 
                   JsonArray battery6 = user.createNestedArray("activations per min");  //left side thing
@@ -1418,7 +1418,7 @@ handle_tpms();
     top[FPSTR(_fahrenheit)] = !fahrenheit;
 
 
-    DEBUG_PRINTLN(F("Andonn config saved."));
+    DEBUG_PRINTLN(F("AvaSpark-RGB config saved."));
   }
 
   /**
@@ -1479,7 +1479,7 @@ handle_tpms();
 
 // strings to reduce flash memory usage (used more than twice)
 //                           _veriable         "what it says on the webpage"
-const char UsermodAndon::_name[] PROGMEM = "Andonn user preset configuration";
+const char UsermodAndon::_name[] PROGMEM = "AvaSpark-RGB user preset configuration";
 const char UsermodAndon::_stock_preset[] PROGMEM = "Stock lighting override preset";
 #ifdef PRO_VERSION
 const char UsermodAndon::_Status_bar[] PROGMEM = "Mirror Status bar error";

@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
-	<title>Andonn Settings</title>
+	<title>Settings</title>
 	<script>
 		var d=document;
 		var loc = false, locip;
@@ -31,7 +31,7 @@
 				loc = true;
 				locip = localStorage.getItem('locIp');
 				if (!locip) {
-					locip = prompt("File Mode. Please enter Andonn IP!");
+					locip = prompt("File Mode. Please enterIP!");
 					localStorage.setItem('locIp', locip);
 				}
 			}
