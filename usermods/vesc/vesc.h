@@ -637,8 +637,6 @@ float motortemp;
   int8_t backwards_preset = 1;  //preset played as a boot animation
   int8_t dim_backwards_preset = 1;  //preset played as a boot animation
   int8_t dim_forwards_preset = 1;  //preset played as a boot animation
-  int dim_left_preset = 0;   
-  int dim_right_preset = 0; 
   int dim_standing_up_preset = 0;
 
   bool vesc_light_on = true;
@@ -719,8 +717,6 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _backwards_preset[];
   static const char _dim_backwards_preset[];
   static const char _dim_forwards_preset[];
-  static const char _dim_left_preset[];
-  static const char _dim_right_preset[];
   static const char _dim_standing_up_preset[];
   static const char _vesc_light_on[];
   static const char _is_uart_true[];
@@ -975,8 +971,6 @@ void set_preset() { // pick which preset based on direction, speed, dim, alt mod
    //5 = back pointing down
 
   if (orientation != 0) {
-    if (orientation == 2) {applyPreset(dim_left_preset);}
-        if (orientation == 3) {applyPreset(dim_right_preset);}
            if (orientation == 5) {applyPreset(dim_standing_up_preset);}
             return;
               }
@@ -1349,8 +1343,6 @@ handle_tpms();
     top[FPSTR(_dim_backwards_preset)] = dim_backwards_preset;  //int input
     top[FPSTR(_dim_forwards_preset)] = dim_forwards_preset;  //int input
 
-    top[FPSTR(_dim_left_preset)] = dim_left_preset;  //int input
-    top[FPSTR(_dim_right_preset)] = dim_right_preset;  //int input
     top[FPSTR(_dim_standing_up_preset)] = dim_standing_up_preset;  //int input
 
     top[FPSTR(_boot_preset)] = boot_preset;  //int input
@@ -1410,8 +1402,6 @@ handle_tpms();
     alt_forwards_preset   = top[FPSTR(_alt_forwards_preset)] | alt_forwards_preset;     //int input
     #endif
 
-    dim_left_preset   = top[FPSTR(_dim_left_preset)] | dim_left_preset;     //int input
-    dim_right_preset   = top[FPSTR(_dim_right_preset)] | dim_right_preset;     //int input
     dim_standing_up_preset   = top[FPSTR(_dim_standing_up_preset)] | dim_standing_up_preset;     //int input
     boot_preset   = top[FPSTR(_boot_preset)] | boot_preset;     //int input
     stock_preset   = top[FPSTR(_stock_preset)] | stock_preset;     //int input
@@ -1455,8 +1445,6 @@ const char Usermodvesc::_vesc_light_on[] PROGMEM = "Lights ON/OFF";
 const char Usermodvesc::_is_vesc_main[] PROGMEM = "Main or rgb input mode";
 const char Usermodvesc::_is_uart_true[] PROGMEM = "UART or CAN bus mode";
 
-const char Usermodvesc::_dim_left_preset[] PROGMEM = "Inactive left tilt lighting preset";
-const char Usermodvesc::_dim_right_preset[] PROGMEM = "Inactive right tilt lighting preset";
 const char Usermodvesc::_dim_standing_up_preset[] PROGMEM = "Inactive standing up lighting preset";
 
 const char Usermodvesc::_boot_preset[] PROGMEM = "Boot animation lighting preset";
