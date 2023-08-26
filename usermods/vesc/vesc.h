@@ -725,7 +725,6 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _is_vesc_main[];
   static const char _boot_preset[];
   static const char _boot_preset_time[];
-  static const char _free_fall_preset_time[];
   static const char _free_fall_preset[];
   static const char _stock_preset[];
   static const char _BatteryCells[];
@@ -769,7 +768,7 @@ unsigned long a_read_milisec;  // analog read limit
 
 #ifdef SIMPLE_CONFIG
   void set_motor_duty_preset()
-  {  
+  {
 
    //if (dutycycle < .01 || dutycycle > -.01)
    //{ return; }
@@ -1066,7 +1065,7 @@ void set_preset() { // pick which preset based on direction, speed, dim, alt mod
    //5 = back pointing down
 
   if (orientation != 0) {
-           if (orientation == 5) {applyPreset(dim_standing_up_preset);}
+           if (orientation == 5 || orientation == 4) {applyPreset(dim_standing_up_preset);}
             return;
               }
 
@@ -1538,9 +1537,9 @@ const char Usermodvesc::_dim_forwards_preset[] PROGMEM = "Forward creep lighting
 const char Usermodvesc::_backwards_preset[] PROGMEM = "Reverse travel lighting preset";
 const char Usermodvesc::_dim_backwards_preset[] PROGMEM = "Reverse creep lighting preset";
 
-const char Usermodvesc::_vesc_light_on[] PROGMEM = "Lights ON/OFF default";
-const char Usermodvesc::_is_vesc_main[] PROGMEM = "Main or rgb input mode";
-const char Usermodvesc::_no_input[] PROGMEM = "no UART or RGB input";
+const char Usermodvesc::_vesc_light_on[] PROGMEM = "Defualt lights on or off";
+const char Usermodvesc::_is_vesc_main[] PROGMEM = "UART mode ON / RGB input mode off";
+const char Usermodvesc::_no_input[] PROGMEM = "aceleromter only input";
 
 const char Usermodvesc::_dim_standing_up_preset[] PROGMEM = "Inactive standing up lighting preset";
 
@@ -1548,7 +1547,6 @@ const char Usermodvesc::_boot_preset[] PROGMEM = "Boot animation lighting preset
 const char Usermodvesc::_boot_preset_time[] PROGMEM = "Boot duration (sec)";
 
 const char Usermodvesc::_free_fall_preset[] PROGMEM = "Freefall lighting preset";
-const char Usermodvesc::_free_fall_preset_time[] PROGMEM = "Freefall duration trigger (sec)";
 
 
 #ifdef SIMPLE_CONFIG

@@ -40,7 +40,7 @@
 #endif
 
 #ifdef OW_VESC
-  #define DATA_PINS 18 ,19  //front then back lights GPIO segment 0 then 1 ect
+  #define DATA_PINS 18 ,17  //front then back lights GPIO segment 0 then 1 ect
   #define USERMOD_VESC
   #define DEFAULT_LED_COUNT 11 //11 for GT 13 for pint
   #define OW_TYPE "Vesc"
