@@ -624,15 +624,12 @@ float motortemp;
 
   #ifdef SIMPLE_CONFIG
   int8_t choosen_slow_preset = 1;
-  int8_t choosen_med_preset = 1;
   int8_t choosen_fast_preset = 1;
 
   int8_t motor_duty_slow = -10;
-  int8_t motor_duty_med = 40;
   int8_t motor_duty_fast = 70;
-  #else
-  int8_t forwards_preset = 1;
   #endif
+  int8_t forwards_preset = 1;
 
   int8_t backwards_preset = 1;  //preset played as a boot animation
   int8_t dim_backwards_preset = 1;  //preset played as a boot animation
@@ -644,6 +641,7 @@ float motortemp;
   bool is_vesc_main = true;
 
   bool alt_mode_user = false;
+  bool alt_toggle = false;
   bool alt_mode = true;
   int8_t alt_backwards_preset = 1;  //preset played as a boot animation
   int8_t alt_forwards_preset = 1;  //preset played as a boot animation
@@ -731,24 +729,23 @@ unsigned long a_read_milisec;  // analog read limit
 
 #ifdef SIMPLE_CONFIG
   static const char _alt_mode_user[];
+  static const char _alt_toggle[];
   static const char _alt_backwards_preset[];
   static const char _alt_forwards_preset[];
   //static const char _trail_ruffness_max[];
   //static const char _low_bat_percent[];
   //static const char _low_bat_preset[];
   static const char _choosen_slow_preset[];
-  static const char _choosen_med_preset[];
   static const char _choosen_fast_preset[];
   static const char _motor_duty_slow[];
-  static const char _motor_duty_med[];
   static const char _motor_duty_fast[];
   //static const char _pressure_range_low[];
   //static const char _pressure_range_high[];
   //static const char _fahrenheit[];
   //static const char _psi[];
-  #else
-  static const char _forwards_preset[];
   #endif
+  static const char _forwards_preset[];
+  
 
 
 
@@ -773,14 +770,23 @@ unsigned long a_read_milisec;  // analog read limit
    //if (dutycycle < .01 || dutycycle > -.01)
    //{ return; }
 
-   if (motor_duty_slow < dutycycle / 100)
-   { applyPreset(choosen_slow_preset); return; }
+if (dutycycle <= motor_duty_slow * 100)
+{
+    applyPreset(choosen_slow_preset);
+    return;
+}
 
-   if (motor_duty_med < dutycycle / 100)
-   { applyPreset(choosen_med_preset); return; }
+if (dutycycle >= motor_duty_fast * 100)
+{
+    applyPreset(choosen_fast_preset);
+    return;
+}
 
-   if (motor_duty_fast < dutycycle / 100)
-   { applyPreset(choosen_fast_preset); return; }
+if (alt_mode) {
+  applyPreset(forwards_preset);
+} else {
+            applyPreset(alt_forwards_preset);
+        }
   }
 #endif
 
@@ -899,14 +905,14 @@ unsigned long a_read_milisec;  // analog read limit
    if (filteredz > 10){orientation = 0;}
 
    if (last_orientation == 0 && orientation == 3){
-   if (alt_mode_user == false){alt_mode_user == true;}
-   if (alt_mode_user == true){alt_mode_user == false;}
+   if (alt_mode_user = false){alt_mode_user = true;}
+   if (alt_mode_user = true){alt_mode_user = false;}
    last_orientation = orientation;
    }
-   
+
       if (last_orientation == 0 && orientation == 2){
-   if (vesc_light_on == false){vesc_light_on == true;}
-   if (vesc_light_on == true){vesc_light_on == false;}
+   if (vesc_light_on = false){vesc_light_on = true;}
+   if (vesc_light_on = true){vesc_light_on = false;}
    last_orientation = orientation;
    }
 
@@ -973,14 +979,6 @@ forward = true;
       dimmed_lights = false;
      }
 
-        if (app_lights_on_last != app_lights_on){
-          if ((millis() - blink_app_lights_timing) < BLINK_APP_LIGHTS_DELAY){ //if time seince last toggle less then 1 sec
-            blink_app_lights = blink_app_lights + 1;
-          }else{
-          blink_app_lights = 0;
-          }
-        blink_app_lights_timing = millis();
-      }
 
      if(app_lights_on_last != app_lights_on){
       if (app_lights_on == false){ //turns lights off if in app lights are off
@@ -1051,50 +1049,42 @@ forward = true;
 
 
 
-void set_preset() { // pick which preset based on direction, speed, dim, alt mode
-
+void set_preset() {
+    // If there's a stock preset, apply it and return
     if (stock_preset != 0){
-    applyPreset(stock_preset);
-    return;}
+        applyPreset(stock_preset);
+        return;
+    }
 
-   //0 = upright (normal)
-   //1 = upside down
-   //2 = left side
-   //3 = right side
-   //4 = front pointing down
-   //5 = back pointing down
-
-  if (orientation != 0) {
-           if (orientation == 5 || orientation == 4) {applyPreset(dim_standing_up_preset);}
-            return;
-              }
-
-
-    if(forward){
-      if (dimmed_lights == false) {
-        if(alt_mode){
-          #ifdef SIMPLE_CONFIG
-          
-          set_motor_duty_preset();
-          #else
-          applyPreset(forwards_preset);
-          #endif
-        } else {
-          applyPreset(alt_forwards_preset);
+    // Handle special orientations
+    if (orientation != 0) {
+        if (orientation == 4 || orientation == 5) {
+            applyPreset(dim_standing_up_preset);
         }
-      } else {
-        applyPreset(dim_forwards_preset);
-      }
+        return;
+    }
+
+    // Depending on direction, light dimming, and alt mode, apply the appropriate preset
+    if (forward) {
+        if (dimmed_lights) {
+            applyPreset(dim_forwards_preset);
+        } else if (alt_mode) {
+            #ifdef SIMPLE_CONFIG
+            set_motor_duty_preset();
+            #else
+            applyPreset(forwards_preset);
+            #endif
+        } else {
+            applyPreset(alt_forwards_preset);
+        }
     } else {
-      if (dimmed_lights == false) {
-        if (alt_mode) {
-          applyPreset(backwards_preset);
+        if (dimmed_lights) {
+            applyPreset(dim_backwards_preset);
+        } else if (alt_mode) {
+            applyPreset(backwards_preset);
         } else {
-          applyPreset(alt_backwards_preset);
+            applyPreset(alt_backwards_preset);
         }
-      } else {
-        applyPreset(dim_backwards_preset);
-      }
     }
 }
 
@@ -1423,19 +1413,18 @@ handle_tpms();
     top[FPSTR(_stock_preset)] = stock_preset;  //int input
     #ifdef SIMPLE_CONFIG
     top[FPSTR(_alt_mode_user)] = alt_mode_user;
+    top[FPSTR(_alt_toggle)] = alt_toggle;
     //top[FPSTR(_low_bat_percent)] = low_bat_percent;  //int input
     //top[FPSTR(_low_bat_preset)] = low_bat_preset;  //int input
     top[FPSTR(_choosen_slow_preset)] = choosen_slow_preset;  //int input
-    top[FPSTR(_choosen_med_preset)] = choosen_med_preset;  //int input
     top[FPSTR(_choosen_fast_preset)] = choosen_fast_preset;  //int input
     top[FPSTR(_motor_duty_slow)] = motor_duty_slow;  //int input
-    top[FPSTR(_motor_duty_med)] = motor_duty_med;  //int input
     top[FPSTR(_motor_duty_fast)] = motor_duty_fast;  //int input
     top[FPSTR(_alt_forwards_preset)] = alt_forwards_preset;  //int input
     top[FPSTR(_alt_backwards_preset)] = alt_backwards_preset;  //int input
-    #else
-    top[FPSTR(_forwards_preset)] = forwards_preset;  //int input
     #endif
+    top[FPSTR(_forwards_preset)] = forwards_preset;  //int input
+    
     top[FPSTR(_backwards_preset)] = backwards_preset;  //int input
     top[FPSTR(_dim_backwards_preset)] = dim_backwards_preset;  //int input
     top[FPSTR(_dim_forwards_preset)] = dim_forwards_preset;  //int input
@@ -1482,19 +1471,18 @@ handle_tpms();
     is_vesc_main            = (top[FPSTR(_is_vesc_main)] | is_vesc_main);       //bool
     no_input            = (top[FPSTR(_no_input)] | no_input);       //bool
     choosen_slow_preset   = top[FPSTR(_choosen_slow_preset)] | choosen_slow_preset;  //int input
-    choosen_med_preset   = top[FPSTR(_choosen_med_preset)] | choosen_med_preset;      //int input
     choosen_fast_preset   = top[FPSTR(_choosen_fast_preset)] | choosen_fast_preset;    //int input
     motor_duty_slow   = top[FPSTR(_motor_duty_slow)] | motor_duty_slow;          //int input
-    motor_duty_med   = top[FPSTR(_motor_duty_med)] | motor_duty_med;      //int input
     motor_duty_fast   = top[FPSTR(_motor_duty_fast)] | motor_duty_fast;     //int input
-    #else
-    forwards_preset   = top[FPSTR(_forwards_preset)] | forwards_preset;     //int input
     #endif
+    forwards_preset   = top[FPSTR(_forwards_preset)] | forwards_preset;     //int input
+    
     backwards_preset   = top[FPSTR(_backwards_preset)] | backwards_preset;     //int input
     dim_backwards_preset   = top[FPSTR(_dim_backwards_preset)] | dim_backwards_preset;     //int input
     dim_forwards_preset   = top[FPSTR(_dim_forwards_preset)] | dim_forwards_preset;     //int input
     #ifdef SIMPLE_CONFIG
     alt_mode_user            = (top[FPSTR(_alt_mode_user)] | alt_mode_user);       //bool
+    alt_toggle            = (top[FPSTR(_alt_toggle)] | alt_toggle);       //bool
     alt_backwards_preset   = top[FPSTR(_alt_backwards_preset)] | alt_backwards_preset;     //int input
     alt_forwards_preset   = top[FPSTR(_alt_forwards_preset)] | alt_forwards_preset;     //int input
     #endif
@@ -1551,22 +1539,21 @@ const char Usermodvesc::_free_fall_preset[] PROGMEM = "Freefall lighting preset"
 
 #ifdef SIMPLE_CONFIG
 const char Usermodvesc::_choosen_slow_preset[] PROGMEM = "Slow preset animation";
-const char Usermodvesc::_choosen_med_preset[] PROGMEM = "Med preset animation";
 const char Usermodvesc::_choosen_fast_preset[] PROGMEM = "Fast preset animation";
 const char Usermodvesc::_motor_duty_slow[] PROGMEM = "Slow motor duty %";
-const char Usermodvesc::_motor_duty_med[] PROGMEM = "Med motor duty %";
 const char Usermodvesc::_motor_duty_fast[] PROGMEM = "fast motor duty %";
 //const char Usermodvesc::_low_bat_percent[] PROGMEM = "Battery percent to change preset (0 to disable) overrides duty cycle preset";
 
 //const char Usermodvesc::_trail_ruffness_max[] PROGMEM = "trail variability maximum (DEV ONLY)";
 const char Usermodvesc::_alt_mode_user[] PROGMEM = "toggle alt presets by laying on right side";
+const char Usermodvesc::_alt_toggle[] PROGMEM = "toggle on off by laying on left side";
 const char Usermodvesc::_alt_forwards_preset[] PROGMEM = "Alt forward travel lighting preset";
 const char Usermodvesc::_alt_backwards_preset[] PROGMEM = "Alt reverse travel lighting preset";
 //const char Usermodvesc::_pressure_range_low[] PROGMEM = "PSI minimum trigger";
 //const char Usermodvesc::_pressure_range_high[] PROGMEM = "PSI maximum trigger";
 //const char Usermodvesc::_fahrenheit[] PROGMEM = "Temperature units (F/C)";
 //const char Usermodvesc::_psi[] PROGMEM = "Pressure units (PSI/BAR)";
-#else
-const char Usermodvesc::_forwards_preset[] PROGMEM = "Forward travel lighting preset";
 #endif
+const char Usermodvesc::_forwards_preset[] PROGMEM = "Forward travel lighting preset";
+
 const char Usermodvesc::_BatteryCells[] PROGMEM = "Battery Cells series";
