@@ -632,8 +632,7 @@ float motortemp;
   int8_t forwards_preset = 1;
 
   int8_t backwards_preset = 1;  //preset played as a boot animation
-  int8_t dim_backwards_preset = 1;  //preset played as a boot animation
-  int8_t dim_forwards_preset = 1;  //preset played as a boot animation
+  int8_t dim_preset = 1;  //preset played as a boot animation
   int dim_standing_up_preset = 0;
 
   bool vesc_light_on = true;
@@ -645,10 +644,6 @@ float motortemp;
   bool alt_mode = true;
   int8_t alt_backwards_preset = 1;  //preset played as a boot animation
   int8_t alt_forwards_preset = 1;  //preset played as a boot animation
-
-  int8_t boot_preset = 1;  //preset played as a boot animation
-
-  int boot_preset_time = 3; // boot animation length in sec
 
 
   bool FRONT_LIGHT_R = false;
@@ -664,8 +659,6 @@ float motortemp;
   bool app_lights_on_last; // last check value of lights on
   int blink_app_lights = 0;
   unsigned long blink_app_lights_timing;
-
-  unsigned int stock_preset = 0;
 
   unsigned int free_fall_preset = 1; // preset after free fall
   unsigned int free_fall_preset_time = 3; // animation length in sec
@@ -715,16 +708,12 @@ unsigned long a_read_milisec;  // analog read limit
   // strings to reduce flash memory usage (used more than twice)
   static const char _name[];
   static const char _backwards_preset[];
-  static const char _dim_backwards_preset[];
-  static const char _dim_forwards_preset[];
+  static const char _dim_preset[];
   static const char _dim_standing_up_preset[];
   static const char _vesc_light_on[];
   static const char _no_input[];
   static const char _is_vesc_main[];
-  static const char _boot_preset[];
-  static const char _boot_preset_time[];
   static const char _free_fall_preset[];
-  static const char _stock_preset[];
   static const char _BatteryCells[];
 
 #ifdef SIMPLE_CONFIG
@@ -1050,11 +1039,6 @@ forward = true;
 
 
 void set_preset() {
-    // If there's a stock preset, apply it and return
-    if (stock_preset != 0){
-        applyPreset(stock_preset);
-        return;
-    }
 
     // Handle special orientations
     if (orientation != 0) {
@@ -1067,7 +1051,7 @@ void set_preset() {
     // Depending on direction, light dimming, and alt mode, apply the appropriate preset
     if (forward) {
         if (dimmed_lights) {
-            applyPreset(dim_forwards_preset);
+            applyPreset(dim_preset);
         } else if (alt_mode) {
             #ifdef SIMPLE_CONFIG
             set_motor_duty_preset();
@@ -1079,7 +1063,7 @@ void set_preset() {
         }
     } else {
         if (dimmed_lights) {
-            applyPreset(dim_backwards_preset);
+            applyPreset(dim_preset);
         } else if (alt_mode) {
             applyPreset(backwards_preset);
         } else {
@@ -1103,7 +1087,7 @@ public:
   /** Define which ports to use as UART */
   UART.setSerialPort(&Serial2);
       briS = 255;
-    bootPreset = boot_preset;
+    bootPreset = dim_preset;
     // set pin modes
     strip.addEffect(FX_MODE_FB_ACCELERATION_BLINK, &mode_fb_acceleration_blink, _data_fx_fb_acceleration_blink);
     strip.addEffect(FX_MODE_F_ACCELERATION_BLINK, &mode_f_acceleration_blink, _data_fx_f_acceleration_blink);
@@ -1204,11 +1188,8 @@ public:
 
     //apHide = true; // hide wifi
 
-    if (boot_preset_time != 0 && ((stock_preset != 0) == false)){ // skip if boot_preset_time set to 0
-    applyPreset(boot_preset);// start up animation plays for 3 sec or so (still need to implement switching back)
-    }else{
-      set_preset();
-    }//end of if not stock preset
+  
+    applyPreset(dim_preset);// start up animation
 
    }
 
@@ -1245,13 +1226,8 @@ get_front_light();  // handels truning on/off lights and forward/back detection
 last_active();//updates when board was last active
 get_imu_data();
 
-    if (stock_preset != 0){
-    applyPreset(stock_preset);
-    return;}
 
-
-
-     if ((millis()) < (boot_preset_time * 1000)){
+     if ((millis()) < (3 * 1000)){
       return;  // returns loop if boot animation hasnt finished playing
      }
 
@@ -1410,7 +1386,6 @@ handle_tpms();
     // we add JSON object.
     JsonObject top = root.createNestedObject(FPSTR(_name)); // usermodname
     top[FPSTR(_vesc_light_on)] = vesc_light_on;
-    top[FPSTR(_stock_preset)] = stock_preset;  //int input
     #ifdef SIMPLE_CONFIG
     top[FPSTR(_alt_mode_user)] = alt_mode_user;
     top[FPSTR(_alt_toggle)] = alt_toggle;
@@ -1426,13 +1401,10 @@ handle_tpms();
     top[FPSTR(_forwards_preset)] = forwards_preset;  //int input
     
     top[FPSTR(_backwards_preset)] = backwards_preset;  //int input
-    top[FPSTR(_dim_backwards_preset)] = dim_backwards_preset;  //int input
-    top[FPSTR(_dim_forwards_preset)] = dim_forwards_preset;  //int input
+    top[FPSTR(_dim_preset)] = dim_preset;  //int input
 
     top[FPSTR(_dim_standing_up_preset)] = dim_standing_up_preset;  //int input
 
-    top[FPSTR(_boot_preset)] = boot_preset;  //int input
-    top[FPSTR(_boot_preset_time)] = boot_preset_time;  //int input
     top[FPSTR(_free_fall_preset)] = free_fall_preset;  //int input
     #ifdef SIMPLE_CONFIG
     //top[FPSTR(_trail_ruffness_max)] = trail_ruffness_max;  //int input
@@ -1478,8 +1450,7 @@ handle_tpms();
     forwards_preset   = top[FPSTR(_forwards_preset)] | forwards_preset;     //int input
     
     backwards_preset   = top[FPSTR(_backwards_preset)] | backwards_preset;     //int input
-    dim_backwards_preset   = top[FPSTR(_dim_backwards_preset)] | dim_backwards_preset;     //int input
-    dim_forwards_preset   = top[FPSTR(_dim_forwards_preset)] | dim_forwards_preset;     //int input
+    dim_preset   = top[FPSTR(_dim_preset)] | dim_preset;     //int input
     #ifdef SIMPLE_CONFIG
     alt_mode_user            = (top[FPSTR(_alt_mode_user)] | alt_mode_user);       //bool
     alt_toggle            = (top[FPSTR(_alt_toggle)] | alt_toggle);       //bool
@@ -1488,9 +1459,6 @@ handle_tpms();
     #endif
 
     dim_standing_up_preset   = top[FPSTR(_dim_standing_up_preset)] | dim_standing_up_preset;     //int input
-    boot_preset   = top[FPSTR(_boot_preset)] | boot_preset;     //int input
-    stock_preset   = top[FPSTR(_stock_preset)] | stock_preset;     //int input
-    boot_preset_time   = top[FPSTR(_boot_preset_time)] | boot_preset_time;     //int input
     
     vesc_light_on            = (top[FPSTR(_vesc_light_on)] | vesc_light_on);       //bool
     free_fall_preset   = top[FPSTR(_free_fall_preset)] | free_fall_preset;     //int input
@@ -1517,13 +1485,11 @@ handle_tpms();
 // strings to reduce flash memory usage (used more than twice)
 //                           _veriable         "what it says on the webpage"
 const char Usermodvesc::_name[] PROGMEM = "AvaSpark-RGB user preset configuration";
-const char Usermodvesc::_stock_preset[] PROGMEM = "Stock lighting override preset";
 
 
-const char Usermodvesc::_dim_forwards_preset[] PROGMEM = "Forward creep lighting preset";
+const char Usermodvesc::_dim_preset[] PROGMEM = "Idle lighting preset";
 
 const char Usermodvesc::_backwards_preset[] PROGMEM = "Reverse travel lighting preset";
-const char Usermodvesc::_dim_backwards_preset[] PROGMEM = "Reverse creep lighting preset";
 
 const char Usermodvesc::_vesc_light_on[] PROGMEM = "Defualt lights on or off";
 const char Usermodvesc::_is_vesc_main[] PROGMEM = "UART mode ON / RGB input mode off";
@@ -1531,8 +1497,6 @@ const char Usermodvesc::_no_input[] PROGMEM = "aceleromter only input";
 
 const char Usermodvesc::_dim_standing_up_preset[] PROGMEM = "Inactive standing up lighting preset";
 
-const char Usermodvesc::_boot_preset[] PROGMEM = "Boot animation lighting preset";
-const char Usermodvesc::_boot_preset_time[] PROGMEM = "Boot duration (sec)";
 
 const char Usermodvesc::_free_fall_preset[] PROGMEM = "Freefall lighting preset";
 
