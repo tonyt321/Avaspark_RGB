@@ -619,10 +619,8 @@ float motortemp;
 
 
 
-  //int8_t low_bat_preset = 1;
-  int8_t low_bat_percent = 10;
 
-  #ifdef SIMPLE_CONFIG
+  #ifndef SIMPLE_CONFIG
   int8_t choosen_slow_preset = 1;
   int8_t choosen_fast_preset = 1;
 
@@ -716,14 +714,12 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _free_fall_preset[];
   static const char _BatteryCells[];
 
-#ifdef SIMPLE_CONFIG
+#ifndef SIMPLE_CONFIG
   static const char _alt_mode_user[];
   static const char _alt_toggle[];
   static const char _alt_backwards_preset[];
   static const char _alt_forwards_preset[];
   //static const char _trail_ruffness_max[];
-  //static const char _low_bat_percent[];
-  //static const char _low_bat_preset[];
   static const char _choosen_slow_preset[];
   static const char _choosen_fast_preset[];
   static const char _motor_duty_slow[];
@@ -752,7 +748,7 @@ unsigned long a_read_milisec;  // analog read limit
       //N is proportional to a scalar value, which is used to scale up/down the speed of the lighting animation
       //when the board speed is within one of the ranges, scale the animation speed accordingly 
 
-#ifdef SIMPLE_CONFIG
+#ifndef SIMPLE_CONFIG
   void set_motor_duty_preset()
   {
 
@@ -1053,7 +1049,7 @@ void set_preset() {
         if (dimmed_lights) {
             applyPreset(dim_preset);
         } else if (alt_mode) {
-            #ifdef SIMPLE_CONFIG
+            #ifndef SIMPLE_CONFIG
             set_motor_duty_preset();
             #else
             applyPreset(forwards_preset);
@@ -1265,11 +1261,6 @@ handle_tpms();
 
 
 
-  //  if ((low_bat_percent < batpercentage) && (low_bat_percent != 0)){  //if user set low battery %   less than    actual battery %
-  //  set_motor_duty_preset();
-  //  } else {
-  //   applyPreset(low_bat_preset);
-  //  }
 
   } // end of main loop
 
@@ -1386,11 +1377,9 @@ handle_tpms();
     // we add JSON object.
     JsonObject top = root.createNestedObject(FPSTR(_name)); // usermodname
     top[FPSTR(_vesc_light_on)] = vesc_light_on;
-    #ifdef SIMPLE_CONFIG
+    #ifndef SIMPLE_CONFIG
     top[FPSTR(_alt_mode_user)] = alt_mode_user;
     top[FPSTR(_alt_toggle)] = alt_toggle;
-    //top[FPSTR(_low_bat_percent)] = low_bat_percent;  //int input
-    //top[FPSTR(_low_bat_preset)] = low_bat_preset;  //int input
     top[FPSTR(_choosen_slow_preset)] = choosen_slow_preset;  //int input
     top[FPSTR(_choosen_fast_preset)] = choosen_fast_preset;  //int input
     top[FPSTR(_motor_duty_slow)] = motor_duty_slow;  //int input
@@ -1399,14 +1388,13 @@ handle_tpms();
     top[FPSTR(_alt_backwards_preset)] = alt_backwards_preset;  //int input
     #endif
     top[FPSTR(_forwards_preset)] = forwards_preset;  //int input
-    
     top[FPSTR(_backwards_preset)] = backwards_preset;  //int input
     top[FPSTR(_dim_preset)] = dim_preset;  //int input
 
     top[FPSTR(_dim_standing_up_preset)] = dim_standing_up_preset;  //int input
 
     top[FPSTR(_free_fall_preset)] = free_fall_preset;  //int input
-    #ifdef SIMPLE_CONFIG
+    #ifndef SIMPLE_CONFIG
     //top[FPSTR(_trail_ruffness_max)] = trail_ruffness_max;  //int input
 
     //top[FPSTR(_pressure_range_low)] = pressure_range_low;  //int input
@@ -1437,9 +1425,7 @@ handle_tpms();
       DEBUG_PRINTLN(F(": No config found. (Using defaults.)"));
       return false;
     }
-    #ifdef SIMPLE_CONFIG
-    //low_bat_percent   = top[FPSTR(_low_bat_percent)] | low_bat_percent;  //int input
-   // low_bat_preset   = top[FPSTR(_low_bat_preset)] | low_bat_preset;  //int input
+    #ifndef SIMPLE_CONFIG
     is_vesc_main            = (top[FPSTR(_is_vesc_main)] | is_vesc_main);       //bool
     no_input            = (top[FPSTR(_no_input)] | no_input);       //bool
     choosen_slow_preset   = top[FPSTR(_choosen_slow_preset)] | choosen_slow_preset;  //int input
@@ -1451,7 +1437,7 @@ handle_tpms();
     
     backwards_preset   = top[FPSTR(_backwards_preset)] | backwards_preset;     //int input
     dim_preset   = top[FPSTR(_dim_preset)] | dim_preset;     //int input
-    #ifdef SIMPLE_CONFIG
+    #ifndef SIMPLE_CONFIG
     alt_mode_user            = (top[FPSTR(_alt_mode_user)] | alt_mode_user);       //bool
     alt_toggle            = (top[FPSTR(_alt_toggle)] | alt_toggle);       //bool
     alt_backwards_preset   = top[FPSTR(_alt_backwards_preset)] | alt_backwards_preset;     //int input
@@ -1463,7 +1449,7 @@ handle_tpms();
     vesc_light_on            = (top[FPSTR(_vesc_light_on)] | vesc_light_on);       //bool
     free_fall_preset   = top[FPSTR(_free_fall_preset)] | free_fall_preset;     //int input
 
-    #ifdef SIMPLE_CONFIG
+    #ifndef SIMPLE_CONFIG
     //trail_ruffness_max   = top[FPSTR(_trail_ruffness_max)] | trail_ruffness_max;     //int input
 
     //pressure_range_low   = top[FPSTR(_pressure_range_low)] | pressure_range_low;     //int input
@@ -1501,13 +1487,11 @@ const char Usermodvesc::_dim_standing_up_preset[] PROGMEM = "Inactive standing u
 const char Usermodvesc::_free_fall_preset[] PROGMEM = "Freefall lighting preset";
 
 
-#ifdef SIMPLE_CONFIG
+#ifndef SIMPLE_CONFIG
 const char Usermodvesc::_choosen_slow_preset[] PROGMEM = "Slow preset animation";
 const char Usermodvesc::_choosen_fast_preset[] PROGMEM = "Fast preset animation";
 const char Usermodvesc::_motor_duty_slow[] PROGMEM = "Slow motor duty %";
 const char Usermodvesc::_motor_duty_fast[] PROGMEM = "fast motor duty %";
-//const char Usermodvesc::_low_bat_percent[] PROGMEM = "Battery percent to change preset (0 to disable) overrides duty cycle preset";
-
 //const char Usermodvesc::_trail_ruffness_max[] PROGMEM = "trail variability maximum (DEV ONLY)";
 const char Usermodvesc::_alt_mode_user[] PROGMEM = "toggle alt presets by laying on right side";
 const char Usermodvesc::_alt_toggle[] PROGMEM = "toggle on off by laying on left side";
