@@ -1205,7 +1205,7 @@ public:
       if (person_on_ui){return;}
     }// end of free fall preset shop mode
 
-if ((a_read_milisec + 100) < millis()){    // limit loop to 10 times a sec
+if ((a_read_milisec + 50) < millis()){    // limit loop to 20 times a sec
 a_read_milisec = millis();
 
 get_front_light();  // handels truning on/off lights and forward/back detection
@@ -1214,6 +1214,7 @@ get_front_light();  // handels truning on/off lights and forward/back detection
   return; // skip rest of loop
 }
 
+get_imu_data();
 
    if (app_lights_on == false){
        return; // skip rest of loop
@@ -1221,7 +1222,6 @@ get_front_light();  // handels truning on/off lights and forward/back detection
 
 
 last_active();//updates when board was last active
-get_imu_data();
 
 
      if ((millis()) < (3 * 1000)){
