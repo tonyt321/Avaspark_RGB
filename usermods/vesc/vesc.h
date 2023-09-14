@@ -655,8 +655,6 @@ float motortemp;
   bool app_lights_on;  // are the lights on in the app?
 
   bool app_lights_on_last; // last check value of lights on
-  int blink_app_lights = 0;
-  unsigned long blink_app_lights_timing;
 
   unsigned int free_fall_preset = 1; // preset after free fall
   unsigned int free_fall_preset_time = 3; // animation length in sec
@@ -713,10 +711,10 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _is_vesc_main[];
   static const char _free_fall_preset[];
   static const char _BatteryCells[];
+  static const char _alt_toggle[];
 
 #ifndef SIMPLE_CONFIG
   static const char _alt_mode_user[];
-  static const char _alt_toggle[];
   static const char _alt_backwards_preset[];
   static const char _alt_forwards_preset[];
   //static const char _trail_ruffness_max[];
@@ -889,17 +887,21 @@ if (alt_mode) {
 
    if (filteredz > 10){orientation = 0;}
 
-   if (last_orientation == 0 && orientation == 3){
-   if (alt_mode_user = false){alt_mode_user = true;}
-   if (alt_mode_user = true){alt_mode_user = false;}
+if(!alt_mode_user){
+   if ((last_orientation == 0 || last_orientation == 1) && (orientation == 3)){
+   if (alt_mode = false){alt_mode = true;}
+   if (alt_mode = true){alt_mode = false;}
    last_orientation = orientation;
    }
+}
 
-      if (last_orientation == 0 && orientation == 2){
+if(alt_toggle){
+      if ((last_orientation == 0 || last_orientation == 1) && (orientation == 2)){
    if (vesc_light_on = false){vesc_light_on = true;}
    if (vesc_light_on = true){vesc_light_on = false;}
    last_orientation = orientation;
    }
+}
 
 } // end of get IMU data
 
@@ -1077,7 +1079,6 @@ public:
   void setup()
   {
 
-  /** Setup UART port On TTGO Display, you have to assign the pins. 25(Tx) 26(Rx) in this case */
   //** Default VESC brate is 115200, you can change it to any other value. */
   Serial2.begin(115200, SERIAL_8N1, VESC_RX, VESC_TX);
   /** Define which ports to use as UART */
@@ -1303,7 +1304,6 @@ handle_tpms();
     lux6.add(app_lights_on);
     lux6.add(forward);
     lux6.add(dimmed_lights);
-    lux6.add(blink_app_lights);
     lux6.add(alt_mode);
     lux6.add(alt_mode_user);
 
@@ -1377,9 +1377,9 @@ handle_tpms();
     // we add JSON object.
     JsonObject top = root.createNestedObject(FPSTR(_name)); // usermodname
     top[FPSTR(_vesc_light_on)] = vesc_light_on;
+    top[FPSTR(_alt_toggle)] = alt_toggle;
     #ifndef SIMPLE_CONFIG
     top[FPSTR(_alt_mode_user)] = alt_mode_user;
-    top[FPSTR(_alt_toggle)] = alt_toggle;
     top[FPSTR(_choosen_slow_preset)] = choosen_slow_preset;  //int input
     top[FPSTR(_choosen_fast_preset)] = choosen_fast_preset;  //int input
     top[FPSTR(_motor_duty_slow)] = motor_duty_slow;  //int input
@@ -1434,19 +1434,17 @@ handle_tpms();
     motor_duty_fast   = top[FPSTR(_motor_duty_fast)] | motor_duty_fast;     //int input
     #endif
     forwards_preset   = top[FPSTR(_forwards_preset)] | forwards_preset;     //int input
-    
     backwards_preset   = top[FPSTR(_backwards_preset)] | backwards_preset;     //int input
     dim_preset   = top[FPSTR(_dim_preset)] | dim_preset;     //int input
     #ifndef SIMPLE_CONFIG
     alt_mode_user            = (top[FPSTR(_alt_mode_user)] | alt_mode_user);       //bool
-    alt_toggle            = (top[FPSTR(_alt_toggle)] | alt_toggle);       //bool
     alt_backwards_preset   = top[FPSTR(_alt_backwards_preset)] | alt_backwards_preset;     //int input
     alt_forwards_preset   = top[FPSTR(_alt_forwards_preset)] | alt_forwards_preset;     //int input
     #endif
 
     dim_standing_up_preset   = top[FPSTR(_dim_standing_up_preset)] | dim_standing_up_preset;     //int input
-    
     vesc_light_on            = (top[FPSTR(_vesc_light_on)] | vesc_light_on);       //bool
+    alt_toggle            = (top[FPSTR(_alt_toggle)] | alt_toggle);       //bool
     free_fall_preset   = top[FPSTR(_free_fall_preset)] | free_fall_preset;     //int input
 
     #ifndef SIMPLE_CONFIG
@@ -1471,37 +1469,23 @@ handle_tpms();
 // strings to reduce flash memory usage (used more than twice)
 //                           _veriable         "what it says on the webpage"
 const char Usermodvesc::_name[] PROGMEM = "AvaSpark-RGB user preset configuration";
-
-
 const char Usermodvesc::_dim_preset[] PROGMEM = "Idle lighting preset";
-
 const char Usermodvesc::_backwards_preset[] PROGMEM = "Reverse travel lighting preset";
-
 const char Usermodvesc::_vesc_light_on[] PROGMEM = "Defualt lights on or off";
 const char Usermodvesc::_is_vesc_main[] PROGMEM = "UART mode ON / RGB input mode off";
 const char Usermodvesc::_no_input[] PROGMEM = "aceleromter only input";
-
 const char Usermodvesc::_dim_standing_up_preset[] PROGMEM = "Inactive standing up lighting preset";
-
-
 const char Usermodvesc::_free_fall_preset[] PROGMEM = "Freefall lighting preset";
-
 
 #ifndef SIMPLE_CONFIG
 const char Usermodvesc::_choosen_slow_preset[] PROGMEM = "Slow preset animation";
 const char Usermodvesc::_choosen_fast_preset[] PROGMEM = "Fast preset animation";
 const char Usermodvesc::_motor_duty_slow[] PROGMEM = "Slow motor duty %";
 const char Usermodvesc::_motor_duty_fast[] PROGMEM = "fast motor duty %";
-//const char Usermodvesc::_trail_ruffness_max[] PROGMEM = "trail variability maximum (DEV ONLY)";
-const char Usermodvesc::_alt_mode_user[] PROGMEM = "toggle alt presets by laying on right side";
-const char Usermodvesc::_alt_toggle[] PROGMEM = "toggle on off by laying on left side";
+const char Usermodvesc::_alt_mode_user[] PROGMEM = "toggle alt presets by laying on other side";
 const char Usermodvesc::_alt_forwards_preset[] PROGMEM = "Alt forward travel lighting preset";
 const char Usermodvesc::_alt_backwards_preset[] PROGMEM = "Alt reverse travel lighting preset";
-//const char Usermodvesc::_pressure_range_low[] PROGMEM = "PSI minimum trigger";
-//const char Usermodvesc::_pressure_range_high[] PROGMEM = "PSI maximum trigger";
-//const char Usermodvesc::_fahrenheit[] PROGMEM = "Temperature units (F/C)";
-//const char Usermodvesc::_psi[] PROGMEM = "Pressure units (PSI/BAR)";
 #endif
+const char Usermodvesc::_alt_toggle[] PROGMEM = "Toggle on off by laying on side";
 const char Usermodvesc::_forwards_preset[] PROGMEM = "Forward travel lighting preset";
-
 const char Usermodvesc::_BatteryCells[] PROGMEM = "Battery Cells series";
