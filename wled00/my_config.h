@@ -75,7 +75,7 @@
 
 
 
-#define DEFAULT_AP_PASS     "avasparkrgb"
+#define DEFAULT_AP_PASS     ""
 #define DEFAULT_OTA_PASS    "avasparkrgb"
 
 

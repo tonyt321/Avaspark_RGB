@@ -398,7 +398,7 @@ void WLED::setup()
   usermods.setup();
 
   if (strcmp(apSSID, DEFAULT_AP_SSID) == 0){
-    showWelcomePage = true;
+    showWelcomePage = false;
   }else{
     showWelcomePage = false;
     }
