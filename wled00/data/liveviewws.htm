@@ -1,61 +1,116 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+ <!-- <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1"> -->
   <meta charset="utf-8">
   <meta name="theme-color" content="#222222">
-  <title>WLED Live Preview</title>
+  <title>ANDONN Live Preview</title>
   <style>
   body {
     margin: 0;
   }
+
   #canv {
-    background: black;
     filter: brightness(175%);
     width: 100%;
-    height: 100%;
+    height: 62.4%;
     position: absolute;
+    z-index: 2; /* Set z-index to be higher than child elements */
   }
-  </style>
-</head>
-<body>
-  <div id="canv"></div>
+
+  #canv {
+    display: flex;
+    flex-direction: row;
+  }
+  #canv img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    /* height: 100%; */
+    object-fit: contain;
+    z-index: 3;
+	max-width: 100%;
+	max-height: 100%;
+  }
+
+  #canv1,
+  #canv2 {
+    width: 50%; 
+    height: 100%;
+    z-index: 1;
+  }
+</style>
+<div id="canv" >
+<img id="canvimg" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgQAAACkCAMAAADfX8ZjAAAAWlBMVEVHcEz///////////////////////////////////////////////////////8AAAABAQH+/v4CAgL9/f0DAwP8/PwEBAT7+/sFBQUHBwcGBgb5+fn6+voICAjrzerbAAAADnRSTlMA+43z6f1r7+f5tXzT990/SIgAAAwLSURBVHja7Z3pcuNIDoS55+yZiaOKdLe97/+a+wNVlETbO70OkWZJqJmIdnA6RlbxYwJIgOTEtow0GkmKUIS5HmwJCyV+2K5p/WmmBQHkCxOCx2OANAopFNuQcIGAs7S/bZyTggfloP1RPlYCMwlOTEjJePBoy0haO/+yoWC6IWW+4IBcD7UcqhHuZ9sIwZUSkJwjJxAFPLft4SiAAmoSOeJnShDxAgA09+xB1QALQMpniaEwooCjIpXg4VaouwMKxSbvny7+gNH0cvIViopDklZzKIQOjbj18CsuS9q+O2zspWChwqGo7bzC0U0BCyVo/gBn8ub6V7z93NYSO9UtgJIyO6B4Fgi8COdX+G77KqSF+VfIQiwAVNdYT87r2Z26P2Bk/1s9fogEKPuumaUiyhbX/TblbBBQKDTsCL1IXGNGsV7uORxADS0opZ3fafUH2PSir9pMpgMqWHchObPr1DNAYJSZst/3Nc4Uu+itUbsIRNaHi8xPPRRYTwS6EvyHYRvsHw5kXkAj8UxKoDMp2DUlCGfICttlrlBUrS3rVxSW4GDq/oA6ql4Xh5f/087hwEi8ggJU4GmUAK8mqPvlwRECKrCE/WNCVGgEA6hC1Uu7zKd+Pcb59ysGrHUc9k4JmjnhAA6qR84AQQUcu9ZC1iyf1j40xjmuEQwUuiZ9U/cHokC7UECh8Yg+kgmFRkChO2/LuUrE3VVPotzq6b1YBbQCvV5cS7GpjQ9cl4Z+wC/4edZ88a5aKOv56SBzDpu+vUTBLp99z3t+cFy31vZMQtvL5bM37pF302gSobH4O5v5uyFoeyecOfPHOHMO7/r2hfE9doagfUKxPhliBKqitPzwHQQAUHuJSBp57Q+gQv3blWA1vKylp+PMOdz07e2dU7+XEnQOxAFHiQgvFAALPoBgWX+LiSRnBaar9V2l2m04aFGgeR2jzDls+/bCckg4CNheyKjzycjv2p+6fu71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">
+  <div id="canv1"></div>
+  <div id="canv2"></div>
+</img>
+</div>
+<script>
+function resizeCanv() {
+  var aspectRatio = 41 / 129;
+  var newHeight = document.getElementById('canv').clientWidth * aspectRatio;
+  document.getElementById('canv').style.height = newHeight + 'px';
+  var iframe = window.frameElement;
+  if (iframe) {
+    iframe.style.height = newHeight + 'px';
+    iframe.style.width = '100%';
+  }
+}
+window.addEventListener('load', resizeCanv);
+window.addEventListener('resize', resizeCanv);
+
+</script>
   <script>
-    var ws;
-    try {
-      ws = top.window.ws;
-    } catch (e) {}
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      //console.info("Peek uses top WS");
-      ws.send("{'lv':true}");
-    } else {
-      console.info("Peek WS opening");
-      ws = new WebSocket((window.location.protocol == "https:"?"wss":"ws")+"://"+document.location.host+"/ws");
-      ws.onopen = function () {
-        //console.info("Peek WS open");
-        ws.send("{'lv':true}");
-      }
-    }
-    ws.binaryType = "arraybuffer";
-    ws.addEventListener('message', (e) => {
-      try {
-        if (toString.call(e.data) === '[object ArrayBuffer]') {
-          let leds = new Uint8Array(event.data);
-          if (leds[0] != 76) return; //'L'
-          let str = "linear-gradient(90deg,";
-          let len = leds.length;
-          let start = leds[1]==2 ? 4 : 2; // 1 = 1D, 2 = 1D/2D (leds[2]=w, leds[3]=h)
-          for (i = start; i < len; i+=3) {
-            str += `rgb(${leds[i]},${leds[i+1]},${leds[i+2]})`;
-            if (i < len -3) str += ","
+ var ws;
+try {
+  ws = top.window.ws;
+} catch (e) {}
+if (ws && ws.readyState === WebSocket.OPEN) {
+  //console.info("Peek uses top WS");
+  ws.send("{'lv':true}");
+} else {
+  console.info("Peek WS opening");
+  ws = new WebSocket((window.location.protocol == "https:"?"wss":"ws")+"://"+document.location.host+"/ws");
+  ws.onopen = function () {
+    //console.info("Peek WS open");
+    ws.send("{'lv':true}");
+  }
+}
+ws.binaryType = "arraybuffer";
+ws.addEventListener('message', (e) => {
+  try {
+    if (toString.call(e.data) === '[object ArrayBuffer]') {
+      let leds = new Uint8Array(event.data);
+      if (leds[0] != 76) return; //'L'
+      let str1 = "linear-gradient(0deg,";
+      let str2 = "linear-gradient(0deg,";
+      let len = leds.length;
+      let start = leds[1]==2 ? 4 : 2; // 1 = 1D, 2 = 1D/2D (leds[2]=w, leds[3]=h)
+      for (i = start; i < len; i+=3) {
+        if (i < ((len - start) / 2) + start) {
+          str1 += `rgb(${leds[i]},${leds[i+1]},${leds[i+2]})`;
+          if (i < (((len - start) / 2) + start) - 3) {
+            str1 += ",";
           }
-          str += ")";
-          document.getElementById("canv").style.background = str;
+        } else {
+          str2 += `rgb(${leds[i]},${leds[i+1]},${leds[i+2]})`;
+          if (i < len - 3) {
+            str2 += ",";
+          }
         }
-      } catch (err) {
-        console.error("Peek WS error:",err);
-      } 
-    });
+      }
+      str1 += ")";
+      str2 += ")";
+      document.getElementById("canv1").style.background = str1;
+      document.getElementById("canv2").style.background = str2;
+    }
+  } catch (err) {
+    console.error("Peek WS error:",err);
+  } 
+});
   </script>
 </body>
 </html>

@@ -580,7 +580,7 @@ function btype(b)
 
 function bname(o)
 {
-	if (o.name=="AvaSpark-RGB") return o.ip;
+	if (o.name=="WLED") return o.ip;
 	return o.name;
 }
 

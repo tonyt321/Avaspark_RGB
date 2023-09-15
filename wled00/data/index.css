@@ -226,9 +226,9 @@ button {
 	display: inline-block;
 	vertical-align: middle;
 }
-
+.sbs>.sliderwrap.il{display:none !important}
 #liveview {
-	height: 4px;
+	/* height: 4px; */
 	display: none;
 	width: 100%;
 	border: 0px;
@@ -346,7 +346,7 @@ button {
 .tab-label {
 	margin: 0 0 -5px 0;
 	padding-bottom: 4px;
-	display: var(--bhd);
+	display: block;
 }
 
 .overlay {

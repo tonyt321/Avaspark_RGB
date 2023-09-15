@@ -42,7 +42,7 @@
 #ifdef OW_VESC
   #define DATA_PINS 18 ,17  //front then back lights GPIO segment 0 then 1 ect
   #define USERMOD_VESC
-  #define DEFAULT_LED_COUNT 11 //11 for GT 13 for pint
+  #define DEFAULT_LED_COUNT 13 //11 for GT 13 for pint
   #define OW_TYPE "Vesc"
   #define WLED_VERSION "Vesc 2.2.2"  //shows up in info on UI
   #define VESC_RX 32   //vesc rx
@@ -63,8 +63,8 @@
 
 
 //disable testing wifi for fast AP start up
-//#define CLIENT_SSID "TRENDnet828_2.4GHz_3FDB"  //for testing only will be disabled in production should be blank
-//#define CLIENT_PASS "8280RH90029"    //for testing only will be disabled in production should be blank
+#define CLIENT_SSID "TRENDnet828_2.4GHz_3FDB"  //for testing only will be disabled in production should be blank
+#define CLIENT_PASS "8280RH90029"    //for testing only will be disabled in production should be blank
 
 
 #define ERROR_LED_PIN 16  // on pcb led
@@ -76,7 +76,7 @@
 
 
 #define DEFAULT_AP_PASS     ""
-#define DEFAULT_OTA_PASS    "avasparkrgb"
+#define DEFAULT_OTA_PASS    ""
 
 
 #define DEFAULT_LED_TYPE TYPE_SK6812_RGBW

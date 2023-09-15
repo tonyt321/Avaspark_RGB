@@ -639,9 +639,11 @@ float motortemp;
 
   bool alt_mode_user = false;
   bool alt_toggle = false;
+  bool alt_toggle_on = true; // editable parady for vesc_light_on
   bool alt_mode = true;
   int8_t alt_backwards_preset = 1;  //preset played as a boot animation
   int8_t alt_forwards_preset = 1;  //preset played as a boot animation
+
 
 
   bool FRONT_LIGHT_R = false;
@@ -649,9 +651,7 @@ float motortemp;
   bool FRONT_LIGHT_W = false;
   int FRONT_LIGHT_W_ANALOG;
 
-  // flag set at startup
   int client_numb;
-  //bool forward = true; //moved to global
   bool app_lights_on;  // are the lights on in the app?
 
   bool app_lights_on_last; // last check value of lights on
@@ -680,11 +680,10 @@ unsigned long a_read_milisec;  // analog read limit
   bool psi = true;     //psi or bar
 
 
-  //bool dimmed_lights = false; // moved to global
-
   bool imu_activity = true;
   bool imu_inactivity = true;
   int  imu_inactivity_count = 0;
+  unsigned long imu_inactivity_milis = 0;
 
   int orientation = 0; //how is the board on the ground
   int last_orientation = 0; //how is the board on the ground
@@ -722,10 +721,6 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _choosen_fast_preset[];
   static const char _motor_duty_slow[];
   static const char _motor_duty_fast[];
-  //static const char _pressure_range_low[];
-  //static const char _pressure_range_high[];
-  //static const char _fahrenheit[];
-  //static const char _psi[];
   #endif
   static const char _forwards_preset[];
   
@@ -857,10 +852,15 @@ if (alt_mode) {
     }
    }
 
+
+
+
    // Inactivity
    if(adxl.triggered(interrupts, ADXL345_INACTIVITY)){
     imu_inactivity = true;
    }
+
+
 
 
    // Activity
@@ -877,7 +877,7 @@ if (alt_mode) {
    //4 = front pointing down
    //5 = back pointing down
 
-   if (dimmed_lights){  //only detect a left right or upside down orientaion if the lights are dim
+   if (imu_inactivity_count > 2){
    if (filteredz < -10){orientation = 1;}
    if (filteredy < -17){orientation = 2;}
    if (filteredy > 17){orientation = 3;}
@@ -889,20 +889,16 @@ if (alt_mode) {
 
 if(!alt_mode_user){
    if ((last_orientation == 0 || last_orientation == 1) && (orientation == 3)){
-   if (alt_mode = false){alt_mode = true;}
-   if (alt_mode = true){alt_mode = false;}
-   last_orientation = orientation;
+   alt_mode = !alt_mode;
    }
 }
 
 if(alt_toggle){
       if ((last_orientation == 0 || last_orientation == 1) && (orientation == 2)){
-   if (vesc_light_on = false){vesc_light_on = true;}
-   if (vesc_light_on = true){vesc_light_on = false;}
-   last_orientation = orientation;
+   alt_toggle_on = !alt_toggle_on;
    }
 }
-
+last_orientation = orientation;
 } // end of get IMU data
 
 void get_front_light() {
@@ -919,10 +915,10 @@ void get_front_light_accel(){
 
 forward = true;
 
-   app_lights_on = vesc_light_on;
+   app_lights_on = alt_toggle_on;
 
 
-     if (imu_inactivity_count > 1){
+     if (imu_inactivity_count > 2){
       dimmed_lights = true;
       }else{
         dimmed_lights = false;
@@ -1011,15 +1007,16 @@ forward = true;
      if (smoothedrpm > 5){forward = true;}
      if (smoothedrpm < -5){forward = false;}
 
-     if ((smoothedrpm < -1 || smoothedrpm > 1) && (dutycycle < -.05 && dutycycle > .05)){
-      dimmed_lights = false;
+     //if ((smoothedrpm < -1 || smoothedrpm > 1) && (dutycycle < -2 && dutycycle > 2) && (imu_inactivity_count > 2)){
+      if (imu_inactivity_count > 2){
+      dimmed_lights = true;
       }else{
-        dimmed_lights = true;
+        dimmed_lights = false;
         }
 
 
 
-   app_lights_on = vesc_light_on;
+   app_lights_on = alt_toggle_on;
 
 
 
@@ -1079,6 +1076,9 @@ public:
   void setup()
   {
 
+
+        alt_toggle_on = vesc_light_on;
+
   //** Default VESC brate is 115200, you can change it to any other value. */
   Serial2.begin(115200, SERIAL_8N1, VESC_RX, VESC_TX);
   /** Define which ports to use as UART */
@@ -1130,8 +1130,8 @@ public:
    adxl.setActivityThreshold(100);      // 62.5mg per increment   // Set activity   // Inactivity thresholds (0-255)
 
    adxl.setInactivityXYZ(1, 1, 1);     // Set to detect inactivity in all the axes "adxl.setInactivityXYZ(X, Y, Z);" (1 == ON, 0 == OFF)
-   adxl.setInactivityThreshold(50);    // 62.5mg per increment   // Set inactivity // Inactivity thresholds (0-255)
-   adxl.setTimeInactivity(3);         // How many seconds of no activity is inactive?
+   adxl.setInactivityThreshold(25);    // 62.5mg per increment   // Set inactivity // Inactivity thresholds (0-255)
+   adxl.setTimeInactivity(1);         // How many seconds of no activity is inactive?
 
    adxl.setTapDetectionOnXYZ(1, 1, 1); // Detect taps in the directions turned ON "adxl.setTapDetectionOnX(X, Y, Z);" (1 == ON, 0 == OFF)
 
@@ -1216,12 +1216,14 @@ get_front_light();  // handels truning on/off lights and forward/back detection
 
 get_imu_data();
 
-   if (app_lights_on == false){
-       return; // skip rest of loop
-   }
 
 
-last_active();//updates when board was last active
+  // if (app_lights_on == false){
+  //     return; // skip rest of loop
+  // }
+
+
+last_active();//updates when board was last active for preset animation
 
 
      if ((millis()) < (3 * 1000)){
@@ -1245,11 +1247,20 @@ handle_tpms();
   }
 /////////////////////////////////////////////////////inactivity "interrupt"
   if (imu_inactivity){
-    imu_inactivity_count = imu_inactivity_count + 1;
-      if (smoothedrpm > 1){
-    imu_inactivity = false;
+        imu_inactivity = false;
+
+              if (imu_inactivity_milis < millis()){
+      imu_inactivity_milis = millis() + 1050;
+    }else{
+      imu_inactivity_milis = imu_inactivity_milis + 1050;
     }
+    imu_inactivity_count = imu_inactivity_count + 1;
   }
+  
+    if (imu_inactivity_milis < millis()){
+   imu_inactivity_count = 0;
+   }
+
 //////////////////////////////////////////////////////////////  free fall "interrupt"
     if (imu_free_fall){
     applyPreset(free_fall_preset);
@@ -1352,6 +1363,12 @@ handle_tpms();
 
                   JsonArray battery6 = user.createNestedArray("Bumpyness");  //left side thing
       battery6.add(display_trail_ruffness);                               //right side variable
+      
+                        JsonArray battery55 = user.createNestedArray("orientation");  //left side thing
+      battery55.add(orientation);                               //right side variable
+
+                              JsonArray battery59 = user.createNestedArray("dimmed_lights");  //left side thing
+      battery59.add(dimmed_lights);                               //right side variable
 
           JsonArray battery9;
            if (psi) {battery9 = user.createNestedArray("Tire PSI");}else{battery9 = user.createNestedArray("Tire Bar");}  //left side thing
@@ -1394,15 +1411,6 @@ handle_tpms();
     top[FPSTR(_dim_standing_up_preset)] = dim_standing_up_preset;  //int input
 
     top[FPSTR(_free_fall_preset)] = free_fall_preset;  //int input
-    #ifndef SIMPLE_CONFIG
-    //top[FPSTR(_trail_ruffness_max)] = trail_ruffness_max;  //int input
-
-    //top[FPSTR(_pressure_range_low)] = pressure_range_low;  //int input
-    //top[FPSTR(_pressure_range_high)] = pressure_range_high;  //int input
-
-    //top[FPSTR(_psi)] = !psi;
-    //top[FPSTR(_fahrenheit)] = !fahrenheit;
-    #endif
 
     top[FPSTR(_is_vesc_main)] = is_vesc_main;
     top[FPSTR(_no_input)] = no_input;
@@ -1441,21 +1449,10 @@ handle_tpms();
     alt_backwards_preset   = top[FPSTR(_alt_backwards_preset)] | alt_backwards_preset;     //int input
     alt_forwards_preset   = top[FPSTR(_alt_forwards_preset)] | alt_forwards_preset;     //int input
     #endif
-
     dim_standing_up_preset   = top[FPSTR(_dim_standing_up_preset)] | dim_standing_up_preset;     //int input
     vesc_light_on            = (top[FPSTR(_vesc_light_on)] | vesc_light_on);       //bool
     alt_toggle            = (top[FPSTR(_alt_toggle)] | alt_toggle);       //bool
     free_fall_preset   = top[FPSTR(_free_fall_preset)] | free_fall_preset;     //int input
-
-    #ifndef SIMPLE_CONFIG
-    //trail_ruffness_max   = top[FPSTR(_trail_ruffness_max)] | trail_ruffness_max;     //int input
-
-    //pressure_range_low   = top[FPSTR(_pressure_range_low)] | pressure_range_low;     //int input
-    //pressure_range_high   = top[FPSTR(_pressure_range_high)] | pressure_range_high;     //int input
-
-    //fahrenheit            = !(top[FPSTR(_fahrenheit)] | !fahrenheit);       //bool
-    //psi            = !(top[FPSTR(_psi)] | !psi);       //bool
-    #endif
     BatteryCells            = (top[FPSTR(_BatteryCells)] | BatteryCells);       //bool
 
     DEBUG_PRINT(FPSTR(_name));
