@@ -887,14 +887,14 @@ if (alt_mode) {
 
    if (filteredz > 10){orientation = 0;}
 
-if(!alt_mode_user){
+if(alt_mode_user){
    if ((last_orientation == 0 || last_orientation == 1) && (orientation == 3)){
    alt_mode = !alt_mode;
    }
 }
 
 if(alt_toggle){
-      if ((last_orientation == 0 || last_orientation == 1) && (orientation == 2)){
+      if ((last_orientation == 0 || last_orientation == 1) && (orientation == 2) || ((!alt_mode_user) && (orientation == 3))){
    alt_toggle_on = !alt_toggle_on;
    }
 }
@@ -924,9 +924,11 @@ forward = true;
         dimmed_lights = false;
         }
 
-   if (app_lights_on == false){ //turns lights off if in app lights are off
+   if (alt_toggle_on == false){ //turns lights off if in app lights are off
+    transitionDelay = 0;
     bri = 0;stateUpdated(1);
    }else{
+    transitionDelay = 250;
     bri = 255;stateUpdated(1);
   }
 }
@@ -1022,9 +1024,11 @@ forward = true;
 
 
 
-   if (app_lights_on == false){ //turns lights off if in app lights are off
+   if (alt_toggle_on == false){ //turns lights off if in app lights are off
+   transitionDelay = 0;
     bri = 0;stateUpdated(1);
    }else{
+    transitionDelay = 250;
     bri = 255;stateUpdated(1);
   }
 
@@ -1042,6 +1046,12 @@ void set_preset() {
         }
         return;
     }
+
+
+       if (alt_toggle_on == false){ //turns lights off if in app lights are off
+    return;
+   }
+
 
     // Depending on direction, light dimming, and alt mode, apply the appropriate preset
     if (forward) {
@@ -1199,8 +1209,6 @@ public:
     if (strip.isUpdating()){return;}
 
 
-
-
           if (free_fall_preset != 250){
       if (person_on_ui){return;}
     }// end of free fall preset shop mode
@@ -1218,9 +1226,7 @@ get_imu_data();
 
 
 
-  // if (app_lights_on == false){
-  //     return; // skip rest of loop
-  // }
+
 
 
 last_active();//updates when board was last active for preset animation
@@ -1256,7 +1262,7 @@ handle_tpms();
     }
     imu_inactivity_count = imu_inactivity_count + 1;
   }
-  
+
     if (imu_inactivity_milis < millis()){
    imu_inactivity_count = 0;
    }
@@ -1369,6 +1375,13 @@ handle_tpms();
 
                               JsonArray battery59 = user.createNestedArray("dimmed_lights");  //left side thing
       battery59.add(dimmed_lights);                               //right side variable
+
+                                    JsonArray battery591 = user.createNestedArray("imu_inactivity_count");  //left side thing
+      battery591.add(imu_inactivity_count);                               //right side variable
+
+                                    JsonArray battery592 = user.createNestedArray("alt_toggle_on");  //left side thing
+      battery592.add(alt_toggle_on);                               //right side variable
+
 
           JsonArray battery9;
            if (psi) {battery9 = user.createNestedArray("Tire PSI");}else{battery9 = user.createNestedArray("Tire Bar");}  //left side thing
