@@ -1078,7 +1078,17 @@ void set_preset() {
 }
 
 
-
+void get_humidity(){
+  if (humiditySensor.available() == true)
+  {
+    humidity = humiditySensor.getTemperature();
+    andonn_temp = humiditySensor.getHumidity();
+  }else{
+ Serial.println("hardware corruption");
+ delay(3);
+ ESP.restart();
+  }
+}
 
 
 
@@ -1137,7 +1147,7 @@ public:
                                       // SPI pins on the ATMega328: 11, 12 and 13 as reference in SPI Library
 
    adxl.setActivityXYZ(1, 1, 1);       // Set to activate movement detection in the axes "adxl.setActivityXYZ(X, Y, Z);" (1 == ON, 0 == OFF)
-   adxl.setActivityThreshold(100);      // 62.5mg per increment   // Set activity   // Inactivity thresholds (0-255)
+   adxl.setActivityThreshold(50);      // 62.5mg per increment   // Set activity   // Inactivity thresholds (0-255)
 
    adxl.setInactivityXYZ(1, 1, 1);     // Set to detect inactivity in all the axes "adxl.setInactivityXYZ(X, Y, Z);" (1 == ON, 0 == OFF)
    adxl.setInactivityThreshold(25);    // 62.5mg per increment   // Set inactivity // Inactivity thresholds (0-255)
@@ -1195,11 +1205,14 @@ public:
 
     //apHide = true; // hide wifi
 
-  
+
     applyPreset(dim_preset);// start up animation
 
    }
 
+
+   Wire.begin();// for humidity
+   humiditySensor.begin();
 
    }// end of start up
 
@@ -1253,6 +1266,10 @@ handle_tpms();
   }
 /////////////////////////////////////////////////////inactivity "interrupt"
   if (imu_inactivity){
+
+get_humidity();
+
+
         imu_inactivity = false;
 
               if (imu_inactivity_milis < millis()){
@@ -1373,15 +1390,11 @@ handle_tpms();
                         JsonArray battery55 = user.createNestedArray("orientation");  //left side thing
       battery55.add(orientation);                               //right side variable
 
-                              JsonArray battery59 = user.createNestedArray("dimmed_lights");  //left side thing
-      battery59.add(dimmed_lights);                               //right side variable
+                              JsonArray battery59 = user.createNestedArray("Humidity %");  //left side thing
+      battery59.add(humidity);                               //right side variable
 
-                                    JsonArray battery591 = user.createNestedArray("imu_inactivity_count");  //left side thing
-      battery591.add(imu_inactivity_count);                               //right side variable
-
-                                    JsonArray battery592 = user.createNestedArray("alt_toggle_on");  //left side thing
-      battery592.add(alt_toggle_on);                               //right side variable
-
+                                    JsonArray battery591 = user.createNestedArray("AvaSpark-RGB Temp C");  //left side thing
+      battery591.add(andonn_temp);                               //right side variable
 
           JsonArray battery9;
            if (psi) {battery9 = user.createNestedArray("Tire PSI");}else{battery9 = user.createNestedArray("Tire Bar");}  //left side thing
