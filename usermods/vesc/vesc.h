@@ -32,7 +32,7 @@ float percent_tpmsp;
 
 int filteredx , filteredy , filteredz;
 bool forward = true;
-bool dimmed_lights = false;
+bool dimmed_lights = true;
 float battery_voltage;
 int vesc_state = 0;
 int state_switch = 0;
@@ -659,6 +659,7 @@ float motortemp;
   unsigned int free_fall_preset = 1; // preset after free fall
   unsigned int free_fall_preset_time = 3; // animation length in sec
   unsigned long free_fall_milisec; // for tracking how much time has past for free_fall animation preset
+  unsigned long active_milis_dim; // for tracking how much time has past for dim light activation
   bool imu_free_fall = false;
 
   int rawx , rawy , rawz;
@@ -748,13 +749,13 @@ unsigned long a_read_milisec;  // analog read limit
    //if (dutycycle < .01 || dutycycle > -.01)
    //{ return; }
 
-if (dutycycle <= motor_duty_slow * 100)
+if (dutycycle * 100 <= motor_duty_slow)
 {
     applyPreset(choosen_slow_preset);
     return;
 }
 
-if (dutycycle >= motor_duty_fast * 100)
+if (dutycycle * 100 >= motor_duty_fast)
 {
     applyPreset(choosen_fast_preset);
     return;
@@ -894,7 +895,7 @@ if(alt_mode_user){
 }
 
 if(alt_toggle){
-      if ((last_orientation == 0 || last_orientation == 1) && (orientation == 2) || ((!alt_mode_user) && (orientation == 3))){
+      if ((((last_orientation == 0) || (last_orientation == 1)) && (orientation == 2)) || ((!alt_mode_user) && (orientation == 3))){
    alt_toggle_on = !alt_toggle_on;
    }
 }
@@ -918,7 +919,7 @@ forward = true;
    app_lights_on = alt_toggle_on;
 
 
-     if (imu_inactivity_count > 2){
+     if (imu_inactivity_count > 10){
       dimmed_lights = true;
       }else{
         dimmed_lights = false;
@@ -1009,11 +1010,13 @@ forward = true;
      if (smoothedrpm > 5){forward = true;}
      if (smoothedrpm < -5){forward = false;}
 
-     //if ((smoothedrpm < -1 || smoothedrpm > 1) && (dutycycle < -2 && dutycycle > 2) && (imu_inactivity_count > 2)){
-      if (imu_inactivity_count > 2){
+     if ((smoothedrpm > -1 && smoothedrpm < 1) && (dutycycle * 100 > -2 && dutycycle * 100 < 2) && (imu_inactivity_count > 10)){
+      if(active_milis_dim + 7000 < millis()){
       dimmed_lights = true;
+      }
       }else{
         dimmed_lights = false;
+        active_milis_dim = millis();
         }
 
 
@@ -1054,27 +1057,21 @@ void set_preset() {
 
 
     // Depending on direction, light dimming, and alt mode, apply the appropriate preset
-    if (forward) {
+        transitionDelay = 750;
         if (dimmed_lights) {
-            applyPreset(dim_preset);
-        } else if (alt_mode) {
-            #ifndef SIMPLE_CONFIG
-            set_motor_duty_preset();
-            #else
-            applyPreset(forwards_preset);
-            #endif
-        } else {
-            applyPreset(alt_forwards_preset);
-        }
-    } else {
-        if (dimmed_lights) {
-            applyPreset(dim_preset);
-        } else if (alt_mode) {
-            applyPreset(backwards_preset);
+        applyPreset(dim_preset);
+        }else{
+
+        if (forward) {
+        set_motor_duty_preset();
+        }else{
+          if (alt_mode) {
+        applyPreset(backwards_preset);
         } else {
             applyPreset(alt_backwards_preset);
         }
-    }
+        }
+        }
 }
 
 
@@ -1083,10 +1080,6 @@ void get_humidity(){
   {
     humidity = humiditySensor.getTemperature();
     andonn_temp = humiditySensor.getHumidity();
-  }else{
- Serial.println("hardware corruption");
- delay(3);
- ESP.restart();
   }
 }
 
@@ -1494,7 +1487,7 @@ get_humidity();
 const char Usermodvesc::_name[] PROGMEM = "AvaSpark-RGB user preset configuration";
 const char Usermodvesc::_dim_preset[] PROGMEM = "Idle lighting preset";
 const char Usermodvesc::_backwards_preset[] PROGMEM = "Reverse travel lighting preset";
-const char Usermodvesc::_vesc_light_on[] PROGMEM = "Defualt lights on or off";
+const char Usermodvesc::_vesc_light_on[] PROGMEM = "Default lights on or off";
 const char Usermodvesc::_is_vesc_main[] PROGMEM = "UART mode ON / RGB input mode off";
 const char Usermodvesc::_no_input[] PROGMEM = "aceleromter only input";
 const char Usermodvesc::_dim_standing_up_preset[] PROGMEM = "Inactive standing up lighting preset";
