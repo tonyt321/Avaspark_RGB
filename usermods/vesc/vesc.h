@@ -34,8 +34,6 @@ int filteredx , filteredy , filteredz;
 bool forward = true;
 bool dimmed_lights = true;
 float battery_voltage;
-int vesc_state = 0;
-int state_switch = 0;
 int humidity = -100;
 int andonn_temp = -100;
 float batpercentage;
@@ -603,8 +601,7 @@ int Poles = 30;                  //Usually 46 for hub motor
 float WheelDia = 0.28;           //Wheel diameter in m
 float GearReduction = 1;         //reduction ratio. 1 for direct drive. Otherwise motor pulley diameter / Wheel pulley diameter.
 
-
-int smoothedrpm;
+int smoothedrpm = 0;
 int rpm;
 float voltage;
 float current;
@@ -616,8 +613,6 @@ float velocity;
 float watthour;
 float mosfettemp;
 float motortemp;
-
-
 
 
   #ifndef SIMPLE_CONFIG
@@ -657,7 +652,7 @@ float motortemp;
   bool app_lights_on_last; // last check value of lights on
 
   unsigned int free_fall_preset = 1; // preset after free fall
-  unsigned int free_fall_preset_time = 3; // animation length in sec
+  unsigned int free_fall_preset_time = 4; // animation length in sec
   unsigned long free_fall_milisec; // for tracking how much time has past for free_fall animation preset
   unsigned long active_milis_dim; // for tracking how much time has past for dim light activation
   bool imu_free_fall = false;
@@ -681,7 +676,7 @@ unsigned long a_read_milisec;  // analog read limit
   bool psi = true;     //psi or bar
 
 
-  bool imu_activity = true;
+  bool imu_activity = false;
   bool imu_inactivity = true;
   int  imu_inactivity_count = 11;
   unsigned long imu_inactivity_milis = 0;
@@ -995,8 +990,7 @@ forward = true;
   distance = rpm*3.142*(1.0/1609.0)*WheelDia*GearReduction;         // Motor RPM x Pi x (1 / meters in a mile or km) x Wheel diameter x (motor pulley / wheelpulley)
   velocity = rpm*3.142*(60.0/1609.0)*WheelDia*GearReduction;        // Motor RPM x Pi x (seconds in a minute / meters in a mile) x Wheel diameter x (motor pulley / wheelpulley)
   batpercentage = map(voltage, (3.0*BatteryCells), (4.2*BatteryCells), 0, 100);
-  //state_switch = (UART.appData.switchState);
-  //vesc_state = (UART.appData.state);
+
 
   bmss = batpercentage;
   smoothedrpm = ((rpm * 0.1 ) + (smoothedrpm * 0.9)); // higly smoothed
@@ -1174,15 +1168,6 @@ public:
    adxl.doubleTapINT(0);
    adxl.singleTapINT(0);
 
-   // adxl.setFIFOMode("FIFO"); //four available modes - Bypass, FIFO, Stream and Trigger.
-   // adxl.set_bw(ADXL345_BW_25);         //set bitrate
-
-   shop = 1;// if display / other esp connected set to 1 to allow more devices connected with blocking main loop
-
-   #ifndef TEST_MODE // test mode skip get front light becuase we dont have the hardware on test esp32
-   get_front_light();  // handels truning on/off lights and forward/back detection
-   #endif
-
    get_imu_data();
    get_imu_data();
    get_imu_data();
@@ -1191,20 +1176,6 @@ public:
    if (filteredy < -10){orientation = 2;}
    if (filteredy > 10){orientation = 3;}
    ///////////////////////////////////////////////////////  wifi
-   //#ifndef TEST_MODE
-   if (orientation == 2 || orientation == 3){
-        ////////////////////////when wifi is on
-    apHide = false; // show wifi
-    applyPreset(free_fall_preset);//use free fall preset as wifi on boot animation
-   /////////////////////////when wifi is off
-   }else{
-
-    //apHide = true; // hide wifi
-
-
-    applyPreset(dim_preset);// start up animation
-
-   }
 
 
    Wire.begin();// for humidity
@@ -1231,15 +1202,6 @@ get_front_light();  // handels truning on/off lights and forward/back detection
   return; // skip rest of loop
 }
 
-get_imu_data();
-
-
-
-
-
-
-last_active();//updates when board was last active for preset animation
-
 
      if ((millis()) < (8 * 1000)){
       imu_inactivity_count = 11;
@@ -1247,7 +1209,8 @@ last_active();//updates when board was last active for preset animation
       return;  // returns loop if boot animation hasnt finished playing
      }
 
-
+get_imu_data();
+last_active();//updates when board was last active for preset animation
 
     if (!imu_free_fall){
       set_preset();
