@@ -683,7 +683,7 @@ unsigned long a_read_milisec;  // analog read limit
 
   bool imu_activity = true;
   bool imu_inactivity = true;
-  int  imu_inactivity_count = 0;
+  int  imu_inactivity_count = 11;
   unsigned long imu_inactivity_milis = 0;
 
   int orientation = 0; //how is the board on the ground
@@ -999,7 +999,7 @@ forward = true;
   //vesc_state = (UART.appData.state);
 
   bmss = batpercentage;
-  smoothedrpm = ((rpm * 0.2 ) + (smoothedrpm * 0.8)); // higly smoothed
+  smoothedrpm = ((rpm * 0.1 ) + (smoothedrpm * 0.9)); // higly smoothed
       }
 
 
@@ -1096,7 +1096,10 @@ public:
   Serial2.begin(115200, SERIAL_8N1, VESC_RX, VESC_TX);
   /** Define which ports to use as UART */
   UART.setSerialPort(&Serial2);
-      briS = 255;
+
+    transitionDelay = 1000;
+    bri = 0;stateUpdated(1);
+
     bootPreset = dim_preset;
     // set pin modes
     strip.addEffect(FX_MODE_FB_ACCELERATION_BLINK, &mode_fb_acceleration_blink, _data_fx_fb_acceleration_blink);
@@ -1238,7 +1241,9 @@ get_imu_data();
 last_active();//updates when board was last active for preset animation
 
 
-     if ((millis()) < (3 * 1000)){
+     if ((millis()) < (8 * 1000)){
+      imu_inactivity_count = 11;
+      imu_activity = false;
       return;  // returns loop if boot animation hasnt finished playing
      }
 
@@ -1259,9 +1264,7 @@ handle_tpms();
   }
 /////////////////////////////////////////////////////inactivity "interrupt"
   if (imu_inactivity){
-
 get_humidity();
-
 
         imu_inactivity = false;
 
@@ -1489,16 +1492,16 @@ const char Usermodvesc::_dim_preset[] PROGMEM = "Idle lighting preset";
 const char Usermodvesc::_backwards_preset[] PROGMEM = "Reverse travel lighting preset";
 const char Usermodvesc::_vesc_light_on[] PROGMEM = "Default lights on or off";
 const char Usermodvesc::_is_vesc_main[] PROGMEM = "UART mode ON / RGB input mode off";
-const char Usermodvesc::_no_input[] PROGMEM = "aceleromter only input";
+const char Usermodvesc::_no_input[] PROGMEM = "Aceleromter only input";
 const char Usermodvesc::_dim_standing_up_preset[] PROGMEM = "Inactive standing up lighting preset";
 const char Usermodvesc::_free_fall_preset[] PROGMEM = "Freefall lighting preset";
 
 #ifndef SIMPLE_CONFIG
-const char Usermodvesc::_choosen_slow_preset[] PROGMEM = "Slow preset animation";
-const char Usermodvesc::_choosen_fast_preset[] PROGMEM = "Fast preset animation";
-const char Usermodvesc::_motor_duty_slow[] PROGMEM = "Slow motor duty %";
-const char Usermodvesc::_motor_duty_fast[] PROGMEM = "fast motor duty %";
-const char Usermodvesc::_alt_mode_user[] PROGMEM = "toggle alt presets by laying on other side";
+const char Usermodvesc::_choosen_slow_preset[] PROGMEM = "Low duty preset animation";
+const char Usermodvesc::_choosen_fast_preset[] PROGMEM = "High duty preset animation";
+const char Usermodvesc::_motor_duty_slow[] PROGMEM = "Low duty motor duty %";
+const char Usermodvesc::_motor_duty_fast[] PROGMEM = "High duty motor duty %";
+const char Usermodvesc::_alt_mode_user[] PROGMEM = "Toggle alt presets by laying on other side";
 const char Usermodvesc::_alt_forwards_preset[] PROGMEM = "Alt forward travel lighting preset";
 const char Usermodvesc::_alt_backwards_preset[] PROGMEM = "Alt reverse travel lighting preset";
 #endif
