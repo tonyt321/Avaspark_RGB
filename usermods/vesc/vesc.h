@@ -741,10 +741,13 @@ unsigned long a_read_milisec;  // analog read limit
   void set_motor_duty_preset()
   {
 
-   //if (dutycycle < .01 || dutycycle > -.01)
-   //{ return; }
+if (alt_mode) {
+  applyPreset(forwards_preset);
+} else {
+            applyPreset(alt_forwards_preset);
+        }
 
-if (dutycycle * 100 <= motor_duty_slow)
+        if (dutycycle * 100 <= motor_duty_slow)
 {
     applyPreset(choosen_slow_preset);
     return;
@@ -756,11 +759,6 @@ if (dutycycle * 100 >= motor_duty_fast)
     return;
 }
 
-if (alt_mode) {
-  applyPreset(forwards_preset);
-} else {
-            applyPreset(alt_forwards_preset);
-        }
   }
 #endif
 
@@ -993,7 +991,7 @@ forward = true;
 
 
   bmss = batpercentage;
-  smoothedrpm = ((rpm * 0.1 ) + (smoothedrpm * 0.9)); // higly smoothed
+  smoothedrpm = ((rpm * 0.01 ) + (smoothedrpm * 0.99)); // higly smoothed
       }
 
 
