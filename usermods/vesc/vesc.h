@@ -747,7 +747,7 @@ if (alt_mode) {
             applyPreset(alt_forwards_preset);
         }
 
-        if (dutycycle * 100 <= motor_duty_slow)
+if (dutycycle * 100 <= motor_duty_slow)
 {
     applyPreset(choosen_slow_preset);
     return;
