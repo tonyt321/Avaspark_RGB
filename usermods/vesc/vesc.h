@@ -719,7 +719,6 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _motor_duty_fast[];
   #endif
   static const char _forwards_preset[];
-  
 
 
 
@@ -735,35 +734,29 @@ unsigned long a_read_milisec;  // analog read limit
       //subdivided into N sub-ranges. These sub-ranges should be of a high enough fidelity that animations are not
       //visually stuttery as speed increases/decreases (roughly 8-10? make N dynamic/programmable if easy to do).
       //N is proportional to a scalar value, which is used to scale up/down the speed of the lighting animation
-      //when the board speed is within one of the ranges, scale the animation speed accordingly 
+      //when the board speed is within one of the ranges, scale the animation speed accordingly
 
 #ifndef SIMPLE_CONFIG
   void set_motor_duty_preset()
   {
 
-if (alt_mode) {
-  applyPreset(forwards_preset);
-} else {
-            applyPreset(alt_forwards_preset);
-        }
+    if (alt_mode) {
+        applyPreset(forwards_preset);
+    } else {
+        applyPreset(alt_forwards_preset);
+    }
 
-if (dutycycle * 100 <= motor_duty_slow)
-{
-    applyPreset(choosen_slow_preset);
-    return;
-}
-
-if (dutycycle * 100 >= motor_duty_fast)
-{
-    applyPreset(choosen_fast_preset);
-    return;
-}
+    if (dutycycle * 100 <= motor_duty_slow) {
+        applyPreset(choosen_slow_preset);
+    } else if (dutycycle * 100 >= motor_duty_fast) {
+        applyPreset(choosen_fast_preset);
+    }
 
   }
 #endif
 
-const int volt_percent_Table[341][2] = { 
-  {2700, 0}, {2705, 0}, {2710, 0}, {2715, 0}, {2720, 0}, 
+const int volt_percent_Table[341][2] = {
+  {2700, 0}, {2705, 0}, {2710, 0}, {2715, 0}, {2720, 0},
   {2725, 0}, {2730, 0}, {2735, 0}, {2740, 0}, {2745, 0},
   {2750, 0}, {2755, 0}, {2760, 0}, {2765, 0}, {2770, 0},
   {2775, 0}, {2780, 0}, {2785, 0}, {2790, 0}, {2795, 0},
@@ -1020,9 +1013,9 @@ forward = true;
     FRONT_LIGHT_W_ANALOG = analogRead(FRONT_LIGHT_W_PIN);
 
     if (FRONT_LIGHT_W_ANALOG > 2000){
-      forward = false;
+      forward = true;
       }else{
-        forward = true;
+        forward = false;
         }
 
     FRONT_LIGHT_R_ANALOG = analogRead(FRONT_LIGHT_R_PIN);
@@ -1153,6 +1146,14 @@ void get_humidity(){
   {
     humidity = humiditySensor.getTemperature();
     andonn_temp = humiditySensor.getHumidity();
+
+  }
+  if ((millis()) > (8 * 1000)){
+    if (humidity == -100){
+        Serial.println("CORRUPT HEAP: Bad head at 0x3ffbb0f0. Expected 0xabba1234 got 0x3ffb9a34 assert failed: multi_heap_free multi_heap_poisoning.c:253 (head != NULL) Backtrace:0x40083881:0x3ffb25400x4008e7e5:0x3ffb2560 0x40093d55:0x3ffb2580 0x4009399b:0x3ffb26b0 0x40083d41:0x3ffb26d0 0x40093d85:0x3ffb26f0 0x4014e3f5:0x3ffb2710 0x400d2dc6:0x3ffb2730 0x400d31e3:0x3ffb2750 0x400d9b02:0x3ffb2820");
+      delay(10000);
+      ESP.restart();
+    }
   }
 }
 
@@ -1247,6 +1248,9 @@ public:
    adxl.doubleTapINT(0);
    adxl.singleTapINT(0);
 
+   Wire.begin();// for humidity
+   humiditySensor.begin();
+
    get_imu_data();
    get_imu_data();
    get_imu_data();
@@ -1257,9 +1261,8 @@ public:
    ///////////////////////////////////////////////////////  wifi
 
 
-   Wire.begin();// for humidity
-   humiditySensor.begin();
 
+   get_humidity();
    }// end of start up
 
   void loop()
@@ -1270,7 +1273,7 @@ public:
 
           if (free_fall_preset != 250){
       if (person_on_ui){return;}
-    }// end of free fall preset shop mode
+    }// end of free fall preset bypass mode
 
 if ((a_read_milisec + 50) < millis()){    // limit loop to 20 times a sec
 a_read_milisec = millis();
@@ -1283,6 +1286,7 @@ get_front_light();  // handels truning on/off lights and forward/back detection
 
 
      if ((millis()) < (8 * 1000)){
+      get_humidity();
       imu_inactivity_count = 11;
       imu_activity = false;
       return;  // returns loop if boot animation hasnt finished playing
