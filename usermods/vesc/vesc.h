@@ -986,7 +986,7 @@ forward = true;
    app_lights_on = alt_toggle_on;
 
 
-     if (imu_inactivity_count > 10){
+     if (imu_inactivity_count > 20){
       dimmed_lights = true;
       }else{
         dimmed_lights = false;
@@ -996,7 +996,7 @@ forward = true;
     transitionDelay = 0;
     bri = 0;stateUpdated(1);
    }else{
-    transitionDelay = 250;
+    transitionDelay = 500;
     bri = 255;stateUpdated(1);
   }
 }
@@ -1076,7 +1076,7 @@ forward = true;
      if (smoothedrpm > 5){forward = true;}
      if (smoothedrpm < -5){forward = false;}
 
-     if ((smoothedrpm > -1 && smoothedrpm < 1) && (dutycycle * 100 > -2 && dutycycle * 100 < 2) && (imu_inactivity_count > 10)){
+     if ((current < 2) && (smoothedrpm > -1 && smoothedrpm < 1) && (dutycycle * 100 > -2 && dutycycle * 100 < 2) && (imu_inactivity_count > 20)){
       if(active_milis_dim + 7000 < millis()){
       dimmed_lights = true;
       }
@@ -1123,7 +1123,7 @@ void set_preset() {
 
 
     // Depending on direction, light dimming, and alt mode, apply the appropriate preset
-        transitionDelay = 750;
+        transitionDelay = 4000;
         if (dimmed_lights) {
         applyPreset(dim_preset);
         }else{
@@ -1171,7 +1171,7 @@ public:
   /** Define which ports to use as UART */
   UART.setSerialPort(&Serial2);
 
-    transitionDelay = 1000;
+    transitionDelay = 5000;
     bri = 0;stateUpdated(1);
 
     bootPreset = dim_preset;
