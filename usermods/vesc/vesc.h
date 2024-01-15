@@ -619,7 +619,7 @@ float motortemp;
   int8_t choosen_slow_preset = 1;
   int8_t choosen_fast_preset = 1;
 
-  int8_t motor_duty_slow = -10;
+  int8_t motor_duty_slow = -30;
   int8_t motor_duty_fast = 70;
   #endif
   int8_t forwards_preset = 1;
@@ -652,6 +652,7 @@ float motortemp;
   bool app_lights_on_last; // last check value of lights on
 
   unsigned int free_fall_preset = 1; // preset after free fall
+  float direction_threshold = 3; // direction_threshold when using IMU only to detect direction
   unsigned int free_fall_preset_time = 4; // animation length in sec
   unsigned long free_fall_milisec; // for tracking how much time has past for free_fall animation preset
   unsigned long active_milis_dim; // for tracking how much time has past for dim light activation
@@ -686,6 +687,11 @@ unsigned long a_read_milisec;  // analog read limit
 
   int trick; // unused for trick detection module input
 
+
+  int numSamples = 10;
+float accelerationBuffer[10]; // Buffer to store acceleration values
+int currentIndex = 0;
+
 ///////////////////////////////////////////////////////////////////////////////////
   unsigned long last_active_millis; // last time lights were bright for count down effect
 
@@ -705,6 +711,7 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _no_input[];
   static const char _is_vesc_main[];
   static const char _free_fall_preset[];
+  static const char _direction_threshold[];
   static const char _BatteryCells[];
   static const char _alt_toggle[];
 
@@ -979,14 +986,40 @@ void get_front_light() {
     }
 }
 
+
+
+
+
+
+
 void get_front_light_accel(){
 
+  if (direction_threshold != 0){
+
+  accelerationBuffer[currentIndex] = filteredx;
+  currentIndex = (currentIndex + 1) % numSamples;
+  float sum = 0;
+  for (int i = 0; i < numSamples; i++) {
+    sum += accelerationBuffer[i];
+  }
+  float accelx_avrg = sum / numSamples;
+
+
+// direction change direction_threshold
+    if (accelx_avrg > direction_threshold) {
+        forward = true; // Set forward to true for forwards motion
+    } else if (accelx_avrg < -direction_threshold) {
+        forward = false; // Set forward to false for backwards motion
+    }
+
+}else{
 forward = true;
+}
 
    app_lights_on = alt_toggle_on;
 
 
-     if (imu_inactivity_count > 20){
+     if (imu_inactivity_count > 50){
       dimmed_lights = true;
       }else{
         dimmed_lights = false;
@@ -1073,11 +1106,11 @@ forward = true;
     // current usage for if the board is engadged or not
 
 
-     if (smoothedrpm > 5){forward = true;}
-     if (smoothedrpm < -5){forward = false;}
+     if (smoothedrpm > 10){forward = true;}
+     if (smoothedrpm < -10){forward = false;}
 
      if ((current < 2) && (smoothedrpm > -1 && smoothedrpm < 1) && (dutycycle * 100 > -2 && dutycycle * 100 < 2) && (imu_inactivity_count > 20)){
-      if(active_milis_dim + 7000 < millis()){
+      if(active_milis_dim + 10000 < millis()){
       dimmed_lights = true;
       }
       }else{
@@ -1088,8 +1121,6 @@ forward = true;
 
 
    app_lights_on = alt_toggle_on;
-
-
 
 
 
@@ -1484,6 +1515,7 @@ get_humidity();
     top[FPSTR(_no_input)] = no_input;
 
     top[FPSTR(_BatteryCells)] = BatteryCells;
+    top[FPSTR(_direction_threshold)] = direction_threshold;
 
 
     DEBUG_PRINTLN(F("AvaSpark-RGB config saved."));
@@ -1522,6 +1554,7 @@ get_humidity();
     alt_toggle            = (top[FPSTR(_alt_toggle)] | alt_toggle);       //bool
     free_fall_preset   = top[FPSTR(_free_fall_preset)] | free_fall_preset;     //int input
     BatteryCells            = (top[FPSTR(_BatteryCells)] | BatteryCells);       //bool
+    direction_threshold            = (top[FPSTR(_direction_threshold)] | direction_threshold);       //bool
 
     DEBUG_PRINT(FPSTR(_name));
     DEBUG_PRINTLN(F(" config (re)loaded."));
@@ -1541,6 +1574,7 @@ const char Usermodvesc::_is_vesc_main[] PROGMEM = "UART mode ON / RGB input mode
 const char Usermodvesc::_no_input[] PROGMEM = "Aceleromter only input";
 const char Usermodvesc::_dim_standing_up_preset[] PROGMEM = "Inactive standing up lighting preset";
 const char Usermodvesc::_free_fall_preset[] PROGMEM = "Freefall lighting preset";
+const char Usermodvesc::_direction_threshold[] PROGMEM = "Experimental Direction threshold for Accel only";
 
 #ifndef SIMPLE_CONFIG
 const char Usermodvesc::_choosen_slow_preset[] PROGMEM = "Low duty preset animation";
