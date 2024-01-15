@@ -1102,7 +1102,7 @@ forward = true;
       }
 
 
-    // rpm for direction 
+    // rpm for direction
     // current usage for if the board is engadged or not
 
 
@@ -1128,7 +1128,7 @@ forward = true;
    transitionDelay = 0;
     bri = 0;stateUpdated(1);
    }else{
-    transitionDelay = 250;
+    transitionDelay = 200;
     bri = 255;stateUpdated(1);
   }
 
@@ -1154,7 +1154,7 @@ void set_preset() {
 
 
     // Depending on direction, light dimming, and alt mode, apply the appropriate preset
-        transitionDelay = 1500;
+        transitionDelay = 500;
         if (dimmed_lights) {
         applyPreset(dim_preset);
         }else{
