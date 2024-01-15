@@ -24,7 +24,7 @@
   #define USERMOD_ANDON_MOD
   #define DEFAULT_LED_COUNT 13 //11 for GT 13 for pint
   #define OW_TYPE "Pint"
-  #define WLED_VERSION "Pint 2.2.3"  //shows up in info on UI
+  #define WLED_VERSION "Pint 2.2.4"  //shows up in info on UI
   #define FRONT_LIGHT_R_PIN 39   //front light red
   #define FRONT_LIGHT_W_PIN 36   //front light white
 #endif
@@ -34,7 +34,7 @@
   #define USERMOD_ANDON_MOD
   #define DEFAULT_LED_COUNT 11 //11 for GT 13 for pint
   #define OW_TYPE "GT"
-  #define WLED_VERSION "GT 2.2.3"  //shows up in info on UI
+  #define WLED_VERSION "GT 2.2.4"  //shows up in info on UI
   #define FRONT_LIGHT_R_PIN 39   //front light red
   #define FRONT_LIGHT_W_PIN 36   //front light white
 #endif
@@ -44,7 +44,7 @@
   #define USERMOD_VESC
   #define DEFAULT_LED_COUNT 13 //11 for GT 13 for pint
   #define OW_TYPE "Vesc"
-  #define WLED_VERSION "Vesc 2.2.3"  //shows up in info on UI
+  #define WLED_VERSION "Vesc 2.2.4"  //shows up in info on UI
   #define VESC_RX 32   //vesc rx
   #define VESC_TX 33   //vesc tx
   #define FRONT_LIGHT_R_PIN 39   //front light red

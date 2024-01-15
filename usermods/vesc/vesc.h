@@ -1154,7 +1154,7 @@ void set_preset() {
 
 
     // Depending on direction, light dimming, and alt mode, apply the appropriate preset
-        transitionDelay = 4000;
+        transitionDelay = 1500;
         if (dimmed_lights) {
         applyPreset(dim_preset);
         }else{

@@ -663,7 +663,7 @@ class WS2812FX {  // 96 bytes
     WS2812FX() :
       paletteFade(0),
       paletteBlend(0),
-      milliampsPerLed(55),
+      milliampsPerLed(40),
       cctBlending(0),
       ablMilliampsMax(ABL_MILLIAMPS_DEFAULT),
       currentMilliamps(0),
