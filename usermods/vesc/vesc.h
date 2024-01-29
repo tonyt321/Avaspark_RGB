@@ -32,7 +32,7 @@ float percent_tpmsp;
 
 int filteredx , filteredy , filteredz;
 bool forward = true;
-bool dimmed_lights = true;
+bool is_idle = true;
 float battery_voltage;
 int humidity = -100;
 int andonn_temp = -100;
@@ -108,13 +108,13 @@ int rcm = 0; //regen mah
  uint16_t mode_stock_front(void)
  {
  if (forward){
-  if(dimmed_lights){
+  if(is_idle){
   for (int i = 0 ; i < SEGLEN; i++) {SEGMENT.setPixelColor(i, 100, 100, 100, 100);}
   }else{
       for (int i = 0 ; i < SEGLEN; i++) {SEGMENT.setPixelColor(i, 255, 255, 255, 255);}
   }
   }else{
-  if(dimmed_lights){
+  if(is_idle){
     for (int i = 0 ; i < SEGLEN; i++) {SEGMENT.setPixelColor(i, 100, 0, 0, 0);}
   }else{
   for (int i = 0 ; i < SEGLEN; i++) {SEGMENT.setPixelColor(i, 255, 0, 0, 0);}
@@ -128,13 +128,13 @@ int rcm = 0; //regen mah
  uint16_t mode_stock_back(void)
  {
  if (forward){
-  if(dimmed_lights){
+  if(is_idle){
   for (int i = 0 ; i < SEGLEN; i++) {SEGMENT.setPixelColor(i, 100, 0, 0, 0);}
   }else{
       for (int i = 0 ; i < SEGLEN; i++) {SEGMENT.setPixelColor(i, 255, 0, 0, 0);}
   }
   }else{
-  if(dimmed_lights){
+  if(is_idle){
     for (int i = 0 ; i < SEGLEN; i++) {SEGMENT.setPixelColor(i, 100, 100, 100, 100);}
   }else{
   for (int i = 0 ; i < SEGLEN; i++) {SEGMENT.setPixelColor(i, 255, 255, 255, 255);}
@@ -607,7 +607,6 @@ float voltage;
 float current;
 int power;
 float amphour;
-float tach;
 float distance;
 float velocity;
 float watthour;
@@ -629,12 +628,12 @@ float motortemp;
   int dim_standing_up_preset = 0;
 
   bool vesc_light_on = true;
-  bool no_input = false;
+  bool accel_input  = false;
   bool is_vesc_main = true;
 
   bool alt_mode_user = false;
   bool alt_toggle = false;
-  bool alt_toggle_on = true; // editable parady for vesc_light_on
+  bool should_lights_be_on = true; // editable parady for vesc_light_on
   bool alt_mode = true;
   int8_t alt_backwards_preset = 1;  //preset played as a boot animation
   int8_t alt_forwards_preset = 1;  //preset played as a boot animation
@@ -646,10 +645,7 @@ float motortemp;
   bool FRONT_LIGHT_W = false;
   int FRONT_LIGHT_W_ANALOG;
 
-  int client_numb;
-  bool app_lights_on;  // are the lights on in the app?
 
-  bool app_lights_on_last; // last check value of lights on
 
   unsigned int free_fall_preset = 1; // preset after free fall
   unsigned int free_fall_preset_time = 4; // animation length in sec
@@ -702,7 +698,7 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _dim_preset[];
   static const char _dim_standing_up_preset[];
   static const char _vesc_light_on[];
-  static const char _no_input[];
+  static const char _accel_input [];
   static const char _is_vesc_main[];
   static const char _free_fall_preset[];
   static const char _BatteryCells[];
@@ -854,8 +850,6 @@ int volt_to_percent(int volts) {
 
       percent_tpmsp = map(display_tpmsp, pressure_range_low, pressure_range_high, 0, 100);
 
-
-
   }
 
 
@@ -868,7 +862,7 @@ int volt_to_percent(int volts) {
     //how is the start/stop of a trail or segment measured?
     //all of the above calculation results in a color assignment to the trail run, like how trails are rated green, blue, black, etc
     void trailRate() {
-      if (dimmed_lights == true){
+      if (is_idle == true){
         inactive_millis = inactive_millis + (millis() - inactive_millis_last);
       }
       inactive_millis_last = millis();
@@ -879,8 +873,8 @@ int volt_to_percent(int volts) {
 
 
    void last_active(){
-    if(app_lights_on){
-     if ((dimmed_lights == false)){
+    if(should_lights_be_on){
+     if ((is_idle == false)){
      last_active_millis = millis();
      }else{
       int time_left = ((last_active_millis + (60000 * 23)) - millis());
@@ -914,7 +908,7 @@ int volt_to_percent(int volts) {
 
     // Free Fall Detection
     if(adxl.triggered(interrupts, ADXL345_FREE_FALL)){
-      if (free_fall_preset_time != 0 && !dimmed_lights){
+      if (free_fall_preset_time != 0 && !is_idle){
     imu_free_fall = true;
     free_fall_milisec = millis();
     }
@@ -962,43 +956,35 @@ if(alt_mode_user){
 }
 
 if(alt_toggle){
-      if ((((last_orientation == 0) || (last_orientation == 1)) && (orientation == 2)) || ((!alt_mode_user) && (orientation == 3))){
-   alt_toggle_on = !alt_toggle_on;
+      if ((((last_orientation == 0) || (last_orientation == 1)) && (orientation == 2)) || ((!alt_mode_user) && (((last_orientation == 0) || (last_orientation == 1)) && (orientation == 3)))){
    }
 }
 last_orientation = orientation;
 } // end of get IMU data
 
-void get_front_light() {
-    if (no_input) {
-        get_front_light_accel(); // use accel data to get dim light
+void get_data() {
+    if (accel_input ) {
+        accel_preset_info(); // use accel data to get dim light
     } else if (is_vesc_main) {
-        get_front_light_vesc(); // use duty cycle and power consumption to get dim light
+        get_vesc_data(); // use duty cycle and power consumption to get dim light
     } else {
         get_front_light_stock(); // use analog input to get dim light
     }
 }
 
-void get_front_light_accel(){
+void accel_preset_info(){
 
 forward = true;
 
-   app_lights_on = alt_toggle_on;
 
 
      if (imu_inactivity_count > 20){
-      dimmed_lights = true;
+      is_idle = true;
       }else{
-        dimmed_lights = false;
+        is_idle = false;
         }
 
-   if (alt_toggle_on == false){ //turns lights off if in app lights are off
-    transitionDelay = 0;
-    bri = 0;stateUpdated(1);
-   }else{
-    transitionDelay = 500;
-    bri = 255;stateUpdated(1);
-  }
+
 }
 
 
@@ -1020,32 +1006,22 @@ forward = true;
 
     FRONT_LIGHT_R_ANALOG = analogRead(FRONT_LIGHT_R_PIN);
     if (FRONT_LIGHT_R_ANALOG > 2000){
-      FRONT_LIGHT_R = false; app_lights_on = false; dimmed_lights = false;
+      FRONT_LIGHT_R = false; should_lights_be_on = false; is_idle = false;
       }else{
-        FRONT_LIGHT_R = true; app_lights_on = true;
+        FRONT_LIGHT_R = true; should_lights_be_on = true;
         }
 
 
      if ((FRONT_LIGHT_R_ANALOG > 1000) && (FRONT_LIGHT_R_ANALOG < 2000)){
-    dimmed_lights = true;
+    is_idle = true;
      } else {
-      dimmed_lights = false;
+      is_idle = false;
      }
 
-
-     if(app_lights_on_last != app_lights_on){
-      if (app_lights_on == false){ //turns lights off if in app lights are off
-       bri = 0;stateUpdated(1);
-      }else{
-       bri = 255;stateUpdated(1);
-      }
-     }
-
-    app_lights_on_last = app_lights_on;
   }
 
 
-  void get_front_light_vesc()
+  void get_vesc_data()
    {
 
 ////////// Read values //////////
@@ -1060,12 +1036,12 @@ forward = true;
   watthour = amphour*voltage;                                       //Likewise
   rpm = UART.data.rpm / (Poles / 2);                                // UART.data.rpm returns cRPM.  Divide by no of pole pairs in the motor for actual.
   distance = distance + rpm*3.142*(1.0/1609.0)*WheelDia*GearReduction;         // Motor RPM x Pi x (1 / meters in a mile or km) x Wheel diameter x (motor pulley / wheelpulley)
-  velocity = rpm*3.142*(60.0/1609.0)*WheelDia*GearReduction;        // Motor RPM x Pi x (seconds in a minute / meters in a mile) x Wheel diameter x (motor pulley / wheelpulley)
+  //velocity = rpm*3.142*(60.0/1609.0)*WheelDia*GearReduction;        // Motor RPM x Pi x (seconds in a minute / meters in a mile) x Wheel diameter x (motor pulley / wheelpulley)
   batpercentage = volt_to_percent(voltage);
 
 
   bmss = batpercentage;
-  smoothedrpm = ((rpm * 0.05 ) + (smoothedrpm * 0.95)); // higly smoothed
+  smoothedrpm = ((rpm * 0.1 ) + (smoothedrpm * 0.9)); // higly smoothed
       }
 
 
@@ -1073,33 +1049,26 @@ forward = true;
     // current usage for if the board is engadged or not
 
 
+
+
+     if(is_idle == true){
+     if (rpm > 2){forward = true;}
+     if (rpm < -2){forward = false;}
+     }else{
      if (smoothedrpm > 5){forward = true;}
      if (smoothedrpm < -5){forward = false;}
+     }
 
-     if ((current < 2) && (smoothedrpm > -1 && smoothedrpm < 1) && (dutycycle * 100 > -2 && dutycycle * 100 < 2) && (imu_inactivity_count > 20)){
+     if ((current < 2) && (smoothedrpm > -1 && smoothedrpm < 1) && (dutycycle * 100 > -2 && dutycycle * 100 < 2) && (imu_inactivity_count > 2)){
       if(active_milis_dim + 7000 < millis()){
-      dimmed_lights = true;
+      is_idle = true;
       }
       }else{
-        dimmed_lights = false;
+        is_idle = false;
         active_milis_dim = millis();
         }
 
 
-
-   app_lights_on = alt_toggle_on;
-
-
-
-
-
-   if (alt_toggle_on == false){ //turns lights off if in app lights are off
-   transitionDelay = 0;
-    bri = 0;stateUpdated(1);
-   }else{
-    transitionDelay = 250;
-    bri = 255;stateUpdated(1);
-  }
 
   }
 
@@ -1108,23 +1077,23 @@ forward = true;
 
 void set_preset() {
 
-    // Handle special orientations
-    if (orientation != 0) {
+
+
         if (orientation == 4 || orientation == 5) {
+          bri = 255;stateUpdated(1);
             applyPreset(dim_standing_up_preset);
+        }else{
+               if (should_lights_be_on == false){ //turns lights off if in app lights are off
+        bri = 0;stateUpdated(1);
+         }else{
+        bri = 255;stateUpdated(1);
         }
-        return;
-    }
 
 
-       if (alt_toggle_on == false){ //turns lights off if in app lights are off
-    return;
-   }
 
 
     // Depending on direction, light dimming, and alt mode, apply the appropriate preset
-        transitionDelay = 4000;
-        if (dimmed_lights) {
+        if (is_idle) {
         applyPreset(dim_preset);
         }else{
 
@@ -1135,6 +1104,7 @@ void set_preset() {
         applyPreset(backwards_preset);
         } else {
             applyPreset(alt_backwards_preset);
+        }
         }
         }
         }
@@ -1151,8 +1121,8 @@ void get_humidity(){
   if ((millis()) > (8 * 1000)){
     if (humidity == -100){
         Serial.println("CORRUPT HEAP: Bad head at 0x3ffbb0f0. Expected 0xabba1234 got 0x3ffb9a34 assert failed: multi_heap_free multi_heap_poisoning.c:253 (head != NULL) Backtrace:0x40083881:0x3ffb25400x4008e7e5:0x3ffb2560 0x40093d55:0x3ffb2580 0x4009399b:0x3ffb26b0 0x40083d41:0x3ffb26d0 0x40093d85:0x3ffb26f0 0x4014e3f5:0x3ffb2710 0x400d2dc6:0x3ffb2730 0x400d31e3:0x3ffb2750 0x400d9b02:0x3ffb2820");
-      delay(10000);
-      ESP.restart();
+     // delay(10000);
+     // ESP.restart();
     }
   }
 }
@@ -1164,7 +1134,7 @@ public:
   {
 
 
-        alt_toggle_on = vesc_light_on;
+        should_lights_be_on = vesc_light_on;
 
   //** Default VESC brate is 115200, you can change it to any other value. */
   Serial2.begin(115200, SERIAL_8N1, VESC_RX, VESC_TX);
@@ -1271,18 +1241,13 @@ public:
     if (strip.isUpdating()){return;}
 
 
-          if (free_fall_preset != 250){
-      if (person_on_ui){return;}
-    }// end of free fall preset bypass mode
 
 if ((a_read_milisec + 50) < millis()){    // limit loop to 20 times a sec
 a_read_milisec = millis();
-
-get_front_light();  // handels truning on/off lights and forward/back detection
-
 }else{
   return; // skip rest of loop
 }
+
 
 
      if ((millis()) < (8 * 1000)){
@@ -1295,11 +1260,15 @@ get_front_light();  // handels truning on/off lights and forward/back detection
 get_imu_data();
 last_active();//updates when board was last active for preset animation
 
-    if (!imu_free_fall){
-      set_preset();
-    }
 
-handle_tpms();
+   get_data();
+
+    if ((!person_on_ui || (free_fall_preset == 250)) || (!person_on_ui && (free_fall_preset == 250))){
+      if(!imu_free_fall){
+      set_preset();
+    }}
+
+//handle_tpms();
 
 
 /////////////////////////////////////// activity (used for trail detection) "interrupt"
@@ -1377,9 +1346,9 @@ get_humidity();
     lux2.add(tpmsb);
 
             JsonArray lux6 = hidden.createNestedArray(F("lights")); //left side thing
-    lux6.add(app_lights_on);
+    lux6.add(should_lights_be_on);
     lux6.add(forward);
-    lux6.add(dimmed_lights);
+    lux6.add(is_idle);
     lux6.add(alt_mode);
     lux6.add(alt_mode_user);
 
@@ -1414,7 +1383,7 @@ get_humidity();
                         JsonArray vesc0 = user.createNestedArray("Current");  //left side thing
       vesc0.add(current);                               //right side variable
 
-                              JsonArray vesc1 = user.createNestedArray("Distance");  //left side thing
+                              JsonArray vesc1 = user.createNestedArray("Distance Miles");  //left side thing
       vesc1.add(distance);                               //right side variable
 
                               JsonArray vesc2 = user.createNestedArray("Mosfet Temp");  //left side thing
@@ -1438,11 +1407,11 @@ get_humidity();
                                     JsonArray battery591 = user.createNestedArray("AvaSpark-RGB Temp C");  //left side thing
       battery591.add(andonn_temp);                               //right side variable
 
-          JsonArray battery9 battery9 = user.createNestedArray("RPM");  //left side thing
-      battery9.add(rpm);
+     //     JsonArray battery9 = user.createNestedArray("RPM");  //left side thing
+     // battery9.add(rpm);
 
-                        JsonArray battery26 = user.createNestedArray("Tire sensor battery %");  //left side thing
-      battery26.add(tpmsb);                               //right side variable
+    //                    JsonArray battery26 = user.createNestedArray("Tire sensor battery %");  //left side thing
+     // battery26.add(tpmsb);                               //right side variable
   }
 
   uint16_t getId()
@@ -1477,7 +1446,7 @@ get_humidity();
     top[FPSTR(_free_fall_preset)] = free_fall_preset;  //int input
 
     top[FPSTR(_is_vesc_main)] = is_vesc_main;
-    top[FPSTR(_no_input)] = no_input;
+    top[FPSTR(_accel_input )] = accel_input ;
 
     top[FPSTR(_BatteryCells)] = BatteryCells;
 
@@ -1499,7 +1468,7 @@ get_humidity();
     }
     #ifndef SIMPLE_CONFIG
     is_vesc_main            = (top[FPSTR(_is_vesc_main)] | is_vesc_main);       //bool
-    no_input            = (top[FPSTR(_no_input)] | no_input);       //bool
+    accel_input             = (top[FPSTR(_accel_input )] | accel_input );       //bool
     choosen_slow_preset   = top[FPSTR(_choosen_slow_preset)] | choosen_slow_preset;  //int input
     choosen_fast_preset   = top[FPSTR(_choosen_fast_preset)] | choosen_fast_preset;    //int input
     motor_duty_slow   = top[FPSTR(_motor_duty_slow)] | motor_duty_slow;          //int input
@@ -1534,7 +1503,7 @@ const char Usermodvesc::_dim_preset[] PROGMEM = "Idle lighting preset";
 const char Usermodvesc::_backwards_preset[] PROGMEM = "Reverse travel lighting preset";
 const char Usermodvesc::_vesc_light_on[] PROGMEM = "Default lights on or off";
 const char Usermodvesc::_is_vesc_main[] PROGMEM = "UART mode ON / RGB input mode off";
-const char Usermodvesc::_no_input[] PROGMEM = "Aceleromter only input";
+const char Usermodvesc::_accel_input [] PROGMEM = "Aceleromter only input";
 const char Usermodvesc::_dim_standing_up_preset[] PROGMEM = "Inactive standing up lighting preset";
 const char Usermodvesc::_free_fall_preset[] PROGMEM = "Freefall lighting preset";
 

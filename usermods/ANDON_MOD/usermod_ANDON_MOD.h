@@ -21,7 +21,7 @@ float percent_tpmsp;
 int display_trail_ruffness;
 int filteredx , filteredy , filteredz;
 bool forward = true;
-bool dimmed_lights = false;
+bool is_idle = false;
 float battery_voltage;
 int humidity = -100;
 int andonn_temp = -100;
@@ -90,13 +90,13 @@ int rcm = 0; //regen mah
  uint16_t mode_stock_front(void)
  {
  if (forward){
-  if(dimmed_lights){
+  if(is_idle){
   for (int i = 0 ; i < SEGLEN; i++) {SEGMENT.setPixelColor(i, 100, 100, 100, 100);}
   }else{
       for (int i = 0 ; i < SEGLEN; i++) {SEGMENT.setPixelColor(i, 255, 255, 255, 255);}
   }
   }else{
-  if(dimmed_lights){
+  if(is_idle){
     for (int i = 0 ; i < SEGLEN; i++) {SEGMENT.setPixelColor(i, 100, 0, 0, 0);}
   }else{
   for (int i = 0 ; i < SEGLEN; i++) {SEGMENT.setPixelColor(i, 255, 0, 0, 0);}
@@ -110,13 +110,13 @@ int rcm = 0; //regen mah
  uint16_t mode_stock_back(void)
  {
  if (forward){
-  if(dimmed_lights){
+  if(is_idle){
   for (int i = 0 ; i < SEGLEN; i++) {SEGMENT.setPixelColor(i, 100, 0, 0, 0);}
   }else{
       for (int i = 0 ; i < SEGLEN; i++) {SEGMENT.setPixelColor(i, 255, 0, 0, 0);}
   }
   }else{
-  if(dimmed_lights){
+  if(is_idle){
     for (int i = 0 ; i < SEGLEN; i++) {SEGMENT.setPixelColor(i, 100, 100, 100, 100);}
   }else{
   for (int i = 0 ; i < SEGLEN; i++) {SEGMENT.setPixelColor(i, 255, 255, 255, 255);}
@@ -565,7 +565,7 @@ unsigned long humidity_read_milisec = -10000;  // analog read limit
   bool psi = true;     //psi or bar
 
 
-  //bool dimmed_lights = false; // moved to global
+  //bool is_idle = false; // moved to global
 
   bool imu_activity = true;
   bool imu_inactivity = true;
@@ -793,7 +793,7 @@ unsigned long humidity_read_milisec = -10000;  // analog read limit
     //how is the start/stop of a trail or segment measured?
     //all of the above calculation results in a color assignment to the trail run, like how trails are rated green, blue, black, etc
     void trailRate() {
-      if (dimmed_lights == true){
+      if (is_idle == true){
         inactive_millis = inactive_millis + (millis() - inactive_millis_last);
       }
       inactive_millis_last = millis();
@@ -805,7 +805,7 @@ unsigned long humidity_read_milisec = -10000;  // analog read limit
 
    void last_active(){
     if(app_lights_on){
-     if ((dimmed_lights == false)){
+     if ((is_idle == false)){
      last_active_millis = millis();
      }else{
       int time_left = ((last_active_millis + (60000 * 23)) - millis());
@@ -839,7 +839,7 @@ unsigned long humidity_read_milisec = -10000;  // analog read limit
 
     // Free Fall Detection
     if(adxl.triggered(interrupts, ADXL345_FREE_FALL)){
-      if (free_fall_preset_time != 0 && !dimmed_lights){
+      if (free_fall_preset_time != 0 && !is_idle){
     imu_free_fall = true;
     free_fall_milisec = millis();
     }
@@ -865,7 +865,7 @@ unsigned long humidity_read_milisec = -10000;  // analog read limit
    //4 = front pointing down
    //5 = back pointing down
 
-   if (dimmed_lights){  //only detect a left right or upside down orientaion if the lights are dim
+   if (is_idle){  //only detect a left right or upside down orientaion if the lights are dim
 
    #ifdef GT
      if (filteredz < -10){orientation = 1;}
@@ -909,16 +909,16 @@ unsigned long humidity_read_milisec = -10000;  // analog read limit
 
     FRONT_LIGHT_R_ANALOG = analogRead(FRONT_LIGHT_R_PIN);
     if (FRONT_LIGHT_R_ANALOG > 2000){
-      FRONT_LIGHT_R = false; app_lights_on = false; dimmed_lights = false;
+      FRONT_LIGHT_R = false; app_lights_on = false; is_idle = false;
       }else{
         FRONT_LIGHT_R = true; app_lights_on = true;
         }
 
 
    if ((FRONT_LIGHT_R_ANALOG > 1000) && (FRONT_LIGHT_R_ANALOG < 2000)){
-    dimmed_lights = true;
+    is_idle = true;
    } else {
-    dimmed_lights = false;
+    is_idle = false;
    }
 
         if (app_lights_on_last != app_lights_on){
@@ -981,7 +981,7 @@ void set_preset() { // pick which preset based on direction, speed, dim, alt mod
 
 
     if(forward){
-      if (dimmed_lights == false) {
+      if (is_idle == false) {
         if(alt_mode){
           #ifdef PRO_VERSION
           set_motor_duty_preset();
@@ -995,7 +995,7 @@ void set_preset() { // pick which preset based on direction, speed, dim, alt mod
         applyPreset(dim_forwards_preset);
       }
     } else {
-      if (dimmed_lights == false) {
+      if (is_idle == false) {
         if (alt_mode) {
           applyPreset(backwards_preset);
         } else {
@@ -1299,7 +1299,7 @@ handle_tpms();
             JsonArray lux6 = hidden.createNestedArray(F("lights")); //left side thing
     lux6.add(app_lights_on);
     lux6.add(forward);
-    lux6.add(dimmed_lights);
+    lux6.add(is_idle);
     lux6.add(blink_app_lights);
     lux6.add(alt_mode);
     lux6.add(alt_mode_user);
