@@ -1059,13 +1059,13 @@ forward = true;
 //  amphour = (UART.data.ampHours);                                   //This doesn't seem to do anything!
   watthour = amphour*voltage;                                       //Likewise
   rpm = UART.data.rpm / (Poles / 2);                                // UART.data.rpm returns cRPM.  Divide by no of pole pairs in the motor for actual.
-  distance = rpm*3.142*(1.0/1609.0)*WheelDia*GearReduction;         // Motor RPM x Pi x (1 / meters in a mile or km) x Wheel diameter x (motor pulley / wheelpulley)
+  distance = distance + rpm*3.142*(1.0/1609.0)*WheelDia*GearReduction;         // Motor RPM x Pi x (1 / meters in a mile or km) x Wheel diameter x (motor pulley / wheelpulley)
   velocity = rpm*3.142*(60.0/1609.0)*WheelDia*GearReduction;        // Motor RPM x Pi x (seconds in a minute / meters in a mile) x Wheel diameter x (motor pulley / wheelpulley)
   batpercentage = volt_to_percent(voltage);
 
 
   bmss = batpercentage;
-  smoothedrpm = ((rpm * 0.01 ) + (smoothedrpm * 0.99)); // higly smoothed
+  smoothedrpm = ((rpm * 0.05 ) + (smoothedrpm * 0.95)); // higly smoothed
       }
 
 
@@ -1406,10 +1406,10 @@ get_humidity();
       user = root.createNestedObject(F("u"));
 
                         JsonArray vesc5 = user.createNestedArray("RPM");  //left side thing
-      vesc5.add(smoothedrpm);  
+      vesc5.add(smoothedrpm);
 
                               JsonArray vesc6 = user.createNestedArray("Duty cycle");  //left side thing
-      vesc6.add(dutycycle);  
+      vesc6.add(dutycycle);
                                    //right side variable
                         JsonArray vesc0 = user.createNestedArray("Current");  //left side thing
       vesc0.add(current);                               //right side variable
@@ -1426,9 +1426,9 @@ get_humidity();
                               JsonArray vesc4 = user.createNestedArray("Batt Percentage");  //left side thing
       vesc4.add(batpercentage);                               //right side variable
 
-                  JsonArray battery6 = user.createNestedArray("Bumpyness");  //left side thing
-      battery6.add(display_trail_ruffness);                               //right side variable
-      
+                  JsonArray battery6 = user.createNestedArray("voltage");  //left side thing
+      battery6.add(voltage);                               //right side variable
+
                         JsonArray battery55 = user.createNestedArray("orientation");  //left side thing
       battery55.add(orientation);                               //right side variable
 
@@ -1438,12 +1438,8 @@ get_humidity();
                                     JsonArray battery591 = user.createNestedArray("AvaSpark-RGB Temp C");  //left side thing
       battery591.add(andonn_temp);                               //right side variable
 
-          JsonArray battery9;
-           if (psi) {battery9 = user.createNestedArray("Tire PSI");}else{battery9 = user.createNestedArray("Tire Bar");}  //left side thing
-      battery9.add(display_tpmsp);
-          JsonArray battery16;
-         if (fahrenheit) {battery16 = user.createNestedArray("Tire Temp F");}else{battery16 = user.createNestedArray("Tire Temp C");}  //left side thing
-         battery16.add(display_tpmst);
+          JsonArray battery9 battery9 = user.createNestedArray("RPM");  //left side thing
+      battery9.add(rpm);
 
                         JsonArray battery26 = user.createNestedArray("Tire sensor battery %");  //left side thing
       battery26.add(tpmsb);                               //right side variable
