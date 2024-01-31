@@ -328,8 +328,8 @@
 #define FX_MODE_HUMIDITY               201
 #define FX_MODE_BATPERCENT             202
 #define FX_MODE_MOSFETTEMP             203
-
 #define MODE_COUNT                     204
+#define FX_MODE_FOOTPAD                205
 
 typedef enum mapping1D2D {
   M12_Pixels = 0,

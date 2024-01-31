@@ -19,6 +19,8 @@
 
 AHT20 humiditySensor;
 
+int footpad_press = -1;
+
 int BatteryCells = 15;
 //int display_battery;
 //int display_duty_cycle;
@@ -585,7 +587,64 @@ int rcm = 0; //regen mah
 
 
 
+
+
+
+ /*
+ * footpad bar thing for activation like on stock pint/gt footpad
+ * 
+ */
+ uint16_t mode_footpad(void) {
+
+     //0 = none
+     //1 = adc2
+     //2 = adc1
+     //3 = both
+uint8_t percent = 0;
+
+if (footpad_press == 0){percent = 0;}
+if (footpad_press == 1){percent = 50;}
+if (footpad_press == 2){percent = 150;}
+if (footpad_press == 3){percent = 100;}
+
+  percent = constrain(percent, 0, 200);
+  uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
+                                         : SEGLEN * (200 - percent) / 100.0;
+  uint8_t size = (1 + (SEGLEN >> 11));
+
+  if (percent <= 100) {
+    for (int i = 0; i < SEGLEN; i++) {
+    	if (i < SEGENV.aux1) {
+        if (SEGMENT.check1)
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(map(percent,0,100,0,255), false, false, 0));
+        else
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+    	}
+    	else {
+        SEGMENT.setPixelColor(i, SEGCOLOR(1));
+    	}
+    }
+  } else {
+    for (int i = 0; i < SEGLEN; i++) {
+    	if (i < (SEGLEN - SEGENV.aux1)) {
+        SEGMENT.setPixelColor(i, SEGCOLOR(1));
+    	}
+    	else {
+        if (SEGMENT.check1)
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(map(percent,100,200,255,0), false, false, 0));
+        else
+          SEGMENT.setPixelColor(i, SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
+    	}
+    }
+  }
+SEGENV.aux1 = active_leds;
+ 	return FRAMETIME;
+ }
+ static const char _data_fx_mode_footpad[] = "FootPad activation@,% of fill,,,,One color;!,!;!";
+
+
 /** Initiate VescUart class */
+
 VescUart UART;
 
 
@@ -614,6 +673,11 @@ float mosfettemp;
 float motortemp;
 
 
+
+int fpkg_switchState = -1;
+float fpkg_adc1 = -1;
+float fpkg_adc2 = -1;
+
   #ifndef SIMPLE_CONFIG
   int8_t choosen_slow_preset = 1;
   int8_t choosen_fast_preset = 1;
@@ -631,6 +695,7 @@ float motortemp;
   bool accel_input  = false;
   bool is_vesc_main = true;
 
+  bool float_pkg = true;
   bool alt_mode_user = false;
   bool alt_toggle = false;
   bool should_lights_be_on; // editable parady for vesc_light_on
@@ -706,6 +771,7 @@ unsigned long a_read_milisec;  // analog read limit
 
 #ifndef SIMPLE_CONFIG
   static const char _alt_mode_user[];
+  static const char _float_pkg[];
   static const char _alt_backwards_preset[];
   static const char _alt_forwards_preset[];
   //static const char _trail_ruffness_max[];
@@ -964,16 +1030,22 @@ last_orientation = orientation;
 } // end of get IMU data
 
 void get_data() {
-    if (accel_input == true) {
+
+
+
+      if (accel_input) {
         accel_preset_info(); // use accel data to get dim light
+        return;
     }
 
-    if (is_vesc_main == true) {
-        get_vesc_data(); // use duty cycle and power consumption to get dim light
+        if (!is_vesc_main) {
+        get_front_light_stock(); // use duty cycle and power consumption to get dim light
+        return;
     }
 
-    if (is_vesc_main == false) {
-       get_front_light_stock(); // use analog input to get dim light
+      if (is_vesc_main) {
+       get_vesc_data(); // use duty cycle and power consumption to get dim light
+       return;
     }
 }
 
@@ -983,7 +1055,7 @@ forward = true;
 
 
 
-     if (imu_inactivity_count > 10){
+     if (imu_inactivity_count > 3){
       is_idle = true;
       }else{
         is_idle = false;
@@ -999,7 +1071,6 @@ forward = true;
     //0      on
     //1659   dim (when you get off the board and it dims the lights)
     //4095   off
-
 
     FRONT_LIGHT_W_ANALOG = analogRead(FRONT_LIGHT_W_PIN);
 
@@ -1064,6 +1135,44 @@ forward = true;
      if (smoothedrpm < -3){forward = false;}
      }
 
+
+
+
+if (UART.getFloatValues()){
+    fpkg_switchState = (UART.floatData.switchState);
+    fpkg_adc1 = (UART.floatData.adc1);
+    fpkg_adc2 = (UART.floatData.adc2);
+     
+     //0 = none
+     //1 = adc2
+     //2 = adc1
+     //3 = both
+
+  if(fpkg_switchState == 0){footpad_press = 0;}
+    if(fpkg_switchState == 1){
+    if(fpkg_adc1 > 1){footpad_press = 1;}
+    if(fpkg_adc2 > 1){footpad_press = 2;}
+    }
+  if(fpkg_switchState == 2){footpad_press = 3;}
+
+
+
+
+
+
+        if(fpkg_switchState == 0){
+      if(active_milis_dim + 2000 < millis()){
+      is_idle = true;
+      }
+      }else{
+        is_idle = false;
+        active_milis_dim = millis();
+        }
+
+        //add float package stuff here
+
+      }else{
+
      if ((current < 2) && (smoothedrpm > -1 && smoothedrpm < 1) && ((dutycycle * 100 > -2) && (dutycycle * 100) < 2) && (imu_inactivity_count > 2)){
       if(active_milis_dim + 7000 < millis()){
       is_idle = true;
@@ -1072,9 +1181,7 @@ forward = true;
         is_idle = false;
         active_milis_dim = millis();
         }
-
-
-
+      }
   }
 
 
@@ -1105,12 +1212,6 @@ void set_preset() {
         }
         }
         }
-
-       if (should_lights_be_on == false){
-        bri = 0;stateUpdated(1);
-         }else{
-        bri = 255;stateUpdated(1);
-         }
 }
 
 
@@ -1157,6 +1258,7 @@ public:
     strip.addEffect(FX_MODE_WHEELTEMP, &mode_wheel_temp, _data_fx_mode_wheel_temp);
     strip.addEffect(FX_MODE_MOSFETTEMP, &mode_mosfet_temp, _data_fx_mode_mosfet_temp);
     strip.addEffect(FX_MODE_TIREPRESSURE, &mode_tire_pressure, _data_fx_mode_tire_pressure);
+    strip.addEffect(FX_MODE_FOOTPAD, &mode_footpad, _data_fx_mode_footpad);
 
     strip.addEffect(FX_MODE_STOCK_FRONT, &mode_stock_front, _data_fx_mode_stock_front);
     strip.addEffect(FX_MODE_STOCK_BACK, &mode_stock_back, _data_fx_mode_stock_back);
@@ -1253,12 +1355,7 @@ a_read_milisec = millis();
 
 
      if ((millis()) < (5 * 1000)){
-
-       if (should_lights_be_on == false){
         bri = 0;stateUpdated(1);
-         }else{
-        bri = 255;stateUpdated(1);
-        }
       get_humidity();
       imu_inactivity_count = 11;
       imu_activity = false;
@@ -1278,6 +1375,11 @@ get_data();
       set_preset();
     }}
 
+       if (should_lights_be_on == false){
+        bri = 0;stateUpdated(1);
+         }else{
+        bri = 255;stateUpdated(1);
+         }
 
 //handle_tpms();
 
@@ -1366,8 +1468,8 @@ get_humidity();
     lux7.add(filteredy);
     lux7.add(filteredz);
 
-        JsonArray lux4 = hidden.createNestedArray(F("trail")); //left side thing
-    lux4.add(display_trail_ruffness);                       //right side variable
+        JsonArray lux4 = hidden.createNestedArray(F("fpkg")); //left side thing
+    lux4.add(float_pkg);                       //right side variable
 
             JsonArray lux1 = hidden.createNestedArray(F("duty")); //left side thing
     lux1.add(dutycycle);                       //right side variable
@@ -1415,8 +1517,14 @@ get_humidity();
                                     JsonArray battery591 = user.createNestedArray("AvaSpark-RGB Temp C");  //left side thing
       battery591.add(andonn_temp);                               //right side variable
 
-          JsonArray battery9 = user.createNestedArray("should_lights_be_on");  //left side thing
-      battery9.add(should_lights_be_on);
+          JsonArray battery9 = user.createNestedArray("footpad_press");  //left side thing
+      battery9.add(footpad_press);
+
+             if (should_lights_be_on == false){
+        bri = 0;stateUpdated(1);
+         }else{
+        bri = 255;stateUpdated(1);
+        }
 
     //                    JsonArray battery26 = user.createNestedArray("Tire sensor battery %");  //left side thing
      // battery26.add(tpmsb);                               //right side variable
@@ -1453,10 +1561,12 @@ get_humidity();
 
     top[FPSTR(_free_fall_preset)] = free_fall_preset;  //int input
 
+    top[FPSTR(_BatteryCells)] = BatteryCells;
     top[FPSTR(_is_vesc_main)] = is_vesc_main;
+    top[FPSTR(_float_pkg)] = float_pkg;
     top[FPSTR(_accel_input )] = accel_input ;
 
-    top[FPSTR(_BatteryCells)] = BatteryCells;
+
 
 
     DEBUG_PRINTLN(F("AvaSpark-RGB config saved."));
@@ -1487,6 +1597,7 @@ get_humidity();
     dim_preset   = top[FPSTR(_dim_preset)] | dim_preset;     //int input
     #ifndef SIMPLE_CONFIG
     alt_mode_user            = (top[FPSTR(_alt_mode_user)] | alt_mode_user);       //bool
+    float_pkg            = (top[FPSTR(_float_pkg)] | float_pkg);       //bool
     alt_backwards_preset   = top[FPSTR(_alt_backwards_preset)] | alt_backwards_preset;     //int input
     alt_forwards_preset   = top[FPSTR(_alt_forwards_preset)] | alt_forwards_preset;     //int input
     #endif
@@ -1521,6 +1632,7 @@ const char Usermodvesc::_choosen_fast_preset[] PROGMEM = "High duty preset anima
 const char Usermodvesc::_motor_duty_slow[] PROGMEM = "Low duty motor duty %";
 const char Usermodvesc::_motor_duty_fast[] PROGMEM = "High duty motor duty %";
 const char Usermodvesc::_alt_mode_user[] PROGMEM = "Toggle alt presets by laying on other side";
+const char Usermodvesc::_float_pkg[] PROGMEM = "use float package info";
 const char Usermodvesc::_alt_forwards_preset[] PROGMEM = "Alt forward travel lighting preset";
 const char Usermodvesc::_alt_backwards_preset[] PROGMEM = "Alt reverse travel lighting preset";
 #endif
