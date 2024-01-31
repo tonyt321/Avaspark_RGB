@@ -713,6 +713,7 @@ float fpkg_adc2 = -1;
 
 
   unsigned int free_fall_preset = 1; // preset after free fall
+  float direction_threshold = 3; // direction_threshold when using IMU only to detect direction
   unsigned int free_fall_preset_time = 4; // animation length in sec
   unsigned long free_fall_milisec; // for tracking how much time has past for free_fall animation preset
   unsigned long active_milis_dim; // for tracking how much time has past for dim light activation
@@ -766,6 +767,7 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _accel_input [];
   static const char _is_vesc_main[];
   static const char _free_fall_preset[];
+  static const char _direction_threshold[];
   static const char _BatteryCells[];
   static const char _alt_toggle[];
 
@@ -1051,11 +1053,21 @@ void get_data() {
 
 void accel_preset_info(){
 
+if (direction_threshold != 0){
+// direction change direction_threshold
+    if (filteredx > direction_threshold) {
+        forward = true; // Set forward to true for forwards motion
+    } else if (filteredx < -direction_threshold) {
+        forward = false; // Set forward to false for backwards motion
+    }
+
+}else{
 forward = true;
+}
 
 
 
-     if (imu_inactivity_count > 3){
+     if (imu_inactivity_count > 6){
       is_idle = true;
       }else{
         is_idle = false;
@@ -1138,7 +1150,8 @@ forward = true;
 
 
 
-if (UART.getFloatValues()){
+if ((UART.getFloatValues()) && float_pkg){
+
     fpkg_switchState = (UART.floatData.switchState);
     fpkg_adc1 = (UART.floatData.adc1);
     fpkg_adc2 = (UART.floatData.adc2);
@@ -1562,6 +1575,7 @@ get_humidity();
     top[FPSTR(_free_fall_preset)] = free_fall_preset;  //int input
 
     top[FPSTR(_BatteryCells)] = BatteryCells;
+    top[FPSTR(_direction_threshold)] = direction_threshold;
     top[FPSTR(_is_vesc_main)] = is_vesc_main;
     top[FPSTR(_float_pkg)] = float_pkg;
     top[FPSTR(_accel_input )] = accel_input ;
@@ -1625,7 +1639,6 @@ const char Usermodvesc::_is_vesc_main[] PROGMEM = "UART mode ON / RGB input mode
 const char Usermodvesc::_accel_input [] PROGMEM = "Aceleromter only input";
 const char Usermodvesc::_dim_standing_up_preset[] PROGMEM = "Inactive standing up lighting preset";
 const char Usermodvesc::_free_fall_preset[] PROGMEM = "Freefall lighting preset";
-
 #ifndef SIMPLE_CONFIG
 const char Usermodvesc::_choosen_slow_preset[] PROGMEM = "Low duty preset animation";
 const char Usermodvesc::_choosen_fast_preset[] PROGMEM = "High duty preset animation";
@@ -1633,6 +1646,7 @@ const char Usermodvesc::_motor_duty_slow[] PROGMEM = "Low duty motor duty %";
 const char Usermodvesc::_motor_duty_fast[] PROGMEM = "High duty motor duty %";
 const char Usermodvesc::_alt_mode_user[] PROGMEM = "Toggle alt presets by laying on other side";
 const char Usermodvesc::_float_pkg[] PROGMEM = "use float package info";
+const char Usermodvesc::_direction_threshold[] PROGMEM = "Experimental Direction threshold for Accel only 0 to disable";
 const char Usermodvesc::_alt_forwards_preset[] PROGMEM = "Alt forward travel lighting preset";
 const char Usermodvesc::_alt_backwards_preset[] PROGMEM = "Alt reverse travel lighting preset";
 #endif
