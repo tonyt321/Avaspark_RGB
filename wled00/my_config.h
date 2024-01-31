@@ -63,8 +63,8 @@
 
 
 //disable testing wifi for fast AP start up
-//#define CLIENT_SSID "TRENDnet828_2.4GHz_3FDB"  //for testing only will be disabled in production should be blank
-//#define CLIENT_PASS "8280RH90029"    //for testing only will be disabled in production should be blank
+#define CLIENT_SSID "TRENDnet828_2.4GHz_3FDB"  //for testing only will be disabled in production should be blank
+#define CLIENT_PASS "8280RH90029"    //for testing only will be disabled in production should be blank
 
 
 #define ERROR_LED_PIN 16  // on pcb led
@@ -74,9 +74,6 @@
 #define BATTERY_VOLTAGE_PIN 34   //battery voltage pin
 
 
-
-#define DEFAULT_AP_PASS     ""
-#define DEFAULT_OTA_PASS    ""
 
 
 #define DEFAULT_LED_TYPE TYPE_SK6812_RGBW

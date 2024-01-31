@@ -633,7 +633,7 @@ float motortemp;
 
   bool alt_mode_user = false;
   bool alt_toggle = false;
-  bool should_lights_be_on = true; // editable parady for vesc_light_on
+  bool should_lights_be_on; // editable parady for vesc_light_on
   bool alt_mode = true;
   int8_t alt_backwards_preset = 1;  //preset played as a boot animation
   int8_t alt_forwards_preset = 1;  //preset played as a boot animation
@@ -929,7 +929,7 @@ int volt_to_percent(int volts) {
    if(adxl.triggered(interrupts, ADXL345_ACTIVITY)){
     imu_inactivity = false;
     imu_activity = true;
-    trail_ruffness = trail_ruffness + 1;
+    //trail_ruffness = trail_ruffness + 1;
    }
 
    //0 = upright (normal)
@@ -956,7 +956,8 @@ if(alt_mode_user){
 }
 
 if(alt_toggle){
-      if ((((last_orientation == 0) || (last_orientation == 1)) && (orientation == 2)) || ((!alt_mode_user) && (((last_orientation == 0) || (last_orientation == 1)) && (orientation == 3)))){
+      if ((((last_orientation == 0) || (last_orientation == 1)) && (orientation == 2)) || (((last_orientation == 0) || (last_orientation == 1)) &&(!alt_mode_user) && (orientation == 3))){
+   should_lights_be_on = !should_lights_be_on;
    }
 }
 last_orientation = orientation;
@@ -965,10 +966,11 @@ last_orientation = orientation;
 void get_data() {
     if (accel_input ) {
         accel_preset_info(); // use accel data to get dim light
-    } else if (is_vesc_main) {
+    }
+    if (is_vesc_main) {
         get_vesc_data(); // use duty cycle and power consumption to get dim light
     } else {
-        get_front_light_stock(); // use analog input to get dim light
+       get_front_light_stock(); // use analog input to get dim light
     }
 }
 
@@ -978,7 +980,7 @@ forward = true;
 
 
 
-     if (imu_inactivity_count > 20){
+     if (imu_inactivity_count > 10){
       is_idle = true;
       }else{
         is_idle = false;
@@ -1035,7 +1037,7 @@ forward = true;
 //  amphour = (UART.data.ampHours);                                   //This doesn't seem to do anything!
   watthour = amphour*voltage;                                       //Likewise
   rpm = UART.data.rpm / (Poles / 2);                                // UART.data.rpm returns cRPM.  Divide by no of pole pairs in the motor for actual.
-  distance = distance + rpm*3.142*(1.0/1609.0)*WheelDia*GearReduction;         // Motor RPM x Pi x (1 / meters in a mile or km) x Wheel diameter x (motor pulley / wheelpulley)
+  distance = distance + (rpm*3.142*(1.0/1609.0)*WheelDia*GearReduction) / 20; /*code runs 20 times a sec*/         // Motor RPM x Pi x (1 / meters in a mile or km) x Wheel diameter x (motor pulley / wheelpulley)
   //velocity = rpm*3.142*(60.0/1609.0)*WheelDia*GearReduction;        // Motor RPM x Pi x (seconds in a minute / meters in a mile) x Wheel diameter x (motor pulley / wheelpulley)
   batpercentage = volt_to_percent(voltage);
 
@@ -1045,21 +1047,21 @@ forward = true;
       }
 
 
-    // rpm for direction 
+    // rpm for direction
     // current usage for if the board is engadged or not
 
 
 
 
      if(is_idle == true){
-     if (rpm > 2){forward = true;}
-     if (rpm < -2){forward = false;}
+     if (rpm > 1){forward = true;}
+     if (rpm < -1){forward = false;}
      }else{
-     if (smoothedrpm > 5){forward = true;}
-     if (smoothedrpm < -5){forward = false;}
+     if (smoothedrpm > 3){forward = true;}
+     if (smoothedrpm < -3){forward = false;}
      }
 
-     if ((current < 2) && (smoothedrpm > -1 && smoothedrpm < 1) && (dutycycle * 100 > -2 && dutycycle * 100 < 2) && (imu_inactivity_count > 2)){
+     if ((current < 2) && (smoothedrpm > -1 && smoothedrpm < 1) && ((dutycycle * 100 > -2) && (dutycycle * 100) < 2) && (imu_inactivity_count > 2)){
       if(active_milis_dim + 7000 < millis()){
       is_idle = true;
       }
@@ -1082,21 +1084,14 @@ void set_preset() {
         if (orientation == 4 || orientation == 5) {
           bri = 255;stateUpdated(1);
             applyPreset(dim_standing_up_preset);
-        }else{
-               if (should_lights_be_on == false){ //turns lights off if in app lights are off
-        bri = 0;stateUpdated(1);
-         }else{
-        bri = 255;stateUpdated(1);
+            return;
         }
-
-
 
 
     // Depending on direction, light dimming, and alt mode, apply the appropriate preset
         if (is_idle) {
         applyPreset(dim_preset);
         }else{
-
         if (forward) {
         set_motor_duty_preset();
         }else{
@@ -1107,7 +1102,12 @@ void set_preset() {
         }
         }
         }
-        }
+
+       if (should_lights_be_on == false){
+        bri = 0;stateUpdated(1);
+         }else{
+        bri = 255;stateUpdated(1);
+         }
 }
 
 
@@ -1118,9 +1118,9 @@ void get_humidity(){
     andonn_temp = humiditySensor.getHumidity();
 
   }
-  if ((millis()) > (8 * 1000)){
+  if ((millis()) > (10 * 1000)){
     if (humidity == -100){
-        Serial.println("CORRUPT HEAP: Bad head at 0x3ffbb0f0. Expected 0xabba1234 got 0x3ffb9a34 assert failed: multi_heap_free multi_heap_poisoning.c:253 (head != NULL) Backtrace:0x40083881:0x3ffb25400x4008e7e5:0x3ffb2560 0x40093d55:0x3ffb2580 0x4009399b:0x3ffb26b0 0x40083d41:0x3ffb26d0 0x40093d85:0x3ffb26f0 0x4014e3f5:0x3ffb2710 0x400d2dc6:0x3ffb2730 0x400d31e3:0x3ffb2750 0x400d9b02:0x3ffb2820");
+     //   Serial.println("CORRUPT HEAP: Bad head at 0x3ffbb0f0. Expected 0xabba1234 got 0x3ffb9a34 assert failed: multi_heap_free multi_heap_poisoning.c:253 (head != NULL) Backtrace:0x40083881:0x3ffb25400x4008e7e5:0x3ffb2560 0x40093d55:0x3ffb2580 0x4009399b:0x3ffb26b0 0x40083d41:0x3ffb26d0 0x40093d85:0x3ffb26f0 0x4014e3f5:0x3ffb2710 0x400d2dc6:0x3ffb2730 0x400d31e3:0x3ffb2750 0x400d9b02:0x3ffb2820");
      // delay(10000);
      // ESP.restart();
     }
@@ -1136,13 +1136,12 @@ public:
 
         should_lights_be_on = vesc_light_on;
 
+
   //** Default VESC brate is 115200, you can change it to any other value. */
   Serial2.begin(115200, SERIAL_8N1, VESC_RX, VESC_TX);
   /** Define which ports to use as UART */
   UART.setSerialPort(&Serial2);
-
-    transitionDelay = 5000;
-    bri = 0;stateUpdated(1);
+    briS = 0;stateUpdated(1);
 
     bootPreset = dim_preset;
     // set pin modes
@@ -1250,23 +1249,32 @@ a_read_milisec = millis();
 
 
 
-     if ((millis()) < (8 * 1000)){
+     if ((millis()) < (5 * 1000)){
+
+       if (should_lights_be_on == false){
+        bri = 0;stateUpdated(1);
+         }else{
+        bri = 255;stateUpdated(1);
+        }
       get_humidity();
       imu_inactivity_count = 11;
       imu_activity = false;
       return;  // returns loop if boot animation hasnt finished playing
      }
 
+
+
+get_humidity();
 get_imu_data();
-last_active();//updates when board was last active for preset animation
+//last_active();//updates when board was last active for preset animation
+get_data();
 
-
-   get_data();
 
     if ((!person_on_ui || (free_fall_preset == 250)) || (!person_on_ui && (free_fall_preset == 250))){
       if(!imu_free_fall){
       set_preset();
     }}
+
 
 //handle_tpms();
 
@@ -1323,9 +1331,6 @@ get_humidity();
 
       tv2 = root["tv2"] | tv2; //totale volatage
       bmss = root["bmss"] | bmss; //bms state of charge
-
-
-
 
     }
 
@@ -1407,8 +1412,8 @@ get_humidity();
                                     JsonArray battery591 = user.createNestedArray("AvaSpark-RGB Temp C");  //left side thing
       battery591.add(andonn_temp);                               //right side variable
 
-     //     JsonArray battery9 = user.createNestedArray("RPM");  //left side thing
-     // battery9.add(rpm);
+          JsonArray battery9 = user.createNestedArray("should_lights_be_on");  //left side thing
+      battery9.add(should_lights_be_on);
 
     //                    JsonArray battery26 = user.createNestedArray("Tire sensor battery %");  //left side thing
      // battery26.add(tpmsb);                               //right side variable
