@@ -964,12 +964,15 @@ last_orientation = orientation;
 } // end of get IMU data
 
 void get_data() {
-    if (accel_input ) {
+    if (accel_input == true) {
         accel_preset_info(); // use accel data to get dim light
     }
-    if (is_vesc_main) {
+
+    if (is_vesc_main == true) {
         get_vesc_data(); // use duty cycle and power consumption to get dim light
-    } else {
+    }
+
+    if (is_vesc_main == false) {
        get_front_light_stock(); // use analog input to get dim light
     }
 }
