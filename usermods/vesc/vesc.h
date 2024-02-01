@@ -21,6 +21,8 @@ AHT20 humiditySensor;
 
 int footpad_press = -1;
 
+int fpkg_state = -1;
+
 int BatteryCells = 15;
 //int display_battery;
 //int display_duty_cycle;
@@ -677,6 +679,9 @@ float motortemp;
 int fpkg_switchState = -1;
 float fpkg_adc1 = -1;
 float fpkg_adc2 = -1;
+float fpkg_roll = -1;
+float fpkg_pitch = -1;
+float fpkg_motorCurrent = -1;
 
   #ifndef SIMPLE_CONFIG
   int8_t choosen_slow_preset = 1;
@@ -1006,16 +1011,32 @@ int volt_to_percent(int volts) {
    //3 = right side
    //4 = front pointing down
    //5 = back pointing down
+if (free_fall_preset == 200 && float_pkg){
+//fpkg_roll
+//fpkg_pitch
 
+   if (is_idle){
+
+if ((35 > fpkg_roll > -35)&&(50 > fpkg_roll > -120)){orientation = 2;}
+if ((10 > fpkg_roll > -10)&&(120 > fpkg_roll > 50)){orientation = 3;}
+if (-70 > fpkg_roll > -90){orientation = 4;}
+if (90 > fpkg_roll > 70){orientation = 5;}
+
+   }
+
+if ((40 > fpkg_roll > -40)&&((180 > fpkg_roll > 160)||(-160 > fpkg_roll > -180))){orientation = 1;}
+if ((-90 > fpkg_roll > -70)&&(50 > fpkg_roll > -120)){orientation = 0;}
+
+}else{
    if (imu_inactivity_count > 2){
-   if (filteredz < -10){orientation = 1;}
    if (filteredy < -17){orientation = 2;}
    if (filteredy > 17){orientation = 3;}
    if (filteredx < -17){orientation = 4;}
    if (filteredx > 17){orientation = 5;}
    }
-
+   if (filteredz < -10){orientation = 1;}
    if (filteredz > 10){orientation = 0;}
+}
 
 if(alt_mode_user){
    if ((last_orientation == 0 || last_orientation == 1) && (orientation == 3)){
@@ -1155,11 +1176,34 @@ if ((UART.getFloatValues()) && float_pkg){
     fpkg_switchState = (UART.floatData.switchState);
     fpkg_adc1 = (UART.floatData.adc1);
     fpkg_adc2 = (UART.floatData.adc2);
-     
+    fpkg_state = (UART.floatData.state); //https://github.com/vedderb/vesc_pkg/blob/main/float/float/float.c
+    fpkg_pitch = (UART.floatData.pitch);
+    fpkg_roll = (UART.floatData.roll);
+    fpkg_motorCurrent = (UART.floatData.motorCurrent);
+
+//// Data type
+//	STARTUP = 0,
+//	RUNNING = 1,
+//	RUNNING_TILTBACK = 2,
+//	RUNNING_WHEELSLIP = 3,
+//	RUNNING_UPSIDEDOWN = 4,
+//	RUNNING_FLYWHEEL = 5,   // we remain in "RUNNING" state in flywheel mode,
+	                        // but then report "RUNNING_FLYWHEEL" in rt data
+//	FAULT_ANGLE_PITCH = 6,	// skipped 5 for compatibility
+//	FAULT_ANGLE_ROLL = 7,
+//	FAULT_SWITCH_HALF = 8,
+//	FAULT_SWITCH_FULL = 9,
+//	FAULT_DUTY = 10, 		// unused but kept for compatibility
+//	FAULT_STARTUP = 11,
+//	FAULT_REVERSE = 12,
+//	FAULT_QUICKSTOP = 13,
+//	CHARGING = 14,
+//	DISABLED = 15
+
+
      //0 = none
      //1 = adc2
-     //2 = adc1
-     //3 = both
+     //2 = adc1    //3 = both
 
   if(fpkg_switchState == 0){footpad_press = 0;}
     if(fpkg_switchState == 1){
@@ -1530,8 +1574,8 @@ get_humidity();
                                     JsonArray battery591 = user.createNestedArray("AvaSpark-RGB Temp C");  //left side thing
       battery591.add(andonn_temp);                               //right side variable
 
-          JsonArray battery9 = user.createNestedArray("footpad_press");  //left side thing
-      battery9.add(footpad_press);
+          JsonArray battery9 = user.createNestedArray("fpkg_state");  //left side thing
+      battery9.add(fpkg_state);
 
              if (should_lights_be_on == false){
         bri = 0;stateUpdated(1);

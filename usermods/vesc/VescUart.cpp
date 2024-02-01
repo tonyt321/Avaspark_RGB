@@ -264,11 +264,11 @@ bool VescUart::getFWversion(void){
 }
 
 bool VescUart::getFWversion(uint8_t canId){
-	
+
 	int32_t index = 0;
 	int payloadSize = (canId == 0 ? 1 : 3);
 	uint8_t payload[payloadSize];
-	
+
 	if (canId != 0) {
 		payload[index++] = { COMM_FORWARD_CAN };
 		payload[index++] = canId;
@@ -347,7 +347,7 @@ void VescUart::setNunchuckValues(uint8_t canId) {
 
 	if(debugPort!=NULL){
 		debugPort->println("Command: COMM_SET_CHUCK_DATA "+String(canId));
-	}	
+	}
 	int32_t index = 0;
 	int payloadSize = (canId == 0 ? 11 : 13);
 	uint8_t payload[payloadSize];
@@ -361,7 +361,7 @@ void VescUart::setNunchuckValues(uint8_t canId) {
 	payload[index++] = nunchuck.valueY;
 	buffer_append_bool(payload, nunchuck.lowerButton, &index);
 	buffer_append_bool(payload, nunchuck.upperButton, &index);
-	
+
 	// Acceleration Data. Not used, Int16 (2 byte)
 	payload[index++] = 0;
 	payload[index++] = 0;
