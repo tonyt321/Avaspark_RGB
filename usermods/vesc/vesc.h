@@ -664,6 +664,7 @@ float GearReduction = 1;         //reduction ratio. 1 for direct drive. Otherwis
 
 int smoothedrpm = 0;
 int rpm;
+float erpm;
 float voltage;
 float current;
 int power;
@@ -1143,7 +1144,8 @@ forward = true;
   power = voltage*current;
 //  amphour = (UART.data.ampHours);                                   //This doesn't seem to do anything!
   watthour = amphour*voltage;                                       //Likewise
-  rpm = UART.data.rpm / (Poles / 2);                                // UART.data.rpm returns cRPM.  Divide by no of pole pairs in the motor for actual.
+  erpm = (UART.data.rpm);
+  rpm = erpm / (Poles / 2);                                // UART.data.rpm returns cRPM.  Divide by no of pole pairs in the motor for actual.
   distance = distance + (rpm*3.142*(1.0/1609.0)*WheelDia*GearReduction) / 20; /*code runs 20 times a sec*/         // Motor RPM x Pi x (1 / meters in a mile or km) x Wheel diameter x (motor pulley / wheelpulley)
   //velocity = rpm*3.142*(60.0/1609.0)*WheelDia*GearReduction;        // Motor RPM x Pi x (seconds in a minute / meters in a mile) x Wheel diameter x (motor pulley / wheelpulley)
   batpercentage = volt_to_percent(voltage);
@@ -1164,8 +1166,8 @@ forward = true;
      if (rpm > 1){forward = true;}
      if (rpm < -1){forward = false;}
      }else{
-     if (smoothedrpm > 3){forward = true;}
-     if (smoothedrpm < -3){forward = false;}
+     if (erpm > 25){forward = true;}
+     if (erpm < -25){forward = false;}
      }
 
 
