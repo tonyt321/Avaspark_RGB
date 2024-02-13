@@ -733,6 +733,10 @@ float fpkg_motorCurrent = -1;
 unsigned long a_read_milisec;  // analog read limit
 
 //////////////////////////////tpsm vars
+int lightBrightness = -1;
+int lightIdleBrightness = -1;
+int statusBrightness = -1;
+bool float_pkg_LCM = false;
 
   int tpmsb = 0; //tpms batt
   float tpmsp = 0; //tpms pressure
@@ -776,7 +780,7 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _direction_threshold[];
   static const char _BatteryCells[];
   static const char _alt_toggle[];
-
+static const char _float_pkg_LCM[];
 #ifndef SIMPLE_CONFIG
   static const char _alt_mode_user[];
   static const char _float_pkg[];
@@ -1018,15 +1022,15 @@ if (free_fall_preset == 200 && float_pkg){
 
    if (is_idle){
 
-if ((35 > fpkg_roll > -35)&&(50 > fpkg_roll > -120)){orientation = 2;}
-if ((10 > fpkg_roll > -10)&&(120 > fpkg_roll > 50)){orientation = 3;}
-if (-70 > fpkg_roll > -90){orientation = 4;}
-if (90 > fpkg_roll > 70){orientation = 5;}
+if ((15 > fpkg_pitch && fpkg_pitch > -15)&&(50 > fpkg_roll && fpkg_roll > -120)){orientation = 2;}
+if ((15 > fpkg_pitch && fpkg_pitch > -15)&&(120 > fpkg_roll && fpkg_roll > 50)){orientation = 3;}
+if (-70 > fpkg_pitch && fpkg_pitch > -90){orientation = 4;}
+if (90 > fpkg_pitch && fpkg_pitch > 70){orientation = 5;}
 
    }
 
-if ((40 > fpkg_roll > -40)&&((180 > fpkg_roll > 160)||(-160 > fpkg_roll > -180))){orientation = 1;}
-if ((-90 > fpkg_roll > -70)&&(50 > fpkg_roll > -120)){orientation = 0;}
+if ((40 > fpkg_pitch && fpkg_pitch > -40)&&((fpkg_roll > 160)||(-160 > fpkg_roll))){orientation = 1;}
+if ((40 > fpkg_pitch && fpkg_pitch > -40)&&(40 > fpkg_roll && fpkg_roll > -40)){orientation = 0;}
 
 }else{
    if (imu_inactivity_count > 2){
@@ -1171,7 +1175,11 @@ forward = true;
      }
 
 
-
+             if (UART.getLCMData() && float_pkg_LCM) {
+      lightBrightness = (UART.floatData.lightBrightness);
+      lightIdleBrightness = (UART.floatData.lightIdleBrightness);
+      statusBrightness = (UART.floatData.statusBrightness);
+     }
 
 if ((UART.getFloatValues()) && float_pkg){
 
@@ -1251,7 +1259,12 @@ void set_preset() {
 
 
         if (orientation == 4 || orientation == 5) {
-          bri = 255;stateUpdated(1);
+          if (UART.getLCMData() && float_pkg_LCM) {
+            bri = lightIdleBrightness;
+            }else{
+              bri = 255;
+              }
+          stateUpdated(1);
             applyPreset(dim_standing_up_preset);
             return;
         }
@@ -1437,7 +1450,12 @@ get_data();
        if (should_lights_be_on == false){
         bri = 0;stateUpdated(1);
          }else{
-        bri = 255;stateUpdated(1);
+           if (UART.getLCMData() && float_pkg_LCM) {
+            bri = lightBrightness;
+            }else{
+              bri = 255;
+              }
+          stateUpdated(1);
          }
 
 //handle_tpms();
@@ -1582,7 +1600,11 @@ get_humidity();
              if (should_lights_be_on == false){
         bri = 0;stateUpdated(1);
          }else{
-        bri = 255;stateUpdated(1);
+                  if (UART.getLCMData() && float_pkg_LCM) {
+            bri = lightBrightness;stateUpdated(1);
+            }else{
+              bri = 255;stateUpdated(1);
+              }
         }
 
     //                    JsonArray battery26 = user.createNestedArray("Tire sensor battery %");  //left side thing
@@ -1624,6 +1646,7 @@ get_humidity();
     top[FPSTR(_direction_threshold)] = direction_threshold;
     top[FPSTR(_is_vesc_main)] = is_vesc_main;
     top[FPSTR(_float_pkg)] = float_pkg;
+        top[FPSTR(_float_pkg)] = float_pkg_LCM;
     top[FPSTR(_accel_input )] = accel_input ;
 
 
@@ -1665,6 +1688,7 @@ get_humidity();
     vesc_light_on            = (top[FPSTR(_vesc_light_on)] | vesc_light_on);       //bool
     alt_toggle            = (top[FPSTR(_alt_toggle)] | alt_toggle);       //bool
     free_fall_preset   = top[FPSTR(_free_fall_preset)] | free_fall_preset;     //int input
+    float_pkg_LCM            = (top[FPSTR(_float_pkg_LCM)] | float_pkg_LCM);       //bool
     BatteryCells            = (top[FPSTR(_BatteryCells)] | BatteryCells);       //bool
 
     DEBUG_PRINT(FPSTR(_name));
@@ -1699,3 +1723,4 @@ const char Usermodvesc::_alt_backwards_preset[] PROGMEM = "Alt reverse travel li
 const char Usermodvesc::_alt_toggle[] PROGMEM = "Toggle on off by laying on side";
 const char Usermodvesc::_forwards_preset[] PROGMEM = "Forward travel lighting preset";
 const char Usermodvesc::_BatteryCells[] PROGMEM = "Battery Cells series";
+const char Usermodvesc::_float_pkg_LCM[] PROGMEM = "use float package lighting for idle and active brightness";

@@ -1243,4 +1243,50 @@ typedef struct __attribute__((packed)) {
 	uint64_t runtime; // Seconds
 } backup_data;
 
+typedef enum {
+	FLOAT_STATE_STARTUP = 0,
+	FLOAT_STATE_RUNNING = 1,
+	FLOAT_STATE_RUNNING_TILTBACK = 2,
+	FLOAT_STATE_RUNNING_WHEELSLIP = 3,
+	FLOAT_STATE_RUNNING_UPSIDEDOWN = 4,
+	FLOAT_STATE_RUNNING_FLYWHEEL = 5,   // we remain in "RUNNING" state in flywheel mode,
+	                        // but then report "RUNNING_FLYWHEEL" in rt data
+	FLOAT_STATE_FAULT_ANGLE_PITCH = 6,	// skipped 5 for compatibility
+	FLOAT_STATE_FAULT_ANGLE_ROLL = 7,
+	FLOAT_STATE_FAULT_SWITCH_HALF = 8,
+	FLOAT_STATE_FAULT_SWITCH_FULL = 9,
+	FLOAT_STATE_FAULT_DUTY = 10, 		// unused but kept for compatibility
+	FLOAT_STATE_FAULT_STARTUP = 11,
+	FLOAT_STATE_FAULT_REVERSE = 12,
+	FLOAT_STATE_FAULT_QUICKSTOP = 13,
+	FLOAT_STATE_CHARGING = 14,
+	FLOAT_STATE_DISABLED = 15
+} FloatState;
+
+enum {
+	FLOAT_COMMAND_GET_INFO = 0,		// get version / package info
+	FLOAT_COMMAND_GET_RTDATA = 1,	// get rt data
+	FLOAT_COMMAND_RT_TUNE = 2,		// runtime tuning (don't write to eeprom)
+	FLOAT_COMMAND_TUNE_DEFAULTS = 3,// set tune to defaults (no eeprom)
+	FLOAT_COMMAND_CFG_SAVE = 4,		// save config to eeprom
+	FLOAT_COMMAND_CFG_RESTORE = 5,	// restore config from eeprom
+	FLOAT_COMMAND_TUNE_OTHER = 6,	// make runtime changes to startup/etc
+	FLOAT_COMMAND_RC_MOVE = 7,		// move motor while board is idle
+	FLOAT_COMMAND_BOOSTER = 8,		// change booster settings
+	FLOAT_COMMAND_PRINT_INFO = 9,	// print verbose info
+	FLOAT_COMMAND_GET_ALLDATA = 10,	// send all data, compact
+	FLOAT_COMMAND_EXPERIMENT = 11,  // generic cmd for sending data, used for testing/tuning new features
+	FLOAT_COMMAND_LOCK = 12,
+	FLOAT_COMMAND_HANDTEST = 13,
+	FLOAT_COMMAND_TUNE_TILT = 14,
+	FLOAT_COMMAND_FLYWHEEL = 22,
+	FLOAT_COMMAND_HAPTIC = 23,
+	FLOAT_COMMAND_LCM_POLL = 24,   // this should only be called by external light modules
+	FLOAT_COMMAND_LIGHT_INFO = 25, // to be called by apps to check if a lighting module is present / get info
+	FLOAT_COMMAND_LIGHT_CTRL = 26, // to be called by apps to change light settings
+	FLOAT_COMMAND_LCM_INFO = 27,   // to be called by apps to check lighting controller firmware
+	FLOAT_COMMAND_CHARGESTATE = 28,// to be called by ADV LCM while charging
+	FLOAT_COMMAND_LCM_DEBUG = 99,  // reserved for external debug purposes
+} float_commands;
+
 #endif /* DATATYPES_H_ */
