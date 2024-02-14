@@ -1432,14 +1432,14 @@ get_data();
     if ((!person_on_ui || (free_fall_preset == 250)) || (!person_on_ui && (free_fall_preset == 250))){
       if(!imu_free_fall){
       set_preset();
-    }}
+    }
 
        if (should_lights_be_on == false){
         bri = 0;stateUpdated(1);
          }else{
         bri = 255;stateUpdated(1);
          }
-
+    }
 //handle_tpms();
 
 
@@ -1579,12 +1579,13 @@ get_humidity();
           JsonArray battery9 = user.createNestedArray("fpkg_state");  //left side thing
       battery9.add(fpkg_state);
 
+if ((!person_on_ui || (free_fall_preset == 250)) || (!person_on_ui && (free_fall_preset == 250))){
              if (should_lights_be_on == false){
         bri = 0;stateUpdated(1);
          }else{
         bri = 255;stateUpdated(1);
         }
-
+}
     //                    JsonArray battery26 = user.createNestedArray("Tire sensor battery %");  //left side thing
      // battery26.add(tpmsb);                               //right side variable
   }
