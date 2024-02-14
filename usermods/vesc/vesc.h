@@ -1018,15 +1018,15 @@ if (free_fall_preset == 200 && float_pkg){
 
    if (is_idle){
 
-if ((35 > fpkg_roll > -35)&&(50 > fpkg_roll > -120)){orientation = 2;}
-if ((10 > fpkg_roll > -10)&&(120 > fpkg_roll > 50)){orientation = 3;}
-if (-70 > fpkg_roll > -90){orientation = 4;}
-if (90 > fpkg_roll > 70){orientation = 5;}
+if ((15 > fpkg_pitch && fpkg_pitch > -15)&&(50 > fpkg_roll && fpkg_roll > -120)){orientation = 2;}
+if ((15 > fpkg_pitch && fpkg_pitch > -15)&&(120 > fpkg_roll && fpkg_roll > 50)){orientation = 3;}
+if (-70 > fpkg_pitch && fpkg_pitch > -90){orientation = 4;}
+if (90 > fpkg_pitch && fpkg_pitch > 70){orientation = 5;}
 
    }
 
-if ((40 > fpkg_roll > -40)&&((180 > fpkg_roll > 160)||(-160 > fpkg_roll > -180))){orientation = 1;}
-if ((-90 > fpkg_roll > -70)&&(50 > fpkg_roll > -120)){orientation = 0;}
+if ((40 > fpkg_pitch && fpkg_pitch > -40)&&((fpkg_roll > 160)||(-160 > fpkg_roll))){orientation = 1;}
+if ((40 > fpkg_pitch && fpkg_pitch > -40)&&(40 > fpkg_roll && fpkg_roll > -40)){orientation = 0;}
 
 }else{
    if (imu_inactivity_count > 2){
@@ -1432,14 +1432,14 @@ get_data();
     if ((!person_on_ui || (free_fall_preset == 250)) || (!person_on_ui && (free_fall_preset == 250))){
       if(!imu_free_fall){
       set_preset();
-    }}
+    }
 
        if (should_lights_be_on == false){
         bri = 0;stateUpdated(1);
          }else{
         bri = 255;stateUpdated(1);
          }
-
+    }
 //handle_tpms();
 
 
@@ -1579,11 +1579,7 @@ get_humidity();
           JsonArray battery9 = user.createNestedArray("fpkg_state");  //left side thing
       battery9.add(fpkg_state);
 
-             if (should_lights_be_on == false){
-        bri = 0;stateUpdated(1);
-         }else{
-        bri = 255;stateUpdated(1);
-        }
+
 
     //                    JsonArray battery26 = user.createNestedArray("Tire sensor battery %");  //left side thing
      // battery26.add(tpmsb);                               //right side variable
