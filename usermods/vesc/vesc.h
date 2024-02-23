@@ -683,6 +683,9 @@ float fpkg_adc2 = -1;
 float fpkg_roll = -1;
 float fpkg_pitch = -1;
 float fpkg_motorCurrent = -1;
+int lightBrightness = -1;
+int lightIdleBrightness = -1;
+int statusBrightness = -1;
 
   #ifndef SIMPLE_CONFIG
   int8_t choosen_fast_preset = 1;
@@ -699,7 +702,7 @@ float fpkg_motorCurrent = -1;
   bool vesc_light_on = true;
   bool accel_input  = false;
   bool is_vesc_main = true;
-
+  bool useLCMinfo  = false;
   bool float_pkg = true;
   bool alt_mode_user = false;
   bool alt_toggle = false;
@@ -770,6 +773,7 @@ unsigned long a_read_milisec;  // analog read limit
   static const char _dim_standing_up_preset[];
   static const char _vesc_light_on[];
   static const char _accel_input [];
+  static const char _useLCMinfo [];
   static const char _is_vesc_main[];
   static const char _free_fall_preset[];
   static const char _direction_threshold[];
@@ -1128,9 +1132,24 @@ forward = true;
 
   void get_vesc_data()
    {
+    static uint8_t counter = 0;
+
+    bool shouldGetVESC = false;
+    bool shouldGetFloat = false;
+    bool shouldGetLCM = false;
+
+    if (counter % 5 == 0) {
+      shouldGetVESC = true;
+    } else if ((counter % 20 == 0) && useLCMinfo) {
+      shouldGetLCM = true;
+    } else {
+      if (float_pkg){
+      shouldGetFloat = true;
+      }
+    }
 
 ////////// Read values //////////
- if ( UART.getVescValues() ) {
+ if (shouldGetVESC && UART.getVescValues() ) {
   voltage = (UART.data.inpVoltage);                                 //Battery Voltage
   current = (UART.data.avgInputCurrent);                            //Current Draw
   dutycycle = (UART.data.dutyCycleNow);                            //Current Draw
@@ -1147,8 +1166,9 @@ forward = true;
 
 
   bmss = batpercentage;
+  }
   smoothedrpm = ((rpm * 0.1 ) + (smoothedrpm * 0.9)); // higly smoothed
-      }
+
 
 
     // rpm for direction
@@ -1168,7 +1188,7 @@ forward = true;
 
 
 
-if ((UART.getFloatValues()) && float_pkg){
+if (shouldGetFloat && UART.getFloatValues()){
 
     fpkg_switchState = (UART.floatData.switchState);
     fpkg_adc1 = (UART.floatData.adc1);
@@ -1236,13 +1256,25 @@ if ((UART.getFloatValues()) && float_pkg){
         active_milis_dim = millis();
         }
       }
+
+
+           if (shouldGetLCM && UART.getLCMData()) {
+      lightBrightness = (UART.floatData.lightBrightness);
+      lightIdleBrightness = (UART.floatData.lightIdleBrightness);
+      statusBrightness = (UART.floatData.statusBrightness);
+     }
+
+      counter++;
+      if (counter > 100) {
+        counter = 0;
+      }
+
   }
 
 
 
 
 void set_preset() {
-
 
 
         if (orientation == 4 || orientation == 5) {
@@ -1431,17 +1463,24 @@ get_data();
     if ((!person_on_ui || (free_fall_preset == 250)) || (!person_on_ui && (free_fall_preset == 250))){
       if(!imu_free_fall){
       set_preset();
+
+if (!should_lights_be_on) {
+    if (off_preset != 0) {
+        applyPreset(off_preset);
+    } else {
+        bri = 0;
+        stateUpdated(1);
+    }
+} else {
+    if (useLCMinfo && lightBrightness >= 0) {
+        bri = lightBrightness;
+    } else {
+        bri = 255;
+    }
+    stateUpdated(1);
+}
     }
 
-       if (should_lights_be_on == false){
-              if (off_preset != 0){
-      applyPreset(off_preset);
-      }else{
-        bri = 0;stateUpdated(1);
-      }
-         }else{
-        bri = 255;stateUpdated(1);
-         }
     }
 //handle_tpms();
 
@@ -1631,6 +1670,7 @@ if ((!person_on_ui || (free_fall_preset == 250)) || (!person_on_ui && (free_fall
     top[FPSTR(_direction_threshold)] = direction_threshold;
     top[FPSTR(_is_vesc_main)] = is_vesc_main;
     top[FPSTR(_float_pkg)] = float_pkg;
+    top[FPSTR(_useLCMinfo)] = useLCMinfo;
     top[FPSTR(_accel_input )] = accel_input ;
 
 
@@ -1664,6 +1704,7 @@ if ((!person_on_ui || (free_fall_preset == 250)) || (!person_on_ui && (free_fall
     #ifndef SIMPLE_CONFIG
     alt_mode_user            = (top[FPSTR(_alt_mode_user)] | alt_mode_user);       //bool
     float_pkg            = (top[FPSTR(_float_pkg)] | float_pkg);       //bool
+    useLCMinfo            = (top[FPSTR(_useLCMinfo)] | useLCMinfo);       //bool
     alt_backwards_preset   = top[FPSTR(_alt_backwards_preset)] | alt_backwards_preset;     //int input
     alt_forwards_preset   = top[FPSTR(_alt_forwards_preset)] | alt_forwards_preset;     //int input
     #endif
@@ -1697,6 +1738,7 @@ const char Usermodvesc::_off_preset[] PROGMEM = "off preset";
 const char Usermodvesc::_motor_duty_fast[] PROGMEM = "High duty motor duty %";
 const char Usermodvesc::_alt_mode_user[] PROGMEM = "Toggle alt presets by laying on other side";
 const char Usermodvesc::_float_pkg[] PROGMEM = "use float package info";
+const char Usermodvesc::_useLCMinfo[] PROGMEM = "use LCM package info";
 const char Usermodvesc::_direction_threshold[] PROGMEM = "Experimental Direction threshold for Accel only 0 to disable";
 const char Usermodvesc::_alt_forwards_preset[] PROGMEM = "Alt forward travel lighting preset";
 const char Usermodvesc::_alt_backwards_preset[] PROGMEM = "Alt reverse travel lighting preset";

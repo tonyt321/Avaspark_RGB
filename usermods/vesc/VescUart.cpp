@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include "VescUart.h"
 
+#define FIRMWARE_ID "AVARGB_1_0_0"
+
 VescUart::VescUart(uint32_t timeout_ms) : _TIMEOUT(timeout_ms) {
 	nunchuck.valueX         = 127;
 	nunchuck.valueY         = 127;
@@ -220,40 +222,56 @@ bool VescUart::processReadPacket(uint8_t * message) {
 			if(message[index++] != 101 || message[index++] != 1){
 				return false;
 			}
-			floatData.pidValue = buffer_get_float32_auto(message, &index);
-			floatData.pitch = buffer_get_float32_auto(message, &index);
-			floatData.roll = buffer_get_float32_auto(message, &index);
+			uint8_t floatCommand = message[index++];
+			switch (floatCommand) {
+				case FLOAT_COMMAND_GET_RTDATA:
+				floatData.pidValue = buffer_get_float32_auto(message, &index);
+				floatData.pitch = buffer_get_float32_auto(message, &index);
+				floatData.roll = buffer_get_float32_auto(message, &index);
 			
-			floatData.state = message[index++]; // uint 8
-			floatData.setpointAdjustmentType = floatData.state >> 4;
-			floatData.state = floatData.state & 0b00001111;
+				floatData.state = message[index++]; // uint 8
+				floatData.setpointAdjustmentType = floatData.state >> 4;
+				floatData.state = floatData.state & 0b00001111;
 			
-			floatData.switchState = message[index++]; // uint 8
-			floatData.beepReason = floatData.switchState >> 4;
-			floatData.switchState = floatData.switchState & 0b00001111;
+				floatData.switchState = message[index++]; // uint 8
+				floatData.beepReason = floatData.switchState >> 4;
+				floatData.switchState = floatData.switchState & 0b00001111;
 
-			floatData.adc1 = buffer_get_float32_auto(message, &index);
-			floatData.adc2 = buffer_get_float32_auto(message, &index);
-			floatData.floatSetpoint = buffer_get_float32_auto(message, &index);
-			floatData.floatAtr = buffer_get_float32_auto(message, &index);
-			floatData.floatBraketilt = buffer_get_float32_auto(message, &index);
-			floatData.floatTorquetilt = buffer_get_float32_auto(message, &index);
-			floatData.floatTurntilt = buffer_get_float32_auto(message, &index);
-			floatData.floatInputtilt = buffer_get_float32_auto(message, &index);
-			floatData.truePitch = buffer_get_float32_auto(message, &index);
-			floatData.filteredCurrent = buffer_get_float32_auto(message, &index);
-			floatData.floatAccDiff = buffer_get_float32_auto(message, &index);
-			floatData.appliedBoosterCurrent = buffer_get_float32_auto(message, &index);
-			floatData.motorCurrent = buffer_get_float32_auto(message, &index);
-			floatData.throttleVal = buffer_get_float32_auto(message, &index);
-			return true;
+				floatData.adc1 = buffer_get_float32_auto(message, &index);
+				floatData.adc2 = buffer_get_float32_auto(message, &index);
+				floatData.floatSetpoint = buffer_get_float32_auto(message, &index);
+				floatData.floatAtr = buffer_get_float32_auto(message, &index);
+				floatData.floatBraketilt = buffer_get_float32_auto(message, &index);
+				floatData.floatTorquetilt = buffer_get_float32_auto(message, &index);
+				floatData.floatTurntilt = buffer_get_float32_auto(message, &index);
+				floatData.floatInputtilt = buffer_get_float32_auto(message, &index);
+				floatData.truePitch = buffer_get_float32_auto(message, &index);
+				floatData.filteredCurrent = buffer_get_float32_auto(message, &index);
+				floatData.floatAccDiff = buffer_get_float32_auto(message, &index);
+				floatData.appliedBoosterCurrent = buffer_get_float32_auto(message, &index);
+				floatData.motorCurrent = buffer_get_float32_auto(message, &index);
+				floatData.throttleVal = buffer_get_float32_auto(message, &index);
+				return true;
+				break;
+			case FLOAT_COMMAND_LCM_POLL:
+				index += 9; // Skip unused bytes
+
+				floatData.lightBrightness = message[index++];
+				floatData.lightIdleBrightness = message[index++];
+				floatData.statusBrightness = message[index++];
+
+				// implement generic byte pair handling for special functionality here
+				return true;
+				break;
+			}
+			
 		break;
 
 		/* case COMM_GET_VALUES_SELECTIVE:
 
 			uint32_t mask = 0xFFFFFFFF; */
 
-		default:
+		//default:
 			return false;
 		break;
 	}
@@ -318,7 +336,7 @@ bool VescUart::getVescValues(uint8_t canId) {
 bool VescUart::getFloatValues(void) {
 
 	if (debugPort!=NULL){
-		debugPort->println("Command: COMM_CUSTOM_APP_DATA ");
+		debugPort->println("Command: COMM_CUSTOM_APP_DATA (RTDATA)");
 	}
 
 	int32_t index = 0;
@@ -326,7 +344,7 @@ bool VescUart::getFloatValues(void) {
 	uint8_t payload[payloadSize];
 	payload[index++] = { COMM_CUSTOM_APP_DATA };
 	payload[index++] = 101;
-	payload[index++] = 0x1;
+	payload[index++] = FLOAT_COMMAND_GET_RTDATA;
 
 	packSendPayload(payload, payloadSize);
 
@@ -334,6 +352,36 @@ bool VescUart::getFloatValues(void) {
 	int messageLength = receiveUartMessage(message);
 
 	if (messageLength > 55) {
+		return processReadPacket(message); 
+	}
+	return false;
+}
+
+bool VescUart::getLCMData(void) {
+	if (debugPort!=NULL){
+		debugPort->println("Command: COMM_CUSTOM_APP_DATA (LCM_POLL)");
+	}
+
+	int32_t index = 0;
+	int payloadSize = 3;
+	uint8_t payload[payloadSize];
+	payload[index++] = { COMM_CUSTOM_APP_DATA };
+	payload[index++] = 101;
+	payload[index++] = FLOAT_COMMAND_LCM_POLL;
+
+	if (!hasSetLCM) {
+		int firmwareIdSize = sizeof(FIRMWARE_ID);
+		memcpy(&payload[3], FIRMWARE_ID, firmwareIdSize);
+		index += firmwareIdSize;
+		hasSetLCM = true;
+	}
+
+	packSendPayload(payload, payloadSize);
+
+	uint8_t message[256];
+	int messageLength = receiveUartMessage(message);
+
+	if (messageLength > 3) {
 		return processReadPacket(message); 
 	}
 	return false;
