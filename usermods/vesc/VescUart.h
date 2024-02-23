@@ -52,6 +52,11 @@ class VescUart
                 float appliedBoosterCurrent;
                 float motorCurrent;
                 float throttleVal;
+
+                // LCM poll data
+                uint8_t lightBrightness;
+                uint8_t lightIdleBrightness;
+                uint8_t statusBrightness;
 	};
 
 	/** Struct to hold the nunchuck values to send over UART */
@@ -136,6 +141,13 @@ class VescUart
          * @return     True if successfull otherwise false
          */
         bool getFloatValues(void);
+
+        /**
+         * @brief      Sends a command to VESC and stores the returned data
+         *
+         * @return     True if successfull otherwise false
+         */
+        bool getLCMData(void);
 
         /**
          * @brief      Sends values for joystick and buttons to the nunchuck app
@@ -224,6 +236,8 @@ class VescUart
 		/** Variabel to hold the reference to the Serial object to use for debugging. 
 		  * Uses the class Stream instead of HarwareSerial */
 		Stream* debugPort = NULL;
+
+                bool hasSetLCM = false;
 
 		/**
 		 * @brief      Packs the payload and sends it over Serial
